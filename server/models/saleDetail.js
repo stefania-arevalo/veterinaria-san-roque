@@ -26,11 +26,7 @@ const SaleDetail = sequelize.define("SaleDetail", {
     idTratMed: {
         type: DataTypes.INTEGER,
         allowNull: true,
-        defaultValue: null,
-        references: {
-            model: "DETALLE_VENTA",
-            key: "idTratMed"
-        }
+        defaultValue: null
     },
     idVacunaAplicada: {
         type: DataTypes.INTEGER,
