@@ -6,7 +6,7 @@ const DB_PASSWORD = process.env.DB_PASSWORD;
 const DB_HOST     = process.env.DB_HOST;
 const DB_PORT     = process.env.DB_PORT || 3306;  // ← agregar esto
 
-const API_VERSION = process.env.API_VERSION;
+const API_VERSION = process.env.API_VERSION || "v1"; ;
 const IP_SERVER   = process.env.IP_SERVER;
 
 const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;

@@ -71,9 +71,13 @@ app.use("/uploads", express.static("uploads"));
 
 //Configure Header HTTP - CORS
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
+  origin: process.env.FRONTEND_URL || 'https://veterinaria-san-roque.vercel.app',
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
+
+app.options('*', cors()); 
 
 // Configure routings
 app.use(`/api/${API_VERSION}`, authRoutes);

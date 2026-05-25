@@ -5,7 +5,7 @@ const isProduction = process.env.NODE_ENV === "production";
 
 const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
     host: DB_HOST,
-    port: DB_PORT,          // ← agregar
+    port: DB_PORT,
     dialect: "mysql",
     logging: false,
     pool: {
@@ -17,7 +17,10 @@ const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
     dialectOptions: {
         connectTimeout: 60000,
         ...(isProduction && {
-            ssl: { rejectUnauthorized: true }
+            ssl: {
+                minVersion: 'TLSv1.2',
+                rejectUnauthorized: false  // ← TiDB Cloud en Render no tiene el CA instalado
+            }
         })
     }
 });
