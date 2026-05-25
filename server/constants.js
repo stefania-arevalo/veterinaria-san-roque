@@ -1,0 +1,21 @@
+require("dotenv").config();
+
+const DB_NAME     = process.env.DB_NAME;
+const DB_USER     = process.env.DB_USER;
+const DB_PASSWORD = process.env.DB_PASSWORD;
+const DB_HOST     = process.env.DB_HOST;
+
+const API_VERSION = process.env.API_VERSION;
+const IP_SERVER   = process.env.IP_SERVER;
+
+const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
+
+module.exports = {
+  DB_NAME,
+  DB_USER,
+  DB_PASSWORD,
+  DB_HOST,
+  API_VERSION,
+  IP_SERVER,
+  JWT_SECRET_KEY,
+};
