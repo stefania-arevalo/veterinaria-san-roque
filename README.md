@@ -1,6 +1,8 @@
 <div align="center">
 
-<img src="https://img.shields.io/badge/🐾-Clínica%20Veterinaria%20San%20Roque-0f6e56?style=for-the-badge&labelColor=085041" alt="San Roque" />
+<p align="center">
+  <img src="./client/public/logo.png" width="250" alt="San Roque"/>
+</p>
 
 # Clínica Veterinaria San Roque
 
@@ -28,14 +30,14 @@ Sistema web integral para la gestión de una clínica veterinaria — clientes, 
 | 📅 **Turnos y agenda** | Programación y seguimiento de citas |
 | 📋 **Historia clínica** | Historial médico por paciente |
 | 💉 **Tratamientos y vacunas** | Control de vacunación y medicación |
-| 🛒 **Ventas** | Venta de productos y medicamentos |
+| 💰 **Ventas** | Venta de productos y medicamentos |
 | 📦 **Stock e inventario** | Control de existencias en tiempo real |
 | 🚚 **Compras y proveedores** | Gestión de abastecimiento |
 | 🌐 **Portal de clientes** | Acceso externo para dueños de mascotas |
 
 ---
 
-## 🛠️ Stack tecnológico
+## 💻 Stack tecnológico
 
 ### Frontend
 - **React** con **Vite** — build ultrarrápido
@@ -154,12 +156,6 @@ Compatible 100% con MySQL. Plan gratuito permanente.
 
 ---
 
-## 🤝 Contribución
-
-Este es un proyecto académico en desarrollo activo. Las sugerencias y mejoras son bienvenidas.
-
----
-
 <div align="center">
-<sub>Desarrollado con 🐾 por <a href="https://github.com/stefania-arevalo">Stefania Arévalo</a></sub>
+<sub>Desarrollado por <a href="https://github.com/stefania-arevalo">Stefania Arévalo</a></sub>
 </div>
