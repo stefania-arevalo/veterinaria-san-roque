@@ -1,7 +1,7 @@
 <div align="center">
 
 <p align="center">
-  <img src="./client/public/logo.png" width="250" alt="San Roque"/>
+  <img src="./client/public/logocolor.png" width="180" alt="San Roque"/>
 </p>
 
 # Clínica Veterinaria San Roque
