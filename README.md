@@ -1,54 +1,165 @@
-# 🐾 Clínica Veterinaria San Roque
+<div align="center">
 
-Sistema web de gestión para una clínica veterinaria, desarrollado para centralizar la administración de clientes, pacientes, turnos, historia clínica, tratamientos, vacunas, ventas, stock y personal.
+<img src="https://img.shields.io/badge/🐾-Clínica%20Veterinaria%20San%20Roque-0f6e56?style=for-the-badge&labelColor=085041" alt="San Roque" />
 
-![Estado](https://img.shields.io/badge/Estado-En%20desarrollo-0d9488)
-![Frontend](https://img.shields.io/badge/Frontend-React-61dafb)
-![Backend](https://img.shields.io/badge/Backend-Node.js-339933)
-![Base%20de%20datos](https://img.shields.io/badge/Database-MySQL-4479a1)
+# Clínica Veterinaria San Roque
+
+Sistema web integral para la gestión de una clínica veterinaria — clientes, pacientes, turnos, historia clínica, tratamientos, stock y más.
+
+<br/>
+
+![Estado](https://img.shields.io/badge/Estado-En%20desarrollo-0f6e56?style=flat-square&labelColor=085041)
+![Frontend](https://img.shields.io/badge/Frontend-React%20+%20Vite-61dafb?style=flat-square&logo=react&logoColor=white&labelColor=1a1a2e)
+![Backend](https://img.shields.io/badge/Backend-Node.js%20+%20Express-339933?style=flat-square&logo=nodedotjs&logoColor=white&labelColor=1a1a2e)
+![Base de datos](https://img.shields.io/badge/Database-MySQL-4479a1?style=flat-square&logo=mysql&logoColor=white&labelColor=1a1a2e)
+![ORM](https://img.shields.io/badge/ORM-Sequelize-52B0E7?style=flat-square&logo=sequelize&logoColor=white&labelColor=1a1a2e)
+
+</div>
+
+---
 
 ## ✨ Funcionalidades
 
-- Gestión de usuarios y roles
-- Administración de personal
-- Registro de clientes y pacientes
-- Turnos y agenda
-- Historia clínica
-- Tratamientos y vacunas
-- Venta de productos y medicamentos
-- Control de stock e inventario
-- Compras y proveedores
-- Portal de clientes
+| Módulo | Descripción |
+|---|---|
+| 👤 **Usuarios y roles** | Gestión de acceso y permisos por rol |
+| 👨‍⚕️ **Personal** | Administración del equipo de la clínica |
+| 🐶 **Clientes y pacientes** | Registro completo de dueños y mascotas |
+| 📅 **Turnos y agenda** | Programación y seguimiento de citas |
+| 📋 **Historia clínica** | Historial médico por paciente |
+| 💉 **Tratamientos y vacunas** | Control de vacunación y medicación |
+| 🛒 **Ventas** | Venta de productos y medicamentos |
+| 📦 **Stock e inventario** | Control de existencias en tiempo real |
+| 🚚 **Compras y proveedores** | Gestión de abastecimiento |
+| 🌐 **Portal de clientes** | Acceso externo para dueños de mascotas |
 
-## 🛠️ Tecnologías
+---
+
+## 🛠️ Stack tecnológico
 
 ### Frontend
-- React
-- Vite
-- React Router DOM
-- Axios
-- Tailwind CSS
+- **React** con **Vite** — build ultrarrápido
+- **React Router DOM** — navegación SPA
+- **Axios** — llamadas HTTP al backend
+- **Tailwind CSS** — estilos utilitarios
 
 ### Backend
-- Node.js
-- Express
-- Sequelize
-- JWT
-- MySQL
+- **Node.js** + **Express** — servidor REST
+- **Sequelize** — ORM para MySQL
+- **JWT** — autenticación con tokens
+- **MySQL** — base de datos relacional
+
+---
 
 ## 📁 Estructura del proyecto
 
-```txt
-Mern - web personal/
-├── client/
+```
+veterinaria-san-roque/
+├── client/                  # Frontend React
 │   ├── public/
 │   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   └── ...
 │   ├── package.json
 │   └── vite.config.js
-└── server/
+│
+└── server/                  # Backend Node.js
     ├── controllers/
     ├── models/
     ├── routes/
     ├── validators/
     ├── .env.example
     └── package.json
+```
+
+---
+
+## 🚀 Instalación local
+
+### Requisitos previos
+- Node.js v18+
+- MySQL 8+
+
+### 1. Clonar el repositorio
+
+```bash
+git clone https://github.com/stefania-arevalo/veterinaria-san-roque.git
+cd veterinaria-san-roque
+```
+
+### 2. Configurar el backend
+
+```bash
+cd server
+npm install
+cp .env.example .env
+# Editar .env con tus credenciales de MySQL
+```
+
+Variables de entorno necesarias (`.env`):
+```env
+PORT=3000
+DB_HOST=localhost
+DB_USER=tu_usuario
+DB_PASSWORD=tu_contraseña
+DB_NAME=veterinaria_san_roque
+JWT_SECRET=una_clave_secreta_larga
+```
+
+Iniciar el servidor:
+```bash
+npm run dev
+```
+
+### 3. Configurar el frontend
+
+```bash
+cd client
+npm install
+```
+
+Crear un archivo `.env` en `/client`:
+```env
+VITE_API_URL=http://localhost:3000/api
+```
+
+Iniciar el frontend:
+```bash
+npm run dev
+```
+
+---
+
+## ☁️ Deploy
+
+### Frontend → [Vercel](https://vercel.com)
+1. Conectar el repositorio en Vercel
+2. Configurar el directorio raíz como `client`
+3. Agregar la variable de entorno `VITE_API_URL` apuntando al backend en producción
+
+### Backend → [Render](https://render.com) *(free tier)*
+1. Crear un nuevo **Web Service** en Render conectado al repo
+2. Configurar directorio raíz: `server`
+3. Build command: `npm install`
+4. Start command: `node index.js` (o `npm start`)
+5. Agregar las variables de entorno desde `.env.example`
+
+### Base de datos MySQL → [TiDB Cloud](https://tidbcloud.com) *(free tier, sin límite de tiempo)*
+Compatible 100% con MySQL. Plan gratuito permanente.
+
+1. Crear cuenta y un nuevo cluster en TiDB Cloud
+2. Obtener los datos de conexión
+3. Actualizar las variables `DB_*` en Render
+
+---
+
+## 🤝 Contribución
+
+Este es un proyecto académico en desarrollo activo. Las sugerencias y mejoras son bienvenidas.
+
+---
+
+<div align="center">
+<sub>Desarrollado con 🐾 por <a href="https://github.com/stefania-arevalo">Stefania Arévalo</a></sub>
+</div>
