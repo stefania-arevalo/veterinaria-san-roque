@@ -479,6 +479,13 @@ function HistorialVentas({ onBack, user, canAnular }) {
         </table>
       </Card>
 
+      {ventaParaEmail && (
+        <EmailComprobanteModal
+          venta={ventaParaEmail}
+          onClose={() => setVentaParaEmail(null)}
+        />
+      )}
+
       {/* Modal detalle */}
       {ventaDetalle && (
         <div style={{
