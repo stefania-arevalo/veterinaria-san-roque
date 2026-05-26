@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import axios from "axios";
+import axios from "../../api/axios";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
 // ─── API helpers ─────────────────────────────────────────────────────────────
 const token = () => localStorage.getItem("accessToken");
 const auth  = () => ({ Authorization: `Bearer ${token()}` });
-const api   = (path) => `/api/V1${path}`;
 
 // ─── Paleta ──────────────────────────────────────────────────────────────────
 const C = {
@@ -382,7 +381,7 @@ export default function ReportsPage() {
     try {
       const params = { tab, desde: d, hasta: h };
       if (tab === "inventario") { delete params.desde; delete params.hasta; }
-      const res = await axios.get(api("/reports"), { params, headers: auth() });
+      const res = await axios.get("/reports", { params, headers: auth() });
       setData(res.data);
     } catch (err) {
       setError(err?.response?.data?.msg || "Error al cargar el reporte.");
