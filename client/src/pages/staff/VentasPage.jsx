@@ -448,8 +448,8 @@ function HistorialVentas({ onBack, user, canAnular }) {
                     {v.EstadoVenta?.descripcion || "Completada"}
                   </span>
                 </td>
-                <td style={{ padding: "12px 16px", textAlign: "right" }}>
-                  <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                <td style={{ padding: "12px 16px", textAlign: "right", minWidth: 280 }}>
+                  <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, flexWrap: "wrap" }}>
                     <button onClick={() => setVentaDetalle(v)} style={{
                       background: C.blueBg, color: C.blue, border: `0.5px solid #b5d4f4`,
                       padding: "6px 12px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 500,
