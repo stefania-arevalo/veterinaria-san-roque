@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useWindowSize } from "../../hooks/useWindowSize";
 
-// ── Paleta verde clínica — extraída de la imagen adjunta ─────────
-const P = {
+// ── Paleta verde clínica — centralizada para consistencia visual ─────────
+export const VET_COLORS = {
   // Verdes principales
   forest:    "#1a3d28",   // verde oscuro — fondo navbar / headers
   pine:      "#1f5c38",   // verde medio — botones principales
@@ -27,10 +27,12 @@ const P = {
   redBg:     "#fcebeb",
 };
 
+// Atajo local para mantener tus estilos inline sin alterar tus variables 'P'
+const P = VET_COLORS;
+
 // ── Navbar ────────────────────────────────────────────────────────
-function Navbar({ onLoginClick }) {
+function Navbar({ onLoginClick, isMobile }) {
   const [scrolled, setScrolled] = useState(false);
-  const { isMobile, isTablet } = useWindowSize();
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 20);
@@ -52,8 +54,8 @@ function Navbar({ onLoginClick }) {
     }}>
       <img src="/logo.png" alt="San Roque" style={{ height: 36, width: "auto", objectFit: "contain" }} />
 
-      <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
-        {navLinks.map(l => (
+      <div style={{ display:"flex", alignItems:"center", gap:isMobile ? 10 : 32 }}>
+        {!isMobile && navLinks.map(l => (
           <a key={l} href={`#${l.toLowerCase().replace(" ", "-")}`} style={{
             fontSize: 13.5, fontWeight: 500, color: P.slate,
             textDecoration: "none", letterSpacing: "0.01em",
@@ -68,10 +70,11 @@ function Navbar({ onLoginClick }) {
           onClick={onLoginClick}
           style={{
             display: "flex", alignItems: "center", gap: 7,
-            padding: "8px 20px", borderRadius: 10,
+            padding:isMobile ? "8px 12px" : "8px 20px",
+            fontSize:isMobile ? 12 : 13.5, borderRadius: 10,
             border: `1.5px solid ${P.pine}`,
             background: "white", color: P.pine,
-            fontWeight: 600, fontSize: 13.5, cursor: "pointer",
+            fontWeight: 600, cursor: "pointer",
             transition: "all 0.18s ease", letterSpacing: "0.01em",
           }}
           onMouseEnter={e => { e.currentTarget.style.background = P.pine; e.currentTarget.style.color = "white"; }}
@@ -85,7 +88,7 @@ function Navbar({ onLoginClick }) {
 }
 
 // ── Formulario de login ───────────────────────────────────────────
-function LoginForm({ onLogin }) {
+function LoginForm({ onLogin, isMobile }) {
   const [form, setForm] = useState({ usuario: "", contraseña: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -122,12 +125,12 @@ function LoginForm({ onLogin }) {
       background: P.white,
       borderRadius: 20,
       boxShadow: "0 24px 64px rgba(26,61,40,0.14), 0 4px 16px rgba(0,0,0,0.06)",
-      padding: "36px 32px",
-      width: "100%", maxWidth: 380,
+      padding: isMobile ? "26px 18px" : "36px 32px",
+      width: "100%",
+      maxWidth: isMobile ? "92vw" : 380,
     }}>
       {/* Ícono + título */}
       <div style={{ textAlign: "center", marginBottom: 28 }}>
-        {/* Contenedor de la imagen con estilos de diseño */}
         <div style={{
           width: 56, 
           height: 56, 
@@ -297,8 +300,7 @@ function ServiceCard({ icon, title, desc }) {
 }
 
 // ── Sección "Cómo funciona el portal" ────────────────────────────
-function HowItWorks() {
-  const { isMobile } = useWindowSize();
+function HowItWorks({ isMobile }) {
   const steps = [
     { n: "01", icon: "📋", title: "Registrate como cliente", desc: "El personal de la clínica registra tus datos y los de tu mascota al momento de la primera consulta." },
     { n: "02", icon: "🔐", title: "Recibís tus credenciales", desc: "Se te asigna un usuario y contraseña para acceder al portal desde cualquier dispositivo." },
@@ -325,7 +327,7 @@ function HowItWorks() {
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: isMobile ? 16 : 32 }}>
           {steps.map((s, i) => (
             <div key={i} style={{ position: "relative" }}>
-              {i < steps.length - 1 && (
+              {!isMobile && i < steps.length - 1 && (
                 <div style={{
                   position: "absolute", top: 24, left: "calc(100% - 16px)",
                   width: 32, height: 2, background: P.border, zIndex: 0,
@@ -357,11 +359,10 @@ function HowItWorks() {
 }
 
 // ── Footer ────────────────────────────────────────────────────────
-function Footer() {
-  const { isMobile } = useWindowSize();
+function Footer({ isMobile }) {
   return (
-    <footer style={{ background: P.forest, color: "rgba(255,255,255,0.75)", padding: "52px 0 28px" }}>
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: isMobile ? "0 16px" : "0 48px" }}>
+    <footer style={{ background: P.forest, color: "rgba(255,255,255,0.75)", padding: isMobile ? "40px 18px 22px" : "52px 0 28px" }}>
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: isMobile ? "0" : "0 48px"}}>
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr 1fr 1fr", gap: isMobile ? 24 : 48, marginBottom: 48 }}>
 
           {/* Marca */}
@@ -468,7 +469,7 @@ export default function LoginPage() {
 
   return (
     <div style={{ fontFamily: "'Segoe UI', system-ui, sans-serif", minHeight: "100vh", background: P.white }}>
-      <Navbar onLoginClick={() => setShowForm(true)} />
+      <Navbar onLoginClick={() => setShowForm(true)} isMobile={isMobile} />
 
       {/* ── HERO ─────────────────────────────────────────────────── */}
       <section id="inicio" style={{
@@ -496,24 +497,13 @@ export default function LoginPage() {
           padding: isMobile ? "40px 20px" : "60px 48px",
           display: "flex", alignItems: "center",
           flexDirection: isMobile ? "column" : "row",
-          gap: isMobile ? 24 : 80, width: "100%",
+          gap: isMobile ? 40 : 80, width: "100%",
         }}>
           {/* Texto izquierda */}
           <div style={{ flex: 1 }}>
-            {/* Tag */}
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              background: P.mint, border: `1px solid ${P.borderLight}`,
-              borderRadius: 99, padding: "5px 16px", marginBottom: 28,
-            }}>
-              <span style={{ fontSize: 13 }}>🐾</span>
-              <span style={{ fontSize: 12.5, fontWeight: 700, color: P.pine, letterSpacing: "0.04em" }}>
-                Clínica Veterinaria San Roque
-              </span>
-            </div>
-
             <h1 style={{
-              fontSize: isMobile ? 32 : 50, fontWeight: 900, color: P.forest,
+              fontSize:isMobile ? 26 : isTablet ? 38 : 50, fontWeight: 900, color: P.forest,
+              textAlign:isMobile ? "center" : "left",
               margin: "0 0 22px", lineHeight: 1.08, letterSpacing: "-1.5px",
             }}>
               Cuidamos a<br />
@@ -522,7 +512,9 @@ export default function LoginPage() {
             </h1>
 
             <p style={{
-              fontSize: 16.5, color: P.muted, lineHeight: 1.75,
+              fontSize:isMobile ? 14 : 16.5,
+              textAlign:isMobile ? "center" : "left",
+              color: P.muted, lineHeight: 1.75,
               margin: "0 0 40px", maxWidth: 520,
             }}>
               Consultas veterinarias, vacunación, tratamientos, grooming y portal de clientes. Todo centralizado para brindarte la mejor atención en Punta Alta.
@@ -536,7 +528,16 @@ export default function LoginPage() {
                 { icon: "✂️", l: "Grooming y estética",             d: "Baño, corte y limpieza especializada." },
                 { icon: "💊", l: "Productos veterinarios",          d: "Medicamentos, alimentos y accesorios." },
               ].map((f, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div 
+                  key={i} 
+                  style={{ 
+                    display: "flex", 
+                    flexDirection: isMobile ? "column" : "row", 
+                    alignItems: "center", 
+                    textAlign: isMobile ? "center" : "left",  
+                    gap: 14 
+                  }}
+                >
                   <div style={{
                     width: 42, height: 42, borderRadius: 11, flexShrink: 0,
                     background: P.white, border: `1px solid ${P.border}`,
@@ -555,13 +556,22 @@ export default function LoginPage() {
               <button
                 onClick={() => setShowForm(true)}
                 style={{
-                  display: "inline-flex", alignItems: "center", gap: 9,
-                  padding: "14px 30px", borderRadius: 12,
+                  display: "inline-flex", 
+                  alignItems: "center", 
+                  justifyContent: isMobile ? "center" : "flex-start",
+                  gap: 9,
+                  width: isMobile ? "100%" : "auto",
+                  padding: isMobile ? "14px 18px" : "14px 30px",
+                  fontSize: isMobile ? 14 : 15.5, 
+                  borderRadius: 12,
                   background: `linear-gradient(135deg, ${P.forest}, ${P.pine})`,
-                  color: "white", border: "none",
-                  fontWeight: 700, fontSize: 15.5, cursor: "pointer",
+                  color: "white", 
+                  border: "none",
+                  fontWeight: 700, 
+                  cursor: "pointer",
                   boxShadow: `0 6px 24px rgba(26,61,40,0.3)`,
-                  transition: "all 0.2s ease", letterSpacing: "0.01em",
+                  transition: "all 0.2s ease", 
+                  letterSpacing: "0.01em",
                 }}
                 onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 10px 32px rgba(26,61,40,0.4)`; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = `0 6px 24px rgba(26,61,40,0.3)`; }}
@@ -571,24 +581,46 @@ export default function LoginPage() {
             )}
           </div>
 
-          {/* Imagen derecha */}
+          {/* ─── CONTENEDOR DERECHO (Tag + Logo) ─── */}
           <div style={{
-            flexShrink: 0,
-            width: isMobile ? 200 : 380,
-            height: isMobile ? 200 : 380,
             display: isMobile ? "none" : "flex",
-            borderRadius: 24, overflow: "hidden",
-            background: `linear-gradient(135deg, ${P.mint}, rgba(234,243,222,0.5))`,
-            alignItems: "center", justifyContent: "center",
-            boxShadow: `0 24px 64px rgba(26,61,40,0.12), 0 4px 16px rgba(26,61,40,0.06)`,
-            border: `1px solid ${P.borderLight}`,
-            padding: 30,
+            flexDirection: "column",
+            alignItems: "center",
+            flexShrink: 0,
           }}>
-            <img
-              src="/logocolor.png"
-              alt="Clínica Veterinaria San Roque"
-              style={{ width: "100%", height: "100%", objectFit: "contain" }}
-            />
+
+            {/* Tag */}
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              background: P.mint, border: `1px solid ${P.borderLight}`,
+              borderRadius: 99, padding: "5px 16px", 
+              marginBottom: 16,
+            }}>
+              <span style={{ fontSize: 13 }}>🐾</span>
+              <span style={{ fontSize: 12.5, fontWeight: 700, color: P.pine, letterSpacing: "0.04em" }}>
+                Clínica Veterinaria San Roque
+              </span>
+            </div>
+
+            {/* Imagen derecha (Contenedor del Logo) */}
+            <div style={{
+              width: 380,
+              height: 380,
+              display: "flex",
+              borderRadius: 24, overflow: "hidden",
+              background: `linear-gradient(135deg, ${P.mint}, rgba(234,243,222,0.5))`,
+              alignItems: "center", justifyContent: "center",
+              boxShadow: `0 24px 64px rgba(26,61,40,0.12), 0 4px 16px rgba(26,61,40,0.06)`,
+              border: `1px solid ${P.borderLight}`,
+              padding: 30,
+            }}>
+              <img
+                src="/logocolor.png"
+                alt="Clínica Veterinaria San Roque"
+                style={{ width: "100%", height: "100%", objectFit: "contain" }}
+              />
+            </div>
+
           </div>
         </div>
 
@@ -613,7 +645,7 @@ export default function LoginPage() {
                   boxShadow: "0 2px 10px rgba(0,0,0,0.15)", color: P.slate,
                 }}
               >×</button>
-              <LoginForm onLogin={handleLogin} />
+              <LoginForm onLogin={handleLogin} isMobile={isMobile} />
             </div>
           </div>
         )}
@@ -621,7 +653,7 @@ export default function LoginPage() {
 
       {/* ── SERVICIOS ────────────────────────────────────────────── */}
       <section id="servicios" style={{ padding: "88px 0", background: P.white }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto", padding: isMobile ? "0 16px" : "0 48px", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 32 : 80, width: "100%", }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", padding: isMobile ? "22px 18px" : "28px 24px", width: "100%" }}>
           <div style={{ textAlign: "center", marginBottom: 56 }}>
             <div style={{
               display: "inline-block", fontSize: 12, fontWeight: 700,
@@ -650,7 +682,7 @@ export default function LoginPage() {
       </section>
 
       {/* ── CÓMO FUNCIONA ─────────────────────────────────────────── */}
-      <HowItWorks />
+      <HowItWorks isMobile={isMobile} />
 
       {/* ── SOBRE NOSOTROS ────────────────────────────────────────── */}
       <section id="nosotros" style={{ padding: "88px 0", background: P.white }}>
@@ -757,7 +789,7 @@ export default function LoginPage() {
         </div>
       </section>
 
-      <Footer />
+      <Footer isMobile={isMobile} />
 
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
