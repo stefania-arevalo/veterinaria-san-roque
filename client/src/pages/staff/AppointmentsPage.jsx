@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import axios from "../../api/axios";
 import { VET_COLORS } from "../../layouts/AdminLayout";
 import { useNavigate, useLocation } from "react-router-dom";
+import { verificarYEnviarRecordatorios } from '../../services/recordatorioTurnos';
 
 const token    = () => localStorage.getItem("accessToken");
 const headers  = () => ({ Authorization: `Bearer ${token()}` });
@@ -2559,6 +2560,7 @@ export default function AppointmentPage() {
       setPets(p.data || []); setVets(v.data || []); setStaff(s.data || []);
       setTypes(t.data || []); setStates(st.data || []); setAnimalSizes(res.data);
     }).catch(console.error);
+    verificarYEnviarRecordatorios();
   }, []);
 
   useEffect(() => { loadAppointments(); }, [filterDate]);

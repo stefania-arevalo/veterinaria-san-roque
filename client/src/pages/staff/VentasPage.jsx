@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
+import EmailComprobanteModal from '../../components/shared/EmailComprobanteModal';
 
 const token = () => localStorage.getItem("accessToken");
 const headers = () => ({ Authorization: `Bearer ${token()}` });
@@ -336,6 +337,8 @@ function HistorialVentas({ onBack, user, canAnular }) {
   const [modalExito, setModalExito] = useState("");
   const [modalError, setModalError] = useState("");
 
+  const [ventaParaEmail, setVentaParaEmail] = useState(null);
+
   const fetchVentas = async () => {
     try {
       const res = await axios.get("/sales", { headers: headers() });
@@ -451,6 +454,17 @@ function HistorialVentas({ onBack, user, canAnular }) {
                       background: C.blueBg, color: C.blue, border: `0.5px solid #b5d4f4`,
                       padding: "6px 12px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 500,
                     }}>Ver detalle</button>
+                    <button
+                      onClick={() => setVentaParaEmail(v)}
+                      style={{
+                        background: '#eaf3de', color: '#1f5c38',
+                        border: '0.5px solid #c0dd97',
+                        padding: '6px 12px', borderRadius: 6,
+                        cursor: 'pointer', fontSize: 12, fontWeight: 500,
+                      }}
+                    >
+                      📧 Enviar
+                    </button>
                     {canAnular && v.EstadoVenta?.descripcion?.toLowerCase() !== "anulada" && (
                       <button onClick={() => setConfirmAnular(v.idVenta)} style={{
                         background: C.redBg, color: C.red, border: `0.5px solid #f7c1c1`,
