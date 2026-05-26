@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { useWindowSize } from "../hooks/useWindowSize"; // Asegurá que la ruta apunte correctamente a tu hook
+import { useWindowSize } from "../hooks/useWindowSize"; 
 import { VET_COLORS } from "../layouts/AdminLayout";
 
 export default function ClientLayout() {
@@ -10,14 +10,17 @@ export default function ClientLayout() {
   const location = useLocation();
   const [showLogout, setShowLogout] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const { isMobile } = useWindowSize(); // Detectamos si es celular
+  const { isMobile } = useWindowSize(); 
 
   useEffect(() => {
     const t = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
 
-  const handleLogout = () => { logout(); navigate("/login"); };
+  const handleLogout = () => { 
+    logout(); 
+    navigate("/login"); 
+  };
 
   const NAV = [
     { label: "Inicio",       path: "/cliente",          icon: "🏠" },
@@ -36,7 +39,6 @@ export default function ClientLayout() {
       flexDirection: "column", 
       background: VET_COLORS.pageBg, 
       fontFamily: "'Segoe UI', system-ui, sans-serif",
-      // Agregamos un padding inferior en mobile para que el contenido no quede oculto detrás de la barra fija
       paddingBottom: isMobile ? "64px" : "0px"
     }}>
 
@@ -63,8 +65,9 @@ export default function ClientLayout() {
               width: "40px", height: "40px", borderRadius: "12px",
               background: `linear-gradient(135deg, ${VET_COLORS.success}, ${VET_COLORS.accent})`,
               display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: `0 2px 8px rgba(46,125,50,0.2)`,
+              boxShadow: "0 2px 8px rgba(46,125,50,0.2)",
               overflow: "hidden", 
+              flexShrink: 0
             }}>
               <img src="/logo.png" alt="Logo" style={{ width: "100%", height: "100%", objectFit: "contain", padding: "4px" }} />
             </div>
@@ -74,7 +77,7 @@ export default function ClientLayout() {
             </div>
           </div>
 
-          {/* Menú de Navegación Tradicional (Solo se renderiza en Escritorio/Tablet) */}
+          {/* Menú de Navegación Tradicional (Solo en Escritorio/Tablet) */}
           {!isMobile && (
             <nav style={{ display: "flex", gap: "4px" }}>
               {NAV.map(item => (
@@ -98,12 +101,16 @@ export default function ClientLayout() {
             </nav>
           )}
 
-          {/* Bloque de Usuario + Botón de Salida */}
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: "13px", fontWeight: "600", color: VET_COLORS.text }}>{user?.usuario}</div>
-              <div style={{ fontSize: "11px", color: VET_COLORS.textMuted }}>Cliente</div>
-            </div>
+          {/* Bloque de Usuario + Botón de Salida (Adaptado para Mobile) */}
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            {/* Ocultamos el bloque de texto en celulares para evitar desbordes en el header */}
+            {!isMobile && (
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: "13px", fontWeight: "600", color: VET_COLORS.text }}>{user?.usuario}</div>
+                <div style={{ fontSize: "11px", color: VET_COLORS.textMuted }}>Cliente</div>
+              </div>
+            )}
+            
             <button
               onClick={() => setShowLogout(true)}
               style={{
@@ -111,10 +118,13 @@ export default function ClientLayout() {
                 border: `1.5px solid ${VET_COLORS.border}`, background: "white",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 cursor: "pointer", fontSize: "15px", transition: "all 0.15s",
+                flexShrink: 0
               }}
               onMouseEnter={e => { e.currentTarget.style.background = "#fff1f1"; e.currentTarget.style.borderColor = VET_COLORS.danger; }}
               onMouseLeave={e => { e.currentTarget.style.background = "white"; e.currentTarget.style.borderColor = VET_COLORS.border; }}
-            >🚪</button>
+            >
+              🚪
+            </button>
           </div>
         </div>
       </header>
@@ -125,12 +135,12 @@ export default function ClientLayout() {
         maxWidth: "1100px", 
         width: "100%", 
         margin: "0 auto", 
-        padding: isMobile ? "20px 16px" : "32px 24px" 
+        padding: isMobile ? "16px 12px" : "32px 24px" 
       }}>
         <Outlet />
       </main>
 
-      {/* Menú Móvil Inferior (Bottom Navigation Bar - Solo se activa en Celulares) */}
+      {/* Menú Móvil Inferior (Bottom Navigation Bar) */}
       {isMobile && (
         <nav style={{
           position: "fixed", bottom: 0, left: 0, right: 0,
@@ -182,7 +192,6 @@ export default function ClientLayout() {
         borderTop: `1px solid ${VET_COLORS.border}`,
         padding: "20px 24px", 
         textAlign: "center",
-        // Escondemos el footer en mobile para no duplicar espacio innecesario cerca de la barra inferior
         display: isMobile ? "none" : "block"
       }}>
         <p style={{ margin: 0, fontSize: "12px", color: VET_COLORS.textMuted, fontWeight: "500" }}>
