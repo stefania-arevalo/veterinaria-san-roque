@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useWindowSize } from "../../hooks/useWindowSize"; // Hook adaptativo
 import axios from "axios";
 
 export const VET_COLORS = {
-  sidebarBg:     "#ffffff",
+  sidebarBg:      "#ffffff",
   sidebarHover:  "#f0fdf4",
   sidebarActive: "#1b4332",
   accent:        "#2d6a4f",
@@ -22,7 +23,6 @@ const token  = () => localStorage.getItem("accessToken");
 const auth   = () => ({ Authorization: `Bearer ${token()}` });
 const apiUrl = (path) => `/api/V1${path}`;
 
-// Se unificó incluyendo el rol 5 (Cliente) e íconos por defecto
 const ROLE_META = {
   1: { label: "Administrador", color: "#6d28d9", bg: "#ede9fe" },
   2: { label: "Veterinario",   color: "#1d4ed8", bg: "#dbeafe"}, 
@@ -31,15 +31,14 @@ const ROLE_META = {
   5: { label: "Cliente",       color: "#475569", bg: "#f1f5f9"}, 
 };
 
-
 const SEXO_MAP = { M: "Masculino", F: "Femenino", O: "Otro" };
 
 const NAV_ITEMS = [
-  { label: "🏠 Inicio",        pagina: "admin",             path: "/admin" },
+  { label: "🏠 Inicio",        pagina: "admin",            path: "/admin" },
   { label: "Ventas",            pagina: "ventas",            path: "/admin/ventas" },
   { label: "Turnos",            pagina: "citas",             path: "/admin/turnos" },
   { label: "Clientes",          pagina: "clientes",          path: "/admin/clientes" },
-  { label: "Pacientes",         pagina: "pacientes",         path: "/admin/pacientes" },
+  { label: "Pacientes",          pagina: "pacientes",         path: "/admin/pacientes" },
   { label: "Historial Clínico", pagina: "historial_clinico", path: "/admin/mascotas/historial" },
   { label: "Compras",           pagina: "compras",           path: "/admin/compras" },
   { label: "Inventario",        pagina: "productos",         path: "/admin/productos" },
@@ -55,9 +54,9 @@ const ADMIN_MENU = [
 // ─── Modal logout ─────────────────────────────────────────────────────────────
 function ConfirmLogoutModal({ onConfirm, onCancel }) {
   return (
-    <div style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000 }}>
+    <div style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 3000 }}>
       <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(2px)" }} onClick={onCancel} />
-      <div style={{ position: "relative", background: "white", borderRadius: 12, padding: 25, width: 350, textAlign: "center", borderTop: `8px solid ${VET_COLORS.accent}`, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}>
+      <div style={{ position: "relative", background: "white", borderRadius: 12, padding: 25, width: 320, maxWidth: "90vw", textAlign: "center", borderTop: `8px solid ${VET_COLORS.accent}`, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}>
         <div style={{ fontSize: 40, marginBottom: 10 }}>👋</div>
         <h3 style={{ margin: "0 0 10px", color: VET_COLORS.sidebarActive, fontWeight: 800 }}>¿CERRAR SESIÓN?</h3>
         <p style={{ color: "#64748b", fontSize: 14, marginBottom: 25 }}>¿Estás seguro de que quieres salir del sistema?</p>
@@ -137,25 +136,21 @@ function ProfileDrawer({ user, username, onClose }) {
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState("");
 
-  // Cambio de contraseña
   const [pwActual,   setPwActual]   = useState("");
   const [pwNueva,    setPwNueva]    = useState("");
   const [pwConfirm,  setPwConfirm]  = useState("");
   const [pwError,    setPwError]    = useState("");
   const [pwSuccess,  setPwSuccess]  = useState("");
   const [savingPw,   setSavingPw]   = useState(false);
-  const [showPw,     setShowPw]     = useState(false);
   const [showPwNueva, setShowPwNueva] = useState(false);
   const [showPwConfirm, setShowPwConfirm] = useState(false);
 
   const roleMeta = ROLE_META[user?.idRol] || { label: "Usuario", color: VET_COLORS.accent, bg: "#f1f5f9", icon: "👤" };
 
-  // Cargar datos del personal asociado al usuario logueado
   const fetchProfile = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      // GET /staffs → filtramos el que tiene nuestro idUsuario
       const res = await axios.get(apiUrl("/staffs"), { headers: auth() });
       const list = Array.isArray(res.data) ? res.data : [];
       const mine = list.find(s => s.idUsuario === user?.user_id || s.User?.idUsuario === user?.user_id);
@@ -199,36 +194,30 @@ function ProfileDrawer({ user, username, onClose }) {
 
   return (
     <>
-      {/* Overlay */}
-      <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 1999 }} onClick={onClose} />
+      <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 2500 }} onClick={onClose} />
 
-      {/* Drawer */}
       <div style={{
-        position: "fixed", top: 0, right: 0, bottom: 0, zIndex: 2000,
+        position: "fixed", top: 0, right: 0, bottom: 0, zIndex: 2600,
         width: 420, maxWidth: "96vw", background: "white",
         boxShadow: "-8px 0 40px rgba(0,0,0,0.15)",
         display: "flex", flexDirection: "column",
         fontFamily: "'Segoe UI', system-ui, sans-serif",
       }}>
 
-        {/* Header */}
+        {/* Header Drawer */}
         <div style={{ padding: "20px 24px", background: roleMeta.color, color: "white", flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", justify盤ontent: "space-between", marginBottom: 12 }}>
             <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Mi perfil</h2>
             <button onClick={onClose} style={{ background: "rgba(255,255,255,0.15)", border: "none", color: "white", width: 32, height: 32, borderRadius: 8, fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
           </div>
 
-          {/* Avatar + info usuario */}
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <div style={{
-              width: 52, height: 52, borderRadius: 14,
-              background: "rgba(255,255,255,0.2)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 24, fontWeight: 700, color: "white", flexShrink: 0,
+              width: 52, height: 52, borderRadius: 14, background: "rgba(255,255,255,0.2)",
+              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, fontWeight: 700, color: "white", flexShrink: 0,
             }}>
               {username ? username.charAt(0).toUpperCase() : "👤"}
             </div>
-            
             <div>
               <div style={{ fontWeight: 700, fontSize: 16 }}>@{username}</div>
               <div style={{ fontSize: 12, opacity: 0.85, marginTop: 2 }}>{roleMeta.label}</div>
@@ -236,9 +225,9 @@ function ProfileDrawer({ user, username, onClose }) {
             </div>
           </div>
         </div>      
-        {/* Cuerpo */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
 
+        {/* Cuerpo Drawer */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
           {loading && (
             <div style={{ textAlign: "center", padding: "40px 0", color: VET_COLORS.textMuted }}>
               <div style={{ fontSize: 28, marginBottom: 8 }}>⏳</div>
@@ -255,15 +244,13 @@ function ProfileDrawer({ user, username, onClose }) {
           {!loading && !error && !profile && (
             <div style={{ background: "#fef3c7", border: "1px solid #fde68a", borderRadius: 10, padding: "16px" }}>
               <p style={{ margin: 0, fontSize: 13, color: "#92400e", lineHeight: 1.6 }}>
-                <strong>Sin datos personales.</strong> Tu cuenta de usuario no tiene un registro de personal vinculado.
-                Contactá al administrador para asociar tus datos.
+                <strong>Sin datos personales.</strong> Cuenta sin registro de personal vinculado.
               </p>
             </div>
           )}
 
           {!loading && !error && profile && (
             <>
-              {/* ── Datos personales ── */}
               <div style={{ marginBottom: 20 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12, paddingBottom: 6, borderBottom: `1px solid ${VET_COLORS.border}` }}>
                   👤 Datos personales
@@ -281,7 +268,6 @@ function ProfileDrawer({ user, username, onClose }) {
                 </div>
               </div>
 
-              {/* ── Datos del rol ── */}
               {(profile.Veterinarian || profile.Assistant || profile.Admin || profile.Seller) && (
                 <div style={{ marginBottom: 20 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12, paddingBottom: 6, borderBottom: `1px solid ${VET_COLORS.border}` }}>
@@ -304,102 +290,54 @@ function ProfileDrawer({ user, username, onClose }) {
                         <Field label="Área de responsabilidad" value={profile.Admin.areaResponsabilidad} />
                       </div>
                     )}
-                    {profile.Seller && (
-                      <div style={{ gridColumn: "1/-1", padding: "10px 12px", background: "#d1fae5", borderRadius: 8 }}>
-                        <p style={{ margin: 0, fontSize: 12, color: "#065f46" }}>💼 Rol de Vendedor — sin datos adicionales.</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* ── Horarios (solo veterinarios) ── */}
-              {profile.Veterinarian?.Horarios?.length > 0 && (
-                <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12, paddingBottom: 6, borderBottom: `1px solid ${VET_COLORS.border}` }}>
-                    🕐 Mis horarios
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    {profile.Veterinarian.Horarios.map((h, i) => (
-                      <div key={i} style={{ display: "flex", gap: 12, padding: "8px 12px", background: "#f0fdf4", borderRadius: 8, fontSize: 13 }}>
-                        <span style={{ fontWeight: 600, minWidth: 100, color: VET_COLORS.accent }}>{h.diaSemana || h.dia || `Día ${i + 1}`}</span>
-                        <span style={{ color: "#475569" }}>{h.horaInicio} – {h.horaFin}</span>
-                      </div>
-                    ))}
                   </div>
                 </div>
               )}
             </>
           )}
 
-          {/* ── Cambiar contraseña ── */}
+          {/* Cambiar contraseña */}
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12, paddingBottom: 6, borderBottom: `1px solid ${VET_COLORS.border}` }}>
               🔐 Cambiar contraseña
             </div>
-            
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              
-              {/* Campo Nueva Contraseña */}
               <div style={{ position: "relative" }}>
                 <input
                   type={showPwNueva ? "text" : "password"}
-                  placeholder="Nueva contraseña (mín. 6 caracteres)"
+                  placeholder="Nueva contraseña"
                   value={pwNueva}
                   onChange={e => { setPwNueva(e.target.value); setPwError(""); setPwSuccess(""); }}
                   style={{ ...inp, paddingRight: 38 }}
-                  autoComplete="new-password"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPwNueva(p => !p)}
-                  style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", padding: 0 }}
-                >
-                  <img
-                    src={showPwNueva ? "/closeeye.png" : "/openeye.png"}
-                    alt={showPwNueva ? "Ocultar" : "Mostrar"}
-                    style={{ width: 20, height: 20, opacity: 0.6 }}
-                  />
+                <button type="button" onClick={() => setShowPwNueva(p => !p)} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer" }}>
+                  <img src={showPwNueva ? "/closeeye.png" : "/openeye.png"} style={{ width: 20, height: 20, opacity: 0.6 }} />
                 </button>
               </div>
 
-              {/* Campo Confirmar Contraseña */}
               <div style={{ position: "relative" }}>
                 <input
                   type={showPwConfirm ? "text" : "password"}
-                  placeholder="Confirmar nueva contraseña"
+                  placeholder="Confirmar contraseña"
                   value={pwConfirm}
                   onChange={e => { setPwConfirm(e.target.value); setPwError(""); setPwSuccess(""); }}
                   style={{ ...inp, paddingRight: 38 }}
-                  autoComplete="new-password"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPwConfirm(p => !p)}
-                  style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", padding: 0 }}
-                >
-                  <img
-                    src={showPwConfirm ? "/closeeye.png" : "/openeye.png"}
-                    alt={showPwConfirm ? "Ocultar" : "Mostrar"}
-                    style={{ width: 20, height: 20, opacity: 0.6 }}
-                  />
+                <button type="button" onClick={() => setShowPwConfirm(p => !p)} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer" }}>
+                  <img src={showPwConfirm ? "/closeeye.png" : "/openeye.png"} style={{ width: 20, height: 20, opacity: 0.6 }} />
                 </button>
               </div>
 
-              {/* Mensajes de error o éxito */}
               {pwError   && <p style={{ margin: 0, fontSize: 12, color: "#c62828" }}>⚠️ {pwError}</p>}
               {pwSuccess && <p style={{ margin: 0, fontSize: 12, color: "#16a34a" }}>✅ {pwSuccess}</p>}
 
-              {/* --- EL BOTÓN QUE TE FALTABA --- */}
               <button
                 onClick={handleChangePassword}
                 disabled={savingPw || !pwNueva || !pwConfirm}
                 style={{
                   padding: "10px 0", borderRadius: 8, border: "none",
                   background: (savingPw || !pwNueva || !pwConfirm) ? "#94a3b8" : VET_COLORS.accent,
-                  color: "white", fontWeight: 700, fontSize: 13,
-                  cursor: (savingPw || !pwNueva || !pwConfirm) ? "not-allowed" : "pointer",
-                  marginTop: 5
+                  color: "white", fontWeight: 700, fontSize: 13, cursor: "pointer", marginTop: 5
                 }}
               >
                 {savingPw ? "Guardando..." : "Actualizar contraseña"}
@@ -417,9 +355,12 @@ export default function AdminLayout() {
   const { user, canAccess, logout } = useAuth();
   const navigate  = useNavigate();
   const location  = useLocation();
+  const { isMobile } = useWindowSize(); // Detectamos mobile
 
   const [showLogout,  setShowLogout]  = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false); // Sidebar móvil
+  const [mobileAdminOpen, setMobileAdminOpen] = useState(false); // Submenú de Admin en móvil
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -430,13 +371,11 @@ export default function AdminLayout() {
   const handleLogoutConfirm = () => { logout(); navigate("/login"); };
 
   const username   = user?.usuario || "usuario";
-
-  // Usamos ROLE_META unificado para extraer la información y el color directamente
   const roleMeta   = ROLE_META[user?.idRol] || { label: "Usuario", color: "#475569", bg: "#f1f5f9" };
   const roleLabel  = roleMeta.label;
 
-  const formatTime = (d) => d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-  const formatDate = (d) => d.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const formatTime = (d) => d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+  const formatDate = (d) => d.toLocaleDateString("es-AR", { weekday: "short", day: "numeric", month: "short" });
   const isActive   = (path) => location.pathname === path;
 
   return (
@@ -445,64 +384,140 @@ export default function AdminLayout() {
       {showLogout  && <ConfirmLogoutModal onConfirm={handleLogoutConfirm} onCancel={() => setShowLogout(false)} />}
       {showProfile && <ProfileDrawer user={user} username={username} onClose={() => setShowProfile(false)} />}
 
+      {/* ── Sidebar Desplegable Móvil (Drawer Izquierdo) ── */}
+      {isMobile && showMobileMenu && (
+        <>
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 1998 }} onClick={() => setShowMobileMenu(false)} />
+          <div style={{
+            position: "fixed", top: 0, bottom: 0, left: 0, width: 280, background: "white",
+            zIndex: 1999, boxShadow: "8px 0 30px rgba(0,0,0,0.1)", display: "flex", flexDirection: "column", overflowY: "auto"
+          }}>
+            <div style={{ padding: "20px 16px", borderBottom: `1px solid ${VET_COLORS.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ fontWeight: 800, color: VET_COLORS.sidebarActive, fontSize: 15 }}>MENÚ GENERAL</div>
+              <button onClick={() => setShowMobileMenu(false)} style={{ background: "none", border: "none", fontSize: 20, color: VET_COLORS.textMuted, cursor: "pointer" }}>×</button>
+            </div>
+            
+            <nav style={{ flex: 1, padding: "12px 8px", display: "flex", flexDirection: "column", gap: 4 }}>
+              {NAV_ITEMS.map(item => {
+                const tieneAcceso = item.pagina === "admin" || canAccess(item.pagina) || user?.idRol === 1;
+                if (!tieneAcceso) return null;
+                const active = isActive(item.path);
+                return (
+                  <button
+                    key={item.path}
+                    onClick={() => { navigate(item.path); setShowMobileMenu(false); }}
+                    style={{
+                      width: "100%", padding: "12px 14px", border: "none", borderRadius: 8, textAlign: "left", fontSize: 14, fontWeight: active ? 700 : 500,
+                      background: active ? VET_COLORS.sidebarHover : "transparent", color: active ? VET_COLORS.accent : "#475569", cursor: "pointer"
+                    }}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
+
+              {/* Acordeón interno para opciones exclusivas de Admin en Móvil */}
+              {user?.idRol === 1 && (
+                <div style={{ marginTop: 8, borderTop: `1px solid ${VET_COLORS.border}`, paddingTop: 8 }}>
+                  <button
+                    onClick={() => setMobileAdminOpen(p => !p)}
+                    style={{
+                      width: "100%", padding: "12px 14px", border: "none", background: "transparent", textAlign: "left", fontSize: 14, fontWeight: 600,
+                      color: "#475569", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer"
+                    }}
+                  >
+                    ⚙️ Administración
+                    <span>{mobileAdminOpen ? "▲" : "▼"}</span>
+                  </button>
+                  {mobileAdminOpen && (
+                    <div style={{ paddingLeft: 12, display: "flex", flexDirection: "column", gap: 2, marginTop: 4 }}>
+                      {ADMIN_MENU.map(subItem => {
+                        const active = isActive(subItem.path);
+                        return (
+                          <button
+                            key={subItem.path}
+                            onClick={() => { navigate(subItem.path); setShowMobileMenu(false); }}
+                            style={{
+                              width: "100%", padding: "10px 14px", border: "none", borderRadius: 6, textAlign: "left", fontSize: 13, fontWeight: active ? 700 : 500,
+                              background: active ? VET_COLORS.accentLight : "transparent", color: active ? VET_COLORS.accent : "#64748b", cursor: "pointer"
+                            }}
+                          >
+                            {subItem.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </nav>
+          </div>
+        </>
+      )}
+
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
 
         {/* ── Header ── */}
-        <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", height: 64, background: "white", borderBottom: `1px solid ${VET_COLORS.border}`, flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <img src="/logocolor.png" alt="Logo" style={{ width: 40, height: 40, objectFit: "contain" }} />
-            <div>
-              <div style={{ fontWeight: 800, fontSize: 16, color: VET_COLORS.sidebarActive, lineHeight: 1 }}>SAN ROQUE</div>
-              <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600, marginTop: 2 }}>VETERINARIA</div>
-            </div>
+        <header style={{ 
+          display: "flex", alignItems: "center", justifyContent: "space-between", 
+          padding: isMobile ? "0 16px" : "0 24px", height: 64, background: "white", 
+          borderBottom: `1px solid ${VET_COLORS.border}`, flexShrink: 0 
+        }}>
+          
+          <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 12 }}>
+            {isMobile && (
+              <button 
+                onClick={() => setShowMobileMenu(true)}
+                style={{ background: "none", border: "none", fontSize: 22, color: VET_COLORS.sidebarActive, cursor: "pointer", paddingRight: 4 }}
+              >
+                ☰
+              </button>
+            )}
+            <img src="/logocolor.png" alt="Logo" style={{ width: 36, height: 36, objectFit: "contain" }} />
+            {!isMobile && (
+              <div>
+                <div style={{ fontWeight: 800, fontSize: 16, color: VET_COLORS.sidebarActive, lineHeight: 1 }}>SAN ROQUE</div>
+                <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600, marginTop: 2 }}>VETERINARIA</div>
+              </div>
+            )}
           </div>
 
+          {/* Reloj clínico adaptado */}
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#1e293b", lineHeight: 1 }}>{formatTime(currentTime)}</div>
-            <div style={{ fontSize: 12, color: "#64748b", textTransform: "capitalize", marginTop: 4 }}>{formatDate(currentTime)}</div>
+            <div style={{ fontSize: isMobile ? 15 : 18, fontWeight: 700, color: "#1e293b", lineHeight: 1 }}>{formatTime(currentTime)}</div>
+            <div style={{ fontSize: 11, color: "#64748b", textTransform: "capitalize", marginTop: 2 }}>{formatDate(currentTime)}</div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {/* ── Botón de perfil — clic en nombre/rol ── */}
+          <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 4 : 10 }}>
             <button
               onClick={() => setShowProfile(true)}
               title="Ver mi perfil"
               style={{
-                textAlign: "right", background: "none", border: "none",
-                cursor: "pointer", padding: "6px 8px", borderRadius: 10,
-                transition: "background 0.2s",
+                textAlign: "right", background: "none", border: "none", cursor: "pointer", padding: "6px", borderRadius: 10, transition: "background 0.2s"
               }}
-              onMouseEnter={e => e.currentTarget.style.background = VET_COLORS.sidebarHover}
-              onMouseLeave={e => e.currentTarget.style.background = "none"}
+              onMouseEnter={e => { if(!isMobile) e.currentTarget.style.background = VET_COLORS.sidebarHover; }}
+              onMouseLeave={e => { if(!isMobile) e.currentTarget.style.background = "none"; }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                {/* Mini avatar con INICIAL */}
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <div style={{
-                  width: 34, height: 34, borderRadius: 9,
-                  // Usamos el color de fondo del rol para mantener la identidad visual
-                  background: roleMeta.bg, 
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 16, fontWeight: 700, // Añadimos peso a la fuente para que resalte
-                  color: roleMeta.color, // Usamos el color de texto del rol
-                  flexShrink: 0,
-                  textTransform: "uppercase" // Aseguramos que siempre sea mayúscula
+                  width: 34, height: 34, borderRadius: 9, background: roleMeta.bg, 
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 700, color: roleMeta.color, flexShrink: 0, textTransform: "uppercase"
                 }}>
-                  {/* Lógica para sacar la inicial: toma el primer caracter del usuario */}
                   {username ? username.charAt(0).toUpperCase() : "👤"}
                 </div>
-                
-                <div style={{ textAlign: "left" }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", lineHeight: 1.2 }}>{username}</div>
-                  <div style={{ fontSize: 11, color: VET_COLORS.accent, fontWeight: 600 }}>{roleLabel}</div>
-                </div>
+                {!isMobile && (
+                  <div style={{ textAlign: "left" }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", lineHeight: 1.2 }}>{username}</div>
+                    <div style={{ fontSize: 11, color: VET_COLORS.accent, fontWeight: 600 }}>{roleLabel}</div>
+                  </div>
+                )}
               </div>
             </button>
 
-            {/* Logout */}
             <button
               onClick={() => setShowLogout(true)}
               title="Cerrar sesión"
-              style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", padding: 6, borderRadius: 8, transition: "background 0.2s" }}
+              style={{ background: "none", border: "none", fontSize: 19, cursor: "pointer", padding: 6, borderRadius: 8, transition: "background 0.2s" }}
               onMouseEnter={e => e.currentTarget.style.background = "#fee2e2"}
               onMouseLeave={e => e.currentTarget.style.background = "none"}
             >
@@ -511,50 +526,47 @@ export default function AdminLayout() {
           </div>
         </header>
 
-        {/* ── Navbar ── */}
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "stretch", background: "white", borderBottom: `1px solid ${VET_COLORS.border}`, padding: "0 20px", flexShrink: 0 }}>
-          {NAV_ITEMS.map(item => {
-            const tieneAcceso = item.pagina === "admin" || canAccess(item.pagina) || user?.idRol === 1;
-            if (!tieneAcceso) return null;
-            return (
-              <button
-                key={item.path}
-                onClick={() => navigate(item.path)}
-                // AÑADE ESTOS DOS EVENTOS:
-                onMouseEnter={(e) => {
-                  if (!isActive(item.path)) {
-                    e.currentTarget.style.background = VET_COLORS.sidebarHover;
-                    e.currentTarget.style.color = VET_COLORS.accent; // Opcional: cambia el color de texto también
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive(item.path)) {
-                    e.currentTarget.style.background = "transparent";
-                    e.currentTarget.style.color = "#64748b"; // Vuelve al color original
-                  }
-                }}
-                style={{
-                  padding: "16px 18px", 
-                  border: "none",
-                  borderBottom: isActive(item.path) ? `3px solid ${VET_COLORS.accent}` : "3px solid transparent",
-                  background: isActive(item.path) ? VET_COLORS.sidebarHover : "transparent",
-                  color: isActive(item.path) ? VET_COLORS.accent : "#64748b",
-                  fontWeight: isActive(item.path) ? 700 : 600,
-                  fontSize: 13, 
-                  cursor: "pointer", 
-                  transition: "all 0.2s", 
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {item.label}
-              </button>
-            );
-          })}
-          {user?.idRol === 1 && <AdminDropdown location={location} navigate={navigate} />}
-        </div>
+        {/* ── Navbar Horizontal Tradicional (Solo visible en Escritorios) ── */}
+        {!isMobile && (
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "stretch", background: "white", borderBottom: `1px solid ${VET_COLORS.border}`, padding: "0 20px", flexShrink: 0 }}>
+            {NAV_ITEMS.map(item => {
+              const tieneAcceso = item.pagina === "admin" || canAccess(item.pagina) || user?.idRol === 1;
+              if (!tieneAcceso) return null;
+              return (
+                <button
+                  key={item.path}
+                  onClick={() => navigate(item.path)}
+                  onMouseEnter={(e) => {
+                    if (!isActive(item.path)) {
+                      e.currentTarget.style.background = VET_COLORS.sidebarHover;
+                      e.currentTarget.style.color = VET_COLORS.accent;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive(item.path)) {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.color = "#64748b";
+                    }
+                  }}
+                  style={{
+                    padding: "16px 18px", border: "none",
+                    borderBottom: isActive(item.path) ? `3px solid ${VET_COLORS.accent}` : "3px solid transparent",
+                    background: isActive(item.path) ? VET_COLORS.sidebarHover : "transparent",
+                    color: isActive(item.path) ? VET_COLORS.accent : "#64748b",
+                    fontWeight: isActive(item.path) ? 700 : 600,
+                    fontSize: 13, cursor: "pointer", transition: "all 0.2s", whiteSpace: "nowrap",
+                  }}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+            {user?.idRol === 1 && <AdminDropdown location={location} navigate={navigate} />}
+          </div>
+        )}
 
-        {/* ── Contenido ── */}
-        <main style={{ flex: 1, padding: "24px", overflowY: "auto" }}>
+        {/* ── Contenido Principal ── */}
+        <main style={{ flex: 1, padding: isMobile ? "16px" : "24px", overflowY: "auto" }}>
           <Outlet />
         </main>
       </div>
