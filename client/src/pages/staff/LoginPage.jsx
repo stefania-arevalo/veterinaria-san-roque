@@ -27,9 +27,10 @@ const P = {
   redBg:     "#fcebeb",
 };
 
-// ── Navbar ────────────────────────────────────────────────────────
+// ── Navbar Corregido para Mobile ──────────────────────────────────
 function Navbar({ onLoginClick, isMobile }) {
   const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 20);
@@ -40,47 +41,97 @@ function Navbar({ onLoginClick, isMobile }) {
   const navLinks = ["Inicio", "Servicios", "Nosotros", "Contacto"];
 
   return (
-    <nav style={{
-      position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-      display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: isMobile ? "0 16px" : "0 48px", height: 64,
-      background: scrolled ? "rgba(255,255,255,0.97)" : "rgba(255,255,255,0.92)",
-      backdropFilter: "blur(14px)",
-      boxShadow: scrolled ? `0 1px 0 ${P.border}, 0 4px 20px rgba(26,61,40,0.07)` : "none",
-      transition: "all 0.3s ease",
-    }}>
-      <img src="/logo.png" alt="San Roque" style={{ height: 36, width: "auto", objectFit: "contain" }} />
+    <>
+      <nav style={{
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: isMobile ? "0 16px" : "0 48px", height: 64,
+        background: scrolled || mobileMenuOpen ? "rgba(255,255,255,0.98)" : "rgba(255,255,255,0.92)",
+        backdropFilter: "blur(14px)",
+        boxShadow: scrolled || mobileMenuOpen ? `0 1px 0 ${P.border}, 0 4px 20px rgba(26,61,40,0.07)` : "none",
+        transition: "all 0.3s ease",
+      }}>
+        <img src="/logo.png" alt="San Roque" style={{ height: 36, width: "auto", objectFit: "contain" }} />
 
-      <div style={{ display:"flex", alignItems:"center", gap:isMobile ? 10 : 32 }}>
-        {!isMobile && navLinks.map(l => (
-          <a key={l} href={`#${l.toLowerCase().replace(" ", "-")}`} style={{
-            fontSize: 13.5, fontWeight: 500, color: P.slate,
-            textDecoration: "none", letterSpacing: "0.01em",
-            transition: "color 0.15s",
-          }}
-          onMouseEnter={e => e.target.style.color = P.pine}
-          onMouseLeave={e => e.target.style.color = P.slate}
-          >{l}</a>
-        ))}
+        {/* Links en Escritorio */}
+        {!isMobile && (
+          <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
+            {navLinks.map(l => (
+              <a key={l} href={`#${l.toLowerCase().replace(" ", "-")}`} style={{
+                fontSize: 13.5, fontWeight: 500, color: P.slate,
+                textDecoration: "none", letterSpacing: "0.01em",
+                transition: "color 0.15s",
+              }}
+              onMouseEnter={e => e.target.style.color = P.pine}
+              onMouseLeave={e => e.target.style.color = P.slate}
+              >{l}</a>
+            ))}
+          </div>
+        )}
 
-        <button
-          onClick={onLoginClick}
-          style={{
-            display: "flex", alignItems: "center", gap: 7,
-            padding: isMobile ? "8px 12px" : "8px 20px",
-            fontSize: isMobile ? 12 : 13.5, borderRadius: 10,
-            border: `1.5px solid ${P.pine}`,
-            background: "white", color: P.pine,
-            fontWeight: 600, cursor: "pointer",
-            transition: "all 0.18s ease", letterSpacing: "0.01em",
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = P.pine; e.currentTarget.style.color = "white"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "white"; e.currentTarget.style.color = P.pine; }}
-        >
-          <span style={{ fontSize: 14 }}>👤</span> Ingresar
-        </button>
-      </div>
-    </nav>
+        {/* Botonera Derecha */}
+        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 12 }}>
+          <button
+            onClick={onLoginClick}
+            style={{
+              display: "flex", alignItems: "center", gap: 6,
+              padding: isMobile ? "6px 12px" : "8px 20px",
+              fontSize: isMobile ? 12 : 13.5, borderRadius: 10,
+              border: `1.5px solid ${P.pine}`,
+              background: "white", color: P.pine,
+              fontWeight: 600, cursor: "pointer",
+              transition: "all 0.18s ease", letterSpacing: "0.01em",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = P.pine; e.currentTarget.style.color = "white"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "white"; e.currentTarget.style.color = P.pine; }}
+          >
+            <span style={{ fontSize: 13 }}>👤</span> Ingresar
+          </button>
+
+          {/* Botón menú hamburguesa (Solo en Mobile) */}
+          {isMobile && (
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              style={{
+                background: "none", border: "none", fontSize: 22, color: P.forest,
+                cursor: "pointer", padding: "4px 8px", display: "flex", alignItems: "center"
+              }}
+            >
+              {mobileMenuOpen ? "✕" : "☰"}
+            </button>
+          )}
+        </div>
+      </nav>
+
+      {/* Menú Desplegable Mobile */}
+      {isMobile && mobileMenuOpen && (
+        <div style={{
+          position: "fixed", top: 64, left: 0, right: 0,
+          background: "rgba(255,255,255,0.98)", backdropFilter: "blur(10px)",
+          borderBottom: `1px solid ${P.border}`, zIndex: 99,
+          padding: "16px 0", display: "flex", flexDirection: "column",
+          boxShadow: "0 10px 20px rgba(26,61,40,0.05)",
+          animation: "fadeIn 0.2s ease-out"
+        }}>
+          {navLinks.map(l => (
+            <a
+              key={l}
+              href={`#${l.toLowerCase().replace(" ", "-")}`}
+              onClick={() => setMobileMenuOpen(false)}
+              style={{
+                padding: "12px 24px", fontSize: 14, fontWeight: 600,
+                color: P.text, textDecoration: "none", borderLeft: `3px solid transparent`,
+                transition: "all 0.15s"
+              }}
+              onMouseEnter={e => { e.target.style.background = P.foam; e.target.style.borderLeftColor = P.leaf; }}
+              onMouseLeave={e => { e.target.style.background = "transparent"; e.target.style.borderLeftColor = "transparent"; }}
+            >
+              🐾 {l}
+            </a>
+          ))}
+        </div>
+      )}
+    </>
   );
 }
 
@@ -495,7 +546,7 @@ export default function LoginPage() {
           display: "flex", alignItems: "center",
           flexDirection: isMobile ? "column" : "row",
           gap: isMobile ? 40 : 80, width: "100%",
-        }}> {/* <── CORREGIDO: Se quitó el cierre prematuro '/>' para que contenga al texto */}
+        }}>
           
           {/* Texto izquierda */}
           <div style={{ flex: 1 }}>
@@ -620,7 +671,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-        </div> {/* <── Cierre correcto del contenedor maxWidth 1100 del Hero */}
+        </div>
 
         {/* Modal de login */}
         {showForm && (
@@ -791,6 +842,7 @@ export default function LoginPage() {
 
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         * { box-sizing: border-box; }
         html { scroll-behavior: smooth; }
         ::selection { background: rgba(39,107,66,0.2); }
