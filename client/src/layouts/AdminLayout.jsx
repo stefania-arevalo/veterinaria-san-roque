@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { useWindowSize } from "../hooks/useWindowSize"; // Hook adaptativo
+import { useWindowSize } from "../hooks/useWindowSize"; 
 import axios from "axios";
 
 export const VET_COLORS = {
@@ -51,7 +51,6 @@ const ADMIN_MENU = [
   { label: "⚙️ Configuración", path: "/admin/configuracion" },
 ];
 
-// ─── Modal logout ─────────────────────────────────────────────────────────────
 function ConfirmLogoutModal({ onConfirm, onCancel }) {
   return (
     <div style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 3000 }}>
@@ -69,7 +68,6 @@ function ConfirmLogoutModal({ onConfirm, onCancel }) {
   );
 }
 
-// ─── Dropdown admin ───────────────────────────────────────────────────────────
 function AdminDropdown({ location, navigate }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -130,13 +128,11 @@ function AdminDropdown({ location, navigate }) {
   );
 }
 
-// ─── Drawer de perfil propio ──────────────────────────────────────────────────
 function ProfileDrawer({ user, username, onClose }) {
   const [profile,  setProfile]  = useState(null);
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState("");
 
-  const [pwActual,   setPwActual]   = useState("");
   const [pwNueva,    setPwNueva]    = useState("");
   const [pwConfirm,  setPwConfirm]  = useState("");
   const [pwError,    setPwError]    = useState("");
@@ -173,7 +169,7 @@ function ProfileDrawer({ user, username, onClose }) {
     try {
       await axios.patch(apiUrl(`/user/${user?.user_id}`), { contraseña: pwNueva }, { headers: auth() });
       setPwSuccess("Contraseña actualizada correctamente.");
-      setPwActual(""); setPwNueva(""); setPwConfirm("");
+      setPwNueva(""); setPwConfirm("");
     } catch (err) {
       setPwError(err?.response?.data?.msg || "Error al cambiar la contraseña.");
     } finally { setSavingPw(false); }
@@ -204,9 +200,9 @@ function ProfileDrawer({ user, username, onClose }) {
         fontFamily: "'Segoe UI', system-ui, sans-serif",
       }}>
 
-        {/* Header Drawer */}
+        {/* Header Drawer (Corregido Typo en Layout) */}
         <div style={{ padding: "20px 24px", background: roleMeta.color, color: "white", flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", justify盤ontent: "space-between", marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
             <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Mi perfil</h2>
             <button onClick={onClose} style={{ background: "rgba(255,255,255,0.15)", border: "none", color: "white", width: 32, height: 32, borderRadius: 8, fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
           </div>
@@ -218,8 +214,8 @@ function ProfileDrawer({ user, username, onClose }) {
             }}>
               {username ? username.charAt(0).toUpperCase() : "👤"}
             </div>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 16 }}>@{username}</div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontWeight: 700, fontSize: 16, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>@{username}</div>
               <div style={{ fontSize: 12, opacity: 0.85, marginTop: 2 }}>{roleMeta.label}</div>
               <div style={{ fontSize: 11, opacity: 0.65, marginTop: 1 }}>ID: {user?.user_id}</div>
             </div>
@@ -296,7 +292,6 @@ function ProfileDrawer({ user, username, onClose }) {
             </>
           )}
 
-          {/* Cambiar contraseña */}
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12, paddingBottom: 6, borderBottom: `1px solid ${VET_COLORS.border}` }}>
               🔐 Cambiar contraseña
@@ -350,17 +345,16 @@ function ProfileDrawer({ user, username, onClose }) {
   );
 }
 
-// ─── Layout principal ─────────────────────────────────────────────────────────
 export default function AdminLayout() {
   const { user, canAccess, logout } = useAuth();
   const navigate  = useNavigate();
   const location  = useLocation();
-  const { isMobile } = useWindowSize(); // Detectamos mobile
+  const { isMobile } = useWindowSize(); 
 
   const [showLogout,  setShowLogout]  = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false); // Sidebar móvil
-  const [mobileAdminOpen, setMobileAdminOpen] = useState(false); // Submenú de Admin en móvil
+  const [showMobileMenu, setShowMobileMenu] = useState(false); 
+  const [mobileAdminOpen, setMobileAdminOpen] = useState(false); 
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -384,7 +378,7 @@ export default function AdminLayout() {
       {showLogout  && <ConfirmLogoutModal onConfirm={handleLogoutConfirm} onCancel={() => setShowLogout(false)} />}
       {showProfile && <ProfileDrawer user={user} username={username} onClose={() => setShowProfile(false)} />}
 
-      {/* ── Sidebar Desplegable Móvil (Drawer Izquierdo) ── */}
+      {/* Sidebar Desplegable Móvil */}
       {isMobile && showMobileMenu && (
         <>
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 1998 }} onClick={() => setShowMobileMenu(false)} />
@@ -416,7 +410,6 @@ export default function AdminLayout() {
                 );
               })}
 
-              {/* Acordeón interno para opciones exclusivas de Admin en Móvil */}
               {user?.idRol === 1 && (
                 <div style={{ marginTop: 8, borderTop: `1px solid ${VET_COLORS.border}`, paddingTop: 8 }}>
                   <button
@@ -457,23 +450,24 @@ export default function AdminLayout() {
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
 
-        {/* ── Header ── */}
+        {/* Header Corregido y Proporcionado */}
         <header style={{ 
           display: "flex", alignItems: "center", justifyContent: "space-between", 
-          padding: isMobile ? "0 16px" : "0 24px", height: 64, background: "white", 
+          padding: isMobile ? "0 12px" : "0 24px", height: 64, background: "white", 
           borderBottom: `1px solid ${VET_COLORS.border}`, flexShrink: 0 
         }}>
           
-          <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 12 }}>
+          {/* Lado Izquierdo: Menu Hamburguesa + Logo */}
+          <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 6 : 12, flexShrink: 0 }}>
             {isMobile && (
               <button 
                 onClick={() => setShowMobileMenu(true)}
-                style={{ background: "none", border: "none", fontSize: 22, color: VET_COLORS.sidebarActive, cursor: "pointer", paddingRight: 4 }}
+                style={{ background: "none", border: "none", fontSize: 22, color: VET_COLORS.sidebarActive, cursor: "pointer", padding: "4px" }}
               >
                 ☰
               </button>
             )}
-            <img src="/logocolor.png" alt="Logo" style={{ width: 36, height: 36, objectFit: "contain" }} />
+            <img src="/logocolor.png" alt="Logo" style={{ width: 34, height: 34, objectFit: "contain", flexShrink: 0 }} />
             {!isMobile && (
               <div>
                 <div style={{ fontWeight: 800, fontSize: 16, color: VET_COLORS.sidebarActive, lineHeight: 1 }}>SAN ROQUE</div>
@@ -482,18 +476,21 @@ export default function AdminLayout() {
             )}
           </div>
 
-          {/* Reloj clínico adaptado */}
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: isMobile ? 15 : 18, fontWeight: 700, color: "#1e293b", lineHeight: 1 }}>{formatTime(currentTime)}</div>
-            <div style={{ fontSize: 11, color: "#64748b", textTransform: "capitalize", marginTop: 2 }}>{formatDate(currentTime)}</div>
+          {/* Centro: Reloj Adaptativo */}
+          <div style={{ textAlign: "center", flex: 1, minWidth: 0, padding: "0 8px" }}>
+            <div style={{ fontSize: isMobile ? 14 : 18, fontWeight: 700, color: "#1e293b", lineHeight: 1 }}>{formatTime(currentTime)}</div>
+            {!isMobile && (
+              <div style={{ fontSize: 11, color: "#64748b", textTransform: "capitalize", marginTop: 2 }}>{formatDate(currentTime)}</div>
+            )}
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 4 : 10 }}>
+          {/* Lado Derecho: Avatar de Usuario + Logout */}
+          <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 2 : 10, flexShrink: 0 }}>
             <button
               onClick={() => setShowProfile(true)}
               title="Ver mi perfil"
               style={{
-                textAlign: "right", background: "none", border: "none", cursor: "pointer", padding: "6px", borderRadius: 10, transition: "background 0.2s"
+                textAlign: "right", background: "none", border: "none", cursor: "pointer", padding: "4px", borderRadius: 10, transition: "background 0.2s"
               }}
               onMouseEnter={e => { if(!isMobile) e.currentTarget.style.background = VET_COLORS.sidebarHover; }}
               onMouseLeave={e => { if(!isMobile) e.currentTarget.style.background = "none"; }}
@@ -501,7 +498,7 @@ export default function AdminLayout() {
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <div style={{
                   width: 34, height: 34, borderRadius: 9, background: roleMeta.bg, 
-                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 700, color: roleMeta.color, flexShrink: 0, textTransform: "uppercase"
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: roleMeta.color, flexShrink: 0, textTransform: "uppercase"
                 }}>
                   {username ? username.charAt(0).toUpperCase() : "👤"}
                 </div>
@@ -517,7 +514,7 @@ export default function AdminLayout() {
             <button
               onClick={() => setShowLogout(true)}
               title="Cerrar sesión"
-              style={{ background: "none", border: "none", fontSize: 19, cursor: "pointer", padding: 6, borderRadius: 8, transition: "background 0.2s" }}
+              style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", padding: 6, borderRadius: 8, transition: "background 0.2s", flexShrink: 0 }}
               onMouseEnter={e => e.currentTarget.style.background = "#fee2e2"}
               onMouseLeave={e => e.currentTarget.style.background = "none"}
             >
@@ -526,7 +523,7 @@ export default function AdminLayout() {
           </div>
         </header>
 
-        {/* ── Navbar Horizontal Tradicional (Solo visible en Escritorios) ── */}
+        {/* Navbar Horizontal Tradicional (Escritorio) */}
         {!isMobile && (
           <div style={{ display: "flex", justifyContent: "center", alignItems: "stretch", background: "white", borderBottom: `1px solid ${VET_COLORS.border}`, padding: "0 20px", flexShrink: 0 }}>
             {NAV_ITEMS.map(item => {
@@ -565,7 +562,7 @@ export default function AdminLayout() {
           </div>
         )}
 
-        {/* ── Contenido Principal ── */}
+        {/* Contenido Principal */}
         <main style={{ flex: 1, padding: isMobile ? "16px" : "24px", overflowY: "auto" }}>
           <Outlet />
         </main>
