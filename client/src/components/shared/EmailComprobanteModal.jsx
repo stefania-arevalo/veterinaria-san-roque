@@ -6,7 +6,7 @@ const token = () => localStorage.getItem('accessToken');
 const headers = () => ({ Authorization: `Bearer ${token()}` });
 
 export default function EmailComprobanteModal({ venta, onClose }) {
-  const esConsumidorFinal = !venta.Cliente || venta.idCliente === 1 || venta.Cliente?.nombres === 'Consumidor';
+  const esConsumidorFinal = !venta.Cliente || Number(venta.idCliente) === 1 || venta.Cliente?.nombres === 'Consumidor';
   
   const [email, setEmail] = useState('');
   const [emailOriginal, setEmailOriginal] = useState('');
