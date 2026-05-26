@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { useWindowSize } from "../../hooks/useWindowSize"; // Asegurá que la ruta apunte correctamente a tu hook
+import { useWindowSize } from "../hooks/useWindowSize"; // Asegurá que la ruta apunte correctamente a tu hook
 import { VET_COLORS } from "../layouts/AdminLayout";
 
 export default function ClientLayout() {

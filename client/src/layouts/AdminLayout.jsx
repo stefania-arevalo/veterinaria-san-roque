@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { useWindowSize } from "../../hooks/useWindowSize"; // Hook adaptativo
+import { useWindowSize } from "../hooks/useWindowSize"; // Hook adaptativo
 import axios from "axios";
 
 export const VET_COLORS = {
