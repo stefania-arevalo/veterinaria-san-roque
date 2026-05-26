@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
-import axios from "axios";
+import axios from "../../api/axios";
 import { VET_COLORS } from "../../layouts/AdminLayout";
 import StaffCreateDrawer, { StaffEditDrawer, ROLE_META, inputStyle, Field, ConfirmModal } from "./StaffCreateDrawer";
 
 // ─── API helpers ───────────────────────────────────────────────────────────
 const token = () => localStorage.getItem("accessToken");
 const auth  = () => ({ Authorization: `Bearer ${token()}` });
-const api = (path) => `/api/v1${path}`;
 
 const SEXO_MAP = { M: "Masculino", F: "Femenino", O: "Otro" };
 
@@ -78,7 +77,7 @@ function UserAccountModal({ user, onClose, onSaved }) {
     try {
       const payload = { estado };
       if (newPassword) payload.contraseña = newPassword;
-      await axios.patch(api(`/user/${user.idUsuario}`), payload, { headers: auth() });
+      await axios.patch(`/user/${user.idUsuario}`, payload, { headers: auth() });
       onSaved();
     } catch (err) {
       setGlobalErr(err?.response?.data?.msg || "Error al guardar.");
@@ -169,7 +168,7 @@ function StaffTab({ localities, showToast }) {
       const params = {};
       if (search)     params.search = search;
       if (roleFilter) params.idRol  = roleFilter;  // ← ahora va al backend
-      const res  = await axios.get(api("/staffs"), { params, headers: auth() });
+      const res  = await axios.get("/staffs", { params, headers: auth() });
       setStaffList(Array.isArray(res.data) ? res.data : []);
     } catch {
       showToast("Error al cargar el personal.", "error");
@@ -180,7 +179,7 @@ function StaffTab({ localities, showToast }) {
 
   const handleDelete = async () => {
     try {
-      await axios.delete(api(`/staff/${confirmDelete.idPersonal}`), { headers: auth() });
+      await axios.delete(`/staff/${confirmDelete.idPersonal}`, { headers: auth() });
       showToast("Registro de personal eliminado.");
       fetchStaff();
     } catch (err) {
@@ -362,9 +361,7 @@ export default function UsersManagementPage() {
       if (search)              params.search = search;
       if (roleFilter)          params.idRol  = roleFilter;
       if (statusFilter !== "") params.estado  = statusFilter;
-      const res = await axios.get(api("/users"), { params, headers: auth() });
-      console.log("USERS RESPONSE:", res.data);
-
+      const res = await axios.get("/users", { params, headers: auth() });
       setUsers(Array.isArray(res.data) ? res.data : []);
     } catch { showToast("Error al cargar usuarios.", "error"); }
     finally { setLoading(false); }
@@ -372,7 +369,7 @@ export default function UsersManagementPage() {
 
   const fetchLocalities = useCallback(async () => {
     try {
-      const res = await axios.get(api("/localities"), { headers: auth() });
+      const res = await axios.get("/localities", { headers: auth() });
       setLocalities(Array.isArray(res.data) ? res.data : []);
     } catch {}
   }, []);
@@ -383,7 +380,7 @@ export default function UsersManagementPage() {
   const handleDeleteUser = async () => {
     const u = confirmDelete.user;
     try {
-      await axios.delete(api(`/user/${u.idUsuario}`), { headers: auth() });
+      await axios.delete(`/user/${u.idUsuario}`, { headers: auth() });
       showToast("Usuario eliminado.");
       fetchUsers();
     } catch (e) {
