@@ -1,5 +1,5 @@
 import NewPatientModal from "../../components/forms/NewPatientModal";
-import { React, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "../../api/axios";
 import { VET_COLORS } from "../../layouts/AdminLayout";
 import { useNavigate, useLocation } from "react-router-dom";
