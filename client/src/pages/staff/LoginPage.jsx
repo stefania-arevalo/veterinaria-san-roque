@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useWindowSize } from "../../hooks/useWindowSize";
 
-// ── Paleta verde clínica — centralizada para consistencia visual ─────────
-export const VET_COLORS = {
+// ── Paleta verde clínica — extraída de la imagen adjunta ─────────
+const P = {
   // Verdes principales
   forest:    "#1a3d28",   // verde oscuro — fondo navbar / headers
   pine:      "#1f5c38",   // verde medio — botones principales
@@ -26,9 +26,6 @@ export const VET_COLORS = {
   red:       "#a32d2d",
   redBg:     "#fcebeb",
 };
-
-// Atajo local para mantener tus estilos inline sin alterar tus variables 'P'
-const P = VET_COLORS;
 
 // ── Navbar ────────────────────────────────────────────────────────
 function Navbar({ onLoginClick, isMobile }) {
@@ -70,8 +67,8 @@ function Navbar({ onLoginClick, isMobile }) {
           onClick={onLoginClick}
           style={{
             display: "flex", alignItems: "center", gap: 7,
-            padding:isMobile ? "8px 12px" : "8px 20px",
-            fontSize:isMobile ? 12 : 13.5, borderRadius: 10,
+            padding: isMobile ? "8px 12px" : "8px 20px",
+            fontSize: isMobile ? 12 : 13.5, borderRadius: 10,
             border: `1.5px solid ${P.pine}`,
             background: "white", color: P.pine,
             fontWeight: 600, cursor: "pointer",
@@ -498,12 +495,13 @@ export default function LoginPage() {
           display: "flex", alignItems: "center",
           flexDirection: isMobile ? "column" : "row",
           gap: isMobile ? 40 : 80, width: "100%",
-        }}>
+        }}> {/* <── CORREGIDO: Se quitó el cierre prematuro '/>' para que contenga al texto */}
+          
           {/* Texto izquierda */}
           <div style={{ flex: 1 }}>
             <h1 style={{
-              fontSize:isMobile ? 26 : isTablet ? 38 : 50, fontWeight: 900, color: P.forest,
-              textAlign:isMobile ? "center" : "left",
+              fontSize: isMobile ? 26 : isTablet ? 38 : 50, fontWeight: 900, color: P.forest,
+              textAlign: isMobile ? "center" : "left",
               margin: "0 0 22px", lineHeight: 1.08, letterSpacing: "-1.5px",
             }}>
               Cuidamos a<br />
@@ -512,8 +510,8 @@ export default function LoginPage() {
             </h1>
 
             <p style={{
-              fontSize:isMobile ? 14 : 16.5,
-              textAlign:isMobile ? "center" : "left",
+              fontSize: isMobile ? 14 : 16.5,
+              textAlign: isMobile ? "center" : "left",
               color: P.muted, lineHeight: 1.75,
               margin: "0 0 40px", maxWidth: 520,
             }}>
@@ -558,7 +556,7 @@ export default function LoginPage() {
                 style={{
                   display: "inline-flex", 
                   alignItems: "center", 
-                  justifyContent: isMobile ? "center" : "flex-start",
+                  justifyContent: isMobile ? "center" : "flex-start", 
                   gap: 9,
                   width: isMobile ? "100%" : "auto",
                   padding: isMobile ? "14px 18px" : "14px 30px",
@@ -585,7 +583,7 @@ export default function LoginPage() {
           <div style={{
             display: isMobile ? "none" : "flex",
             flexDirection: "column",
-            alignItems: "center",
+            alignItems: "center", 
             flexShrink: 0,
           }}>
 
@@ -594,7 +592,7 @@ export default function LoginPage() {
               display: "inline-flex", alignItems: "center", gap: 8,
               background: P.mint, border: `1px solid ${P.borderLight}`,
               borderRadius: 99, padding: "5px 16px", 
-              marginBottom: 16,
+              marginBottom: 16, 
             }}>
               <span style={{ fontSize: 13 }}>🐾</span>
               <span style={{ fontSize: 12.5, fontWeight: 700, color: P.pine, letterSpacing: "0.04em" }}>
@@ -620,9 +618,9 @@ export default function LoginPage() {
                 style={{ width: "100%", height: "100%", objectFit: "contain" }}
               />
             </div>
-
           </div>
-        </div>
+
+        </div> {/* <── Cierre correcto del contenedor maxWidth 1100 del Hero */}
 
         {/* Modal de login */}
         {showForm && (
@@ -653,7 +651,7 @@ export default function LoginPage() {
 
       {/* ── SERVICIOS ────────────────────────────────────────────── */}
       <section id="servicios" style={{ padding: "88px 0", background: P.white }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto", padding: isMobile ? "22px 18px" : "28px 24px", width: "100%" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", padding: isMobile ? "22px 18px" : "28px 24px", width: "100%", }}>
           <div style={{ textAlign: "center", marginBottom: 56 }}>
             <div style={{
               display: "inline-block", fontSize: 12, fontWeight: 700,
