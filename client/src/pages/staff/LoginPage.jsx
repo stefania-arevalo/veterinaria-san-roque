@@ -322,7 +322,7 @@ function HowItWorks() {
             El portal está disponible para todos los clientes registrados en la clínica.
           </p>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 32 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: isMobile ? 16 : 32 }}>
           {steps.map((s, i) => (
             <div key={i} style={{ position: "relative" }}>
               {i < steps.length - 1 && (
@@ -362,7 +362,7 @@ function Footer() {
   return (
     <footer style={{ background: P.forest, color: "rgba(255,255,255,0.75)", padding: "52px 0 28px" }}>
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: isMobile ? "0 16px" : "0 48px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 48, marginBottom: 48 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr 1fr 1fr", gap: isMobile ? 24 : 48, marginBottom: 48 }}>
 
           {/* Marca */}
           <div>
@@ -436,6 +436,7 @@ function Footer() {
         <div style={{
           borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 24,
           display: "flex", alignItems: "center", justifyContent: "space-between",
+          flexDirection: isMobile ? "column" : "row", gap: isMobile ? 8 : 0, textAlign: isMobile ? "center" : "left",
         }}>
           <p style={{ margin: 0, fontSize: 12, color: "rgba(255,255,255,0.3)" }}>
             © {new Date().getFullYear()} Clínica Veterinaria San Roque. Todos los derechos reservados.
@@ -492,9 +493,10 @@ export default function LoginPage() {
 
         <div style={{
           maxWidth: 1100, margin: "0 auto",
-          padding: "60px 48px",
+          padding: isMobile ? "40px 20px" : "60px 48px",
           display: "flex", alignItems: "center",
-          gap: 80, width: "100%",
+          flexDirection: isMobile ? "column" : "row",
+          gap: isMobile ? 24 : 80, width: "100%",
         }}>
           {/* Texto izquierda */}
           <div style={{ flex: 1 }}>
@@ -654,7 +656,7 @@ export default function LoginPage() {
       <section id="nosotros" style={{ padding: "88px 0", background: P.white }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: isMobile ? "0 16px" : "0 48px" }}>
           <div style={{
-            display: "grid", gridTemplateColumns: "1fr 1fr", gap: 72,
+            display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 32 : 72,
             alignItems: "center",
           }}>
             {/* Visual */}
@@ -725,7 +727,7 @@ export default function LoginPage() {
             </h2>
             <p style={{ margin: 0, fontSize: 15, color: P.muted }}>Comunicate con nosotros</p>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 22 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 22 }}>
             {[
               { icon: "📍", title: "Dirección",  text: "Punta Alta,\nBuenos Aires." },
               { icon: "📞", title: "Teléfono",   text: "11 1234 5678" },
