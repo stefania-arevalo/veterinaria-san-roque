@@ -19,7 +19,6 @@ export default function EmailComprobanteModal({ venta, onClose }) {
     if (esConsumidorFinal) return;
     axios.get(`/client/${venta.idCliente}`, { headers: headers() })
       .then(res => {
-        console.log('Respuesta cliente completa:', res.data);
         const correo = res.data?.correo || res.data?.email || '';
         setEmail(correo);
         setEmailOriginal(correo);

@@ -4,7 +4,7 @@ const SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID;
 const PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 const T_TURNO     = import.meta.env.VITE_EMAILJS_TEMPLATE_TURNO;
 const T_COMPROBANTE = import.meta.env.VITE_EMAILJS_TEMPLATE_COMPROBANTE;
-console.log('EmailJS vars:', { SERVICE_ID, PUBLIC_KEY, T_COMPROBANTE });
+
 export async function enviarRecordatorioTurno({ clienteNombre, clienteEmail, fecha, hora, mascotaNombre, servicio }) {
   if (!clienteEmail) return { ok: false, error: 'Sin email' };
   try {

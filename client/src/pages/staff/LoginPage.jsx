@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { useWindowSize } from "../../hooks/useWindowSize";
 
 // ── Paleta verde clínica — extraída de la imagen adjunta ─────────
 const P = {
@@ -29,6 +30,7 @@ const P = {
 // ── Navbar ────────────────────────────────────────────────────────
 function Navbar({ onLoginClick }) {
   const [scrolled, setScrolled] = useState(false);
+  const { isMobile, isTablet } = useWindowSize();
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 20);
@@ -42,7 +44,7 @@ function Navbar({ onLoginClick }) {
     <nav style={{
       position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
       display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: "0 48px", height: 64,
+      padding: isMobile ? "0 16px" : "0 48px", height: 64,
       background: scrolled ? "rgba(255,255,255,0.97)" : "rgba(255,255,255,0.92)",
       backdropFilter: "blur(14px)",
       boxShadow: scrolled ? `0 1px 0 ${P.border}, 0 4px 20px rgba(26,61,40,0.07)` : "none",
@@ -296,6 +298,7 @@ function ServiceCard({ icon, title, desc }) {
 
 // ── Sección "Cómo funciona el portal" ────────────────────────────
 function HowItWorks() {
+  const { isMobile } = useWindowSize();
   const steps = [
     { n: "01", icon: "📋", title: "Registrate como cliente", desc: "El personal de la clínica registra tus datos y los de tu mascota al momento de la primera consulta." },
     { n: "02", icon: "🔐", title: "Recibís tus credenciales", desc: "Se te asigna un usuario y contraseña para acceder al portal desde cualquier dispositivo." },
@@ -303,7 +306,7 @@ function HowItWorks() {
   ];
   return (
     <section style={{ padding: "80px 0", background: P.foam }}>
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 48px" }}>
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: isMobile ? "0 16px" : "0 48px" }}>
         <div style={{ textAlign: "center", marginBottom: 56 }}>
           <div style={{
             display: "inline-block", fontSize: 12, fontWeight: 700,
@@ -355,9 +358,10 @@ function HowItWorks() {
 
 // ── Footer ────────────────────────────────────────────────────────
 function Footer() {
+  const { isMobile } = useWindowSize();
   return (
     <footer style={{ background: P.forest, color: "rgba(255,255,255,0.75)", padding: "52px 0 28px" }}>
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 48px" }}>
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: isMobile ? "0 16px" : "0 48px" }}>
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 48, marginBottom: 48 }}>
 
           {/* Marca */}
@@ -450,6 +454,7 @@ export default function LoginPage() {
   const { login, user } = useAuth();
   const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
+  const { isMobile, isTablet } = useWindowSize();
 
   useEffect(() => {
     if (user) navigate(user.idRol === 5 ? "/cliente" : "/admin");
@@ -506,7 +511,7 @@ export default function LoginPage() {
             </div>
 
             <h1 style={{
-              fontSize: 50, fontWeight: 900, color: P.forest,
+              fontSize: isMobile ? 32 : 50, fontWeight: 900, color: P.forest,
               margin: "0 0 22px", lineHeight: 1.08, letterSpacing: "-1.5px",
             }}>
               Cuidamos a<br />
@@ -566,10 +571,13 @@ export default function LoginPage() {
 
           {/* Imagen derecha */}
           <div style={{
-            flexShrink: 0, width: 380, height: 380,
+            flexShrink: 0,
+            width: isMobile ? 200 : 380,
+            height: isMobile ? 200 : 380,
+            display: isMobile ? "none" : "flex",
             borderRadius: 24, overflow: "hidden",
             background: `linear-gradient(135deg, ${P.mint}, rgba(234,243,222,0.5))`,
-            display: "flex", alignItems: "center", justifyContent: "center",
+            alignItems: "center", justifyContent: "center",
             boxShadow: `0 24px 64px rgba(26,61,40,0.12), 0 4px 16px rgba(26,61,40,0.06)`,
             border: `1px solid ${P.borderLight}`,
             padding: 30,
@@ -611,7 +619,7 @@ export default function LoginPage() {
 
       {/* ── SERVICIOS ────────────────────────────────────────────── */}
       <section id="servicios" style={{ padding: "88px 0", background: P.white }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 48px" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", padding: isMobile ? "0 16px" : "0 48px", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 32 : 80, width: "100%", }}>
           <div style={{ textAlign: "center", marginBottom: 56 }}>
             <div style={{
               display: "inline-block", fontSize: 12, fontWeight: 700,
@@ -626,7 +634,7 @@ export default function LoginPage() {
               Atención integral para el bienestar de tu mascota
             </p>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 22 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : isTablet ? "repeat(2, 1fr)" : "repeat(3, 1fr)", gap: 22 }}>
             {[
               { icon: "📝", title: "Consultas clínicas",    desc: "Atención médica general, controles preventivos y diagnósticos clínicos personalizados." },
               { icon: "💉", title: "Vacunación",            desc: "Registro digital y control del calendario vacunal de cada paciente." },
@@ -644,7 +652,7 @@ export default function LoginPage() {
 
       {/* ── SOBRE NOSOTROS ────────────────────────────────────────── */}
       <section id="nosotros" style={{ padding: "88px 0", background: P.white }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 48px" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", padding: isMobile ? "0 16px" : "0 48px" }}>
           <div style={{
             display: "grid", gridTemplateColumns: "1fr 1fr", gap: 72,
             alignItems: "center",
@@ -704,7 +712,7 @@ export default function LoginPage() {
 
       {/* ── CONTACTO ──────────────────────────────────────────────── */}
       <section id="contacto" style={{ padding: "88px 0", background: P.foam }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 48px" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", padding: isMobile ? "0 16px" : "0 48px" }}>
           <div style={{ textAlign: "center", marginBottom: 52 }}>
             <div style={{
               display: "inline-block", fontSize: 12, fontWeight: 700,
