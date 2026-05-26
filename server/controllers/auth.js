@@ -99,7 +99,7 @@ async function refreshAccessToken(req, res, next) {
         };
 
         res.status(200).send({
-            accessToken: jwt.createAccessToken(payloadData), // Pasamos payloadData en lugar de userStorage
+          access: jwt.createAccessToken(payloadData)
         });
     } catch (error) {
         next(error);

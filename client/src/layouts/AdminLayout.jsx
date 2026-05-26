@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useWindowSize } from "../hooks/useWindowSize"; 
-import axios from "axios";
+import axios from "../api/axios";
 
 export const VET_COLORS = {
   sidebarBg:      "#ffffff",
@@ -21,7 +21,7 @@ export const VET_COLORS = {
 
 const token  = () => localStorage.getItem("accessToken");
 const auth   = () => ({ Authorization: `Bearer ${token()}` });
-const apiUrl = (path) => `/api/V1${path}`;
+const apiUrl = (path) => `/api/v1${path}`;
 
 const ROLE_META = {
   1: { label: "Administrador", color: "#6d28d9", bg: "#ede9fe" },

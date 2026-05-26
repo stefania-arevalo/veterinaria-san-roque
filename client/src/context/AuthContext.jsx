@@ -76,8 +76,8 @@ export function AuthProvider({ children }) {
   const refreshSession = async (refreshToken) => {
     try {
       const data = await refreshTokenApi(refreshToken);
-      localStorage.setItem("accessToken", data.accessToken);
-      const decoded = jwtDecode(data.accessToken);
+      localStorage.setItem("accessToken", data.access);
+      const decoded = jwtDecode(data.access);
       setUser(decoded);
     } catch {
       logout();

@@ -1,8 +1,8 @@
-import axios from "axios";
+import axios from "../api/axios";
  
 const token = () => localStorage.getItem("accessToken");
 export const authHeaders = () => ({ Authorization: `Bearer ${token()}` });
-export const apiUrl = (path) => `/api/V1${path}`;
+const apiUrl = (path) => `/api/v1${path}`;
  
 // ── Endpoints por entidad ────────────────────────────────────────────────────
 const entityEndpoint = (entityType, entityId) => {
