@@ -6,9 +6,7 @@ import StaffCreateDrawer, { StaffEditDrawer, ROLE_META, inputStyle, Field, Confi
 // ─── API helpers ───────────────────────────────────────────────────────────
 const token = () => localStorage.getItem("accessToken");
 const auth  = () => ({ Authorization: `Bearer ${token()}` });
-
-// Asegura la compatibilidad exacta con los prefijos globales de tu ruteador de Express
-const api   = (path) => `/api/V1${path}`;
+const api = (path) => `/api/v1${path}`;
 
 const SEXO_MAP = { M: "Masculino", F: "Femenino", O: "Otro" };
 
@@ -23,11 +21,10 @@ function RoleBadge({ idRol }) {
 }
 
 function StatusBadge({ estado }) {
-  const isActive = estado === true || estado === 1 || estado === "true";
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 99, background: isActive ? "#dcfce7" : "#fee2e2", color: isActive ? "#166534" : "#991b1b" }}>
-      <span style={{ width: 6, height: 6, borderRadius: "50%", background: isActive ? "#16a34a" : "#dc2626" }} />
-      {isActive ? "Activo" : "Inactivo"}
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 99, background: estado ? "#dcfce7" : "#fee2e2", color: estado ? "#166534" : "#991b1b" }}>
+      <span style={{ width: 6, height: 6, borderRadius: "50%", background: estado ? "#16a34a" : "#dc2626" }} />
+      {estado ? "Activo" : "Inactivo"}
     </span>
   );
 }
@@ -42,7 +39,6 @@ function Toast({ toast }) {
 }
 
 function LinkedEntityBadge({ user }) {
-  if (!user) return null;
   const person = user.Staff || user.Client;
   if (!person) {
     return (
@@ -52,11 +48,11 @@ function LinkedEntityBadge({ user }) {
     );
   }
   const isStaff  = !!user.Staff;
-  const fullName = `${person.nombres || ""} ${person.apellidos || ""}`.trim() || "Usuario del Sistema";
+  const fullName = `${person.nombres} ${person.apellidos}`;
   return (
     <div>
       <div style={{ fontSize: 13, fontWeight: 600, color: "#1a202c" }}>{fullName}</div>
-      <div style={{ fontSize: 11, color: VET_COLORS.textMuted }}>{isStaff ? "👥 Personal" : "🐾 Cliente"} · DNI {person.dni || "—"}</div>
+      <div style={{ fontSize: 11, color: VET_COLORS.textMuted }}>{isStaff ? "👥 Personal" : "🐾 Cliente"} · DNI {person.dni}</div>
     </div>
   );
 }
@@ -85,7 +81,7 @@ function UserAccountModal({ user, onClose, onSaved }) {
       await axios.patch(api(`/user/${user.idUsuario}`), payload, { headers: auth() });
       onSaved();
     } catch (err) {
-      setGlobalErr(err?.response?.data?.msg || "Error al guardar los cambios en el servidor.");
+      setGlobalErr(err?.response?.data?.msg || "Error al guardar.");
     } finally { setSaving(false); }
   };
 
@@ -127,7 +123,7 @@ function UserAccountModal({ user, onClose, onSaved }) {
           <Field label="Estado de la cuenta">
             <div style={{ display: "flex", gap: 10 }}>
               {[{ v: true, l: "✅ Activo" }, { v: false, l: "❌ Inactivo" }].map(opt => (
-                <button key={String(opt.v)} type="button" onClick={() => setEstado(opt.v)} style={{ flex: 1, padding: "9px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", border: `2px solid ${estado === opt.v ? VET_COLORS.accent : VET_COLORS.border}`, background: estado === opt.v ? "#f0fdf4" : "white", color: estado === opt.v ? VET_COLORS.accent : "#64748b" }}>{opt.l}</button>
+                <button key={String(opt.v)} type="button" onClick={() => setEstado(opt.v)} style={{ flex: 1, padding: "9px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", border: `2px solid ${estado === opt.v ? VET_COLORS.accent : VET_COLORS.border}`, background: estado === opt.v ? (VET_COLORS.accentLight || "#f0fdf4") : "white", color: estado === opt.v ? VET_COLORS.accent : "#64748b" }}>{opt.l}</button>
               ))}
             </div>
           </Field>
@@ -158,7 +154,7 @@ function UserAccountModal({ user, onClose, onSaved }) {
 // TAB: PERSONAL
 // ══════════════════════════════════════════════════════════════════════════════
 function StaffTab({ localities, showToast }) {
-  const [staffList,     setStaffList]     = useState([]);
+  const [staffList,    setStaffList]    = useState([]);
   const [loading,      setLoading]      = useState(true);
   const [search,       setSearch]       = useState("");
   const [roleFilter,   setRoleFilter]   = useState("");
@@ -171,14 +167,14 @@ function StaffTab({ localities, showToast }) {
     setLoading(true);
     try {
       const params = {};
-      if (search && search.trim() !== "") params.search = search.trim();
-      if (roleFilter) params.idRol = roleFilter;
-      const res = await axios.get(api("/staffs"), { params, headers: auth() });
+      if (search)     params.search = search;
+      if (roleFilter) params.idRol  = roleFilter;  // ← ahora va al backend
+      const res  = await axios.get(api("/staffs"), { params, headers: auth() });
       setStaffList(Array.isArray(res.data) ? res.data : []);
-    } catch (err) {
-      showToast("Error al cargar la lista de personal.", "error");
+    } catch {
+      showToast("Error al cargar el personal.", "error");
     } finally { setLoading(false); }
-  }, [search, roleFilter, showToast]);
+  }, [search, roleFilter]);
 
   useEffect(() => { fetchStaff(); }, [fetchStaff]);
 
@@ -188,7 +184,7 @@ function StaffTab({ localities, showToast }) {
       showToast("Registro de personal eliminado.");
       fetchStaff();
     } catch (err) {
-      showToast(err?.response?.data?.msg || "No se pudo eliminar el registro de personal.", "error");
+      showToast(err?.response?.data?.msg || "No se pudo eliminar. Puede tener datos asociados.", "error");
     } finally { setConfirmDelete(null); }
   };
 
@@ -231,20 +227,30 @@ function StaffTab({ localities, showToast }) {
         />
       )}
 
+      {/* Barra de búsqueda y filtros */}
       <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
         <div style={{ position: "relative", flex: 2, minWidth: 220 }}>
           <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }}>🔍</span>
-          <input placeholder="Buscar por nombre, apellido, DNI o correo..." value={search} onChange={e => setSearch(e.target.value)} style={{ ...inputStyle(false), paddingLeft: 36 }} />
+          <input
+            placeholder="Buscar por nombre, apellido, DNI o correo..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{ ...inputStyle(false), paddingLeft: 36 }}
+          />
         </div>
         <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} style={{ ...inputStyle(false), maxWidth: 180 }}>
           <option value="">Todos los roles</option>
-          {STAFF_ROLES.map(r => <option key={r} value={r}>{ROLE_META[r]?.icon} {ROLE_META[r]?.label}</option>)}
+          {STAFF_ROLES.map(r => <option key={r} value={r}>{ROLE_META[r].icon} {ROLE_META[r].label}</option>)}
         </select>
-        <button onClick={() => setShowCreate(true)} style={{ padding: "9px 18px", borderRadius: 8, border: "none", background: VET_COLORS.accent, color: "white", cursor: "pointer", fontWeight: 700, fontSize: 13, whiteSpace: "nowrap", boxShadow: "0 2px 8px rgba(45,106,79,0.25)" }}>
+        <button
+          onClick={() => setShowCreate(true)}
+          style={{ padding: "9px 18px", borderRadius: 8, border: "none", background: VET_COLORS.accent, color: "white", cursor: "pointer", fontWeight: 700, fontSize: 13, whiteSpace: "nowrap", boxShadow: "0 2px 8px rgba(45,106,79,0.25)" }}
+        >
           + Nuevo personal
         </button>
       </div>
 
+      {/* Tabla */}
       <div style={{ background: "white", borderRadius: 14, border: `1px solid ${VET_COLORS.border}`, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}>
         {loading ? (
           <div style={{ padding: 48, textAlign: "center", color: VET_COLORS.textMuted }}>Cargando personal...</div>
@@ -320,6 +326,9 @@ function StaffTab({ localities, showToast }) {
           </table>
         )}
       </div>
+      <p style={{ margin: "10px 0 0", fontSize: 11, color: "#94a3b8" }}>
+        💡 Clic en una fila para ver todos los atributos. Eliminar solo borra los datos de personal, no la cuenta de usuario.
+      </p>
     </div>
   );
 }
@@ -332,62 +341,55 @@ export default function UsersManagementPage() {
   const [users,         setUsers]         = useState([]);
   const [localities,    setLocalities]    = useState([]);
   const [loading,       setLoading]       = useState(true);
-  const [search,         setSearch]        = useState("");
+  const [search,        setSearch]        = useState("");
   const [roleFilter,    setRoleFilter]    = useState("");
   const [statusFilter,  setStatusFilter]  = useState("");
   const [orphanFilter,  setOrphanFilter]  = useState(false);
 
   const [editUser,      setEditUser]      = useState(null);
-  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null); // { user }
   const [toast,         setToast]         = useState(null);
 
-  const showToast = useCallback((msg, type = "success") => {
+  const showToast = (msg, type = "success") => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3500);
-  }, []);
+  };
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const params = {};
-      if (search && search.trim() !== "") params.search = search.trim();
-      if (roleFilter) params.idRol = roleFilter;
-      if (statusFilter !== "") params.estado = statusFilter;
-      
-      // Intentamos con /users, si tu backend usa singular podés cambiarlo a /user
+      if (search)              params.search = search;
+      if (roleFilter)          params.idRol  = roleFilter;
+      if (statusFilter !== "") params.estado  = statusFilter;
       const res = await axios.get(api("/users"), { params, headers: auth() });
       setUsers(Array.isArray(res.data) ? res.data : []);
-    } catch (err) { 
-      console.error("Axios user fetch error: ", err);
-      showToast("Error al conectar con el servidor TiDB.", "error"); 
-    } finally { 
-      setLoading(false); 
-    }
-  }, [search, roleFilter, statusFilter, showToast]);
+    } catch { showToast("Error al cargar usuarios.", "error"); }
+    finally { setLoading(false); }
+  }, [search, roleFilter, statusFilter]);
 
   const fetchLocalities = useCallback(async () => {
     try {
       const res = await axios.get(api("/localities"), { headers: auth() });
       setLocalities(Array.isArray(res.data) ? res.data : []);
-    } catch (err) {
-      console.error("Error localites:", err);
-    }
+    } catch {}
   }, []);
 
-  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+  useEffect(() => { fetchUsers(); },     [fetchUsers]);
   useEffect(() => { fetchLocalities(); }, [fetchLocalities]);
 
   const handleDeleteUser = async () => {
     const u = confirmDelete.user;
     try {
       await axios.delete(api(`/user/${u.idUsuario}`), { headers: auth() });
-      showToast("Cuenta de usuario eliminada correctamente.");
+      showToast("Usuario eliminado.");
       fetchUsers();
     } catch (e) {
-      showToast(e?.response?.data?.msg || "No se pudo eliminar el usuario.", "error");
+      showToast(e?.response?.data?.msg || "No se pudo eliminar.", "error");
     } finally { setConfirmDelete(null); }
   };
 
+  // Filtro client-side de huérfanos (usuarios sin Staff ni Client)
   const displayedUsers = orphanFilter
     ? users.filter(u => !u.Staff && !u.Client)
     : users;
@@ -407,6 +409,7 @@ export default function UsersManagementPage() {
     <div style={{ maxWidth: 1200, margin: "0 auto" }}>
       <Toast toast={toast} />
 
+      {/* Confirmación eliminar usuario */}
       {confirmDelete && (
         <ConfirmModal
           title="¿Eliminar cuenta de usuario?"
@@ -417,6 +420,7 @@ export default function UsersManagementPage() {
         />
       )}
 
+      {/* Modal gestión de cuenta */}
       {editUser && (
         <UserAccountModal
           user={editUser}
@@ -440,9 +444,10 @@ export default function UsersManagementPage() {
             )}
           </p>
         </div>
+        {/* Sin botón "Nuevo usuario" — se crean desde Personal o Clientes */}
       </div>
 
-      {/* Stats */}
+      {/* Stats — solo en tab usuarios */}
       {activeTab === "usuarios" && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10, marginBottom: 16 }}>
           {stats.map(s => (
@@ -466,6 +471,7 @@ export default function UsersManagementPage() {
 
       <div style={{ background: "white", border: `1px solid ${VET_COLORS.border}`, borderTop: "none", borderRadius: "0 0 14px 14px", padding: "20px", boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}>
 
+        {/* ── TAB USUARIOS ── */}
         {activeTab === "usuarios" && (
           <>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16, alignItems: "center" }}>
@@ -482,6 +488,7 @@ export default function UsersManagementPage() {
                 <option value="true">Solo activos</option>
                 <option value="false">Solo inactivos</option>
               </select>
+              {/* Filtro huérfanos — funcional */}
               <button
                 onClick={() => setOrphanFilter(p => !p)}
                 style={{
@@ -507,7 +514,7 @@ export default function UsersManagementPage() {
                 </thead>
                 <tbody>
                   {loading ? (
-                    <tr><td colSpan={5} style={{ padding: 48, textAlign: "center", color: VET_COLORS.textMuted }}>Cargando usuarios desde TiDB...</td></tr>
+                    <tr><td colSpan={5} style={{ padding: 48, textAlign: "center", color: VET_COLORS.textMuted }}>Cargando...</td></tr>
                   ) : displayedUsers.length === 0 ? (
                     <tr><td colSpan={5} style={{ padding: 48, textAlign: "center", color: VET_COLORS.textMuted }}>No se encontraron usuarios.</td></tr>
                   ) : displayedUsers.map((u, i) => (
@@ -535,11 +542,12 @@ export default function UsersManagementPage() {
             </div>
 
             <p style={{ margin: "12px 0 0", fontSize: 11, color: "#94a3b8" }}>
-              💡 Las cuentas se crean desde las pestañas <strong>Personal</strong> y <strong>Clientes</strong>. Acá solo gestionás el estado y contraseñas.
+              💡 Las cuentas se crean desde las pestañas <strong>Personal</strong> y <strong>Clientes</strong>. Acá solo gestionás estado y contraseña.
             </p>
           </>
         )}
 
+        {/* ── TAB PERSONAL ── */}
         {activeTab === "personal" && (
           <StaffTab localities={localities} showToast={showToast} />
         )}
