@@ -341,13 +341,14 @@ export default function UsersManagementPage() {
   const [users,         setUsers]         = useState([]);
   const [localities,    setLocalities]    = useState([]);
   const [loading,       setLoading]       = useState(true);
-  const [search,        setSearch]        = useState("");
+  const [loadingLocs,   setLoadingLocs]   = useState(true); // Estado de carga separado para localidades
+  const [search,         setSearch]        = useState("");
   const [roleFilter,    setRoleFilter]    = useState("");
   const [statusFilter,  setStatusFilter]  = useState("");
   const [orphanFilter,  setOrphanFilter]  = useState(false);
 
   const [editUser,      setEditUser]      = useState(null);
-  const [confirmDelete, setConfirmDelete] = useState(null); // { user }
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const [toast,         setToast]         = useState(null);
 
   const showToast = (msg, type = "success") => {
@@ -359,24 +360,49 @@ export default function UsersManagementPage() {
     setLoading(true);
     try {
       const params = {};
-      if (search)              params.search = search;
-      if (roleFilter)          params.idRol  = roleFilter;
-      if (statusFilter !== "") params.estado  = statusFilter;
+      
+      // SOLUCIÓN FILTROS: Solo enviar parámetros si realmente tienen un valor asignado
+      if (search && search.trim() !== "") {
+        params.search = search.trim();
+      }
+      if (roleFilter && roleFilter !== "") {
+        params.idRol = roleFilter;
+      }
+      if (statusFilter !== undefined && statusFilter !== "") {
+        params.estado = statusFilter;
+      }
+
       const res = await axios.get(api("/users"), { params, headers: auth() });
       setUsers(Array.isArray(res.data) ? res.data : []);
-    } catch { showToast("Error al cargar usuarios.", "error"); }
-    finally { setLoading(false); }
+    } catch (error) { 
+      console.error("Error fetching users:", error);
+      showToast("Error al cargar usuarios de la base de datos.", "error"); 
+    } finally { 
+      setLoading(false); // Garantiza que siempre deje de mostrar "Cargando..."
+    }
   }, [search, roleFilter, statusFilter]);
 
   const fetchLocalities = useCallback(async () => {
+    setLoadingLocs(true);
     try {
       const res = await axios.get(api("/localities"), { headers: auth() });
       setLocalities(Array.isArray(res.data) ? res.data : []);
-    } catch {}
+    } catch (error) {
+      console.error("Error fetching localities:", error);
+      // No bloquea la UI principal si falla, solo loguea el error
+    } finally {
+      setLoadingLocs(false);
+    }
   }, []);
 
-  useEffect(() => { fetchUsers(); },     [fetchUsers]);
-  useEffect(() => { fetchLocalities(); }, [fetchLocalities]);
+  // Disparadores controlados de los efectos
+  useEffect(() => { 
+    fetchUsers(); 
+  }, [fetchUsers]);
+
+  useEffect(() => { 
+    fetchLocalities(); 
+  }, [fetchLocalities]);
 
   const handleDeleteUser = async () => {
     const u = confirmDelete.user;
@@ -385,7 +411,7 @@ export default function UsersManagementPage() {
       showToast("Usuario eliminado.");
       fetchUsers();
     } catch (e) {
-      showToast(e?.response?.data?.msg || "No se pudo eliminar.", "error");
+      showToast(e?.response?.data?.msg || "No se pudo eliminar el usuario.", "error");
     } finally { setConfirmDelete(null); }
   };
 
@@ -444,7 +470,6 @@ export default function UsersManagementPage() {
             )}
           </p>
         </div>
-        {/* Sin botón "Nuevo usuario" — se crean desde Personal o Clientes */}
       </div>
 
       {/* Stats — solo en tab usuarios */}
@@ -488,7 +513,6 @@ export default function UsersManagementPage() {
                 <option value="true">Solo activos</option>
                 <option value="false">Solo inactivos</option>
               </select>
-              {/* Filtro huérfanos — funcional */}
               <button
                 onClick={() => setOrphanFilter(p => !p)}
                 style={{
@@ -510,11 +534,12 @@ export default function UsersManagementPage() {
                     {["Usuario", "Persona vinculada", "Rol", "Estado", "Acciones"].map((h, i) => (
                       <th key={h} style={{ padding: "11px 16px", textAlign: i === 4 ? "right" : "left", fontWeight: 700, fontSize: 11, textTransform: "uppercase", color: VET_COLORS.textMuted, letterSpacing: "0.04em", borderBottom: `1px solid ${VET_COLORS.border}` }}>{h}</th>
                     ))}
+                   Amin
                   </tr>
                 </thead>
                 <tbody>
                   {loading ? (
-                    <tr><td colSpan={5} style={{ padding: 48, textAlign: "center", color: VET_COLORS.textMuted }}>Cargando...</td></tr>
+                    <tr><td colSpan={5} style={{ padding: 48, textAlign: "center", color: VET_COLORS.textMuted }}>Cargando usuarios...</td></tr>
                   ) : displayedUsers.length === 0 ? (
                     <tr><td colSpan={5} style={{ padding: 48, textAlign: "center", color: VET_COLORS.textMuted }}>No se encontraron usuarios.</td></tr>
                   ) : displayedUsers.map((u, i) => (
