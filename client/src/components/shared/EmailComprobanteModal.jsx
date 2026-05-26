@@ -1,6 +1,6 @@
 // client/src/components/EmailComprobanteModal.jsx
 import { useState } from 'react';
-import { enviarComprobantePago } from '../services/emailService';
+import { enviarComprobantePago } from '../../services/emailService';
 
 export default function EmailComprobanteModal({ venta, onClose }) {
   const esConsumidorFinal = !venta.Cliente || venta.Cliente?.idCliente === 1;
