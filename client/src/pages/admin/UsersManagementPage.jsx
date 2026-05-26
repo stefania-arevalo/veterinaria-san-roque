@@ -363,6 +363,8 @@ export default function UsersManagementPage() {
       if (roleFilter)          params.idRol  = roleFilter;
       if (statusFilter !== "") params.estado  = statusFilter;
       const res = await axios.get(api("/users"), { params, headers: auth() });
+      console.log("USERS RESPONSE:", res.data);
+
       setUsers(Array.isArray(res.data) ? res.data : []);
     } catch { showToast("Error al cargar usuarios.", "error"); }
     finally { setLoading(false); }
