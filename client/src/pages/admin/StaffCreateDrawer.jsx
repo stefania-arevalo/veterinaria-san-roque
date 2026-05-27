@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "../../api/axios";
 import { VET_COLORS } from "../../layouts/AdminLayout";
-import { createAndLinkUser, linkExistingUser, unlinkUser, authHeaders, apiUrl } from "../../hooks/userLinkHelpers";
+import { createAndLinkUser, linkExistingUser, unlinkUser, authHeaders } from "../../hooks/userLinkHelpers";
 
 export const ROLE_META = {
   1: { label: "Administrador", color: "#6d28d9", bg: "#ede9fe" },
