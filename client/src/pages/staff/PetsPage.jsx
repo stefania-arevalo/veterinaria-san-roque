@@ -453,7 +453,7 @@ export default function PetsPage() {
                     {p.Dueño ? `${p.Dueño.nombres} ${p.Dueño.apellidos}` : "—"}
                   </td>
                   <td style={{ padding: "12px 16px", fontSize: 13, color: C.muted }}>
-                    {p.Breed?.Species?.nombre || p.Raza?.Species?.nombre || "—"}
+                  {p.Breed?.Especie?.nombre || p.Raza?.Especie?.nombre || p.Breed?.Species?.nombre || p.Raza?.Species?.nombre || "—"}
                   </td>
                   <td style={{ padding: "12px 16px", fontSize: 13, color: C.muted }}>
                     {p.Breed?.nombre || p.Raza?.descripcion || p.Raza?.nombre || "—"}

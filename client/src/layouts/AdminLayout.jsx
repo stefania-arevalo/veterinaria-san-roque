@@ -21,7 +21,6 @@ export const VET_COLORS = {
 
 const token  = () => localStorage.getItem("accessToken");
 const auth   = () => ({ Authorization: `Bearer ${token()}` });
-const apiUrl = (path) => `/api/v1${path}`;
 
 const ROLE_META = {
   1: { label: "Administrador", color: "#6d28d9", bg: "#ede9fe" },
@@ -147,9 +146,16 @@ function ProfileDrawer({ user, username, onClose }) {
     setLoading(true);
     setError("");
     try {
-      const res = await axios.get(apiUrl("/staffs"), { headers: auth() });
+      const res = await axios.get("/staffs", { headers: auth() });
       const list = Array.isArray(res.data) ? res.data : [];
-      const mine = list.find(s => s.idUsuario === user?.user_id || s.User?.idUsuario === user?.user_id);
+      const mine = list.find(s => 
+        s.idUsuario === user?.user_id || 
+        s.idUsuario === user?.idUsuario || 
+        s.User?.idUsuario === user?.user_id || 
+        s.User?.idUsuario === user?.idUsuario ||
+        s.idPersonal === user?.idPersonal || // Agregamos este por si cruza por Personal clínico
+        s.User?.idPersonal === user?.idPersonal
+      );
       setProfile(mine || null);
     } catch {
       setError("No se pudo cargar el perfil.");
@@ -167,7 +173,7 @@ function ProfileDrawer({ user, username, onClose }) {
 
     setSavingPw(true);
     try {
-      await axios.patch(apiUrl(`/user/${user?.user_id}`), { contraseña: pwNueva }, { headers: auth() });
+      await axios.patch(`/user/${user?.user_id}`, { contraseña: pwNueva }, { headers: auth() });
       setPwSuccess("Contraseña actualizada correctamente.");
       setPwNueva(""); setPwConfirm("");
     } catch (err) {
