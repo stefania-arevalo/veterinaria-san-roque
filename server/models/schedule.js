@@ -1,5 +1,6 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../db");
+const VetSchedule = require("./vetSchedule");
 
 const Schedule = sequelize.define("Schedule", {
     idHorario: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
@@ -45,5 +46,7 @@ const Schedule = sequelize.define("Schedule", {
         }
     }
 });
+
+Schedule.belongsTo(VetSchedule, { foreignKey: "idHorario" });
 
 module.exports = Schedule;

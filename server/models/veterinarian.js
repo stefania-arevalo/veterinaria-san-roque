@@ -2,6 +2,7 @@ const { DataTypes } = require("sequelize");
 const sequelize = require("../db");
 const Staff = require("./staff");
 const ProfessionalCard = require("./professionalCard");
+const VetSchedule = require("./vetSchedule");
 
 const Veterinarian = sequelize.define("Veterinarian", {
     idPersonal: { 
@@ -41,5 +42,5 @@ const Veterinarian = sequelize.define("Veterinarian", {
 
 Veterinarian.belongsTo(Staff, { foreignKey: "idPersonal" });
 Veterinarian.belongsTo(ProfessionalCard, { foreignKey: "idMatricula" });
-
+Veterinarian.belongsTo(VetSchedule, { foreignKey: "idHorario" });
 module.exports = Veterinarian;
