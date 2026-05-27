@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { createAndLinkUser, linkExistingUser, unlinkUser, authHeaders, apiUrl } from "../../hooks/userLinkHelpers";
+import { createAndLinkUser, linkExistingUser, unlinkUser, authHeaders } from "../../hooks/userLinkHelpers";
 
 const token = () => localStorage.getItem("accessToken");
 const headers = () => ({ Authorization: `Bearer ${token()}` });
