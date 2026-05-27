@@ -2,12 +2,11 @@ import axios from "../api/axios";
  
 const token = () => localStorage.getItem("accessToken");
 export const authHeaders = () => ({ Authorization: `Bearer ${token()}` });
-const apiUrl = (path) => `/api/v1${path}`;
  
 // ── Endpoints por entidad ────────────────────────────────────────────────────
 const entityEndpoint = (entityType, entityId) => {
-  if (entityType === "staff")  return apiUrl(`/staff/${entityId}`);
-  if (entityType === "client") return apiUrl(`/client/${entityId}`);
+  if (entityType === "staff")  return `/staff/${entityId}`;
+  if (entityType === "client") return `/client/${entityId}`;
   throw new Error(`entityType desconocido: ${entityType}`);
 };
  
@@ -16,7 +15,7 @@ const entityEndpoint = (entityType, entityId) => {
 export async function createAndLinkUser({ usuario, contraseña, idRol, entityType, entityId }) {
   // 1. Crear el usuario
   const uRes = await axios.post(
-    apiUrl("/user"),
+    "/user",
     {
       usuario:    usuario.trim().toLowerCase(),
       contraseña,
