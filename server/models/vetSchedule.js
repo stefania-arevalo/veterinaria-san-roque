@@ -1,8 +1,5 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../db");
-const Veterinarian = require("./veterinarian");
-const Staff = require("./staff"); 
-const Schedule = require("./schedule");
 
 const VetSchedule = sequelize.define("VetSchedule", {
     idVeterinario: { 
@@ -17,17 +14,24 @@ const VetSchedule = sequelize.define("VetSchedule", {
         allowNull: false,
         validate: { isInt: { msg: "El ID del horario debe ser un número entero" } }
     }
-}, { tableName: "HORARIO_VETERINARIO", timestamps: false });
-
-// RELACIÓN VETSCOPE -> VETERINARIAN
-// foreignKey: el campo en ESTA tabla (VetSchedule)
-// targetKey: el campo en la tabla DESTINO (Veterinarian)
-VetSchedule.belongsTo(Veterinarian, { 
-    foreignKey: 'idVeterinario', 
-    targetKey: 'idPersonal' 
+}, { 
+    tableName: "HORARIO_VETERINARIO", 
+    timestamps: false 
 });
 
-Veterinarian.belongsTo(Staff, { foreignKey: "idPersonal" });
-VetSchedule.belongsTo(Schedule, { foreignKey: "idHorario" });
+
+VetSchedule.associate = (models) => {
+    
+    // RELACIÓN VET_SCHEDULE -> VETERINARIAN
+    VetSchedule.belongsTo(models.Veterinarian, { 
+        foreignKey: 'idVeterinario', 
+        targetKey: 'idPersonal' 
+    });
+
+    // RELACIÓN VET_SCHEDULE -> SCHEDULE
+    VetSchedule.belongsTo(models.Schedule, { 
+        foreignKey: "idHorario" 
+    });
+};
 
 module.exports = VetSchedule;

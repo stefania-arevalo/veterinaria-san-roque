@@ -1,8 +1,5 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../db");
-const Locality = require("./locality");
-const User = require("./user");
-const Salary = require("./salary");
 
 const Staff = sequelize.define("Staff", {
     idPersonal: {
@@ -59,39 +56,29 @@ const Staff = sequelize.define("Staff", {
         validate: { isEmail: { msg: "El formato del correo electrónico no es válido." } }
     },
     idLocalidad: {
-        type: DataTypes.INTEGER,
-        references: { model: Locality, key: 'idLocalidad' }
+        type: DataTypes.INTEGER
     },
     idUsuario: {
         type: DataTypes.INTEGER,
-        unique: {
-            msg: "Este usuario ya está vinculado a otro miembro del personal."
-        },
-        references: { 
-            model: User, 
-            key: 'idUsuario' 
-        }
+        unique: { msg: "Este usuario ya está vinculado a otro miembro del personal." }
     },
     idSalario: {
-        type: DataTypes.INTEGER,
-        references: { model: Salary, key: 'idSalario' }
+        type: DataTypes.INTEGER
     }
 }, {
     tableName: "PERSONAL",
     timestamps: false
 });
 
+// Usamos el objeto "models" inyectado para evitar require locales cruzados
 Staff.associate = (models) => {
-    const Veterinarian = require("./veterinarian");
-    const Assistant = require("./assistant");
-    const Admin = require("./admin");
-    const Seller = require("./seller");
-    
-    Staff.hasOne(Veterinarian, { foreignKey: "idPersonal" });
-    Staff.hasOne(Assistant, { foreignKey: "idPersonal" });
-    Staff.hasOne(Admin, { foreignKey: "idPersonal" });
-    Staff.hasOne(Seller, { foreignKey: "idPersonal" });
+    // Subclases (Roles de personal)
+    Staff.hasOne(models.Veterinarian, { foreignKey: "idPersonal" });
+    Staff.hasOne(models.Assistant, { foreignKey: "idPersonal" });
+    Staff.hasOne(models.Admin, { foreignKey: "idPersonal" });
+    Staff.hasOne(models.Seller, { foreignKey: "idPersonal" });
 
+    // Tablas maestras / Relaciones directas
     Staff.belongsTo(models.Locality, { foreignKey: "idLocalidad" });
     Staff.belongsTo(models.User, { foreignKey: "idUsuario" });
     Staff.belongsTo(models.Salary, { foreignKey: "idSalario" });

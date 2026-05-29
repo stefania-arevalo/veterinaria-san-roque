@@ -1,18 +1,15 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../db");
-const Staff = require("./staff");
-const ProfessionalCard = require("./professionalCard");
-const VetSchedule = require("./vetSchedule");
 
 const Veterinarian = sequelize.define("Veterinarian", {
     idPersonal: { 
         type: DataTypes.INTEGER, 
         primaryKey: true, 
-        references: { model: Staff, key: 'idPersonal' },
+        allowNull: false,
         validate: {
-            notEmpty: { msg: "El ID de personal es obligatorio." }
-        },
-        isInt: { msg: "El ID de personal debe ser un número entero." }
+            notEmpty: { msg: "El ID de personal es obligatorio." },
+            isInt: { msg: "El ID de personal debe ser un número entero." }
+        }
     },
     especialidad: { 
         type: DataTypes.STRING(100), 
@@ -25,8 +22,7 @@ const Veterinarian = sequelize.define("Veterinarian", {
     idMatricula: { 
         type: DataTypes.INTEGER, 
         unique: { msg: "Esta matrícula ya está asignada a otro veterinario." }, 
-        allowNull: false, 
-        references: { model: ProfessionalCard, key: 'idMatricula' } 
+        allowNull: false
     }
 }, {
     tableName: "VETERINARIOS",
@@ -40,7 +36,16 @@ const Veterinarian = sequelize.define("Veterinarian", {
     }
 });
 
-Veterinarian.belongsTo(Staff, { foreignKey: "idPersonal" });
-Veterinarian.belongsTo(ProfessionalCard, { foreignKey: "idMatricula" });
-Veterinarian.belongsTo(VetSchedule, { foreignKey: "idHorario" });
+
+Veterinarian.associate = (models) => {
+    // Relación de herencia/identidad con Personal
+    Veterinarian.belongsTo(models.Staff, { foreignKey: "idPersonal" });
+    
+    // Relación con su Matrícula Profesional
+    Veterinarian.belongsTo(models.ProfessionalCard, { foreignKey: "idMatricula" });
+    
+    // Relación con la tabla intermedia de horarios
+    Veterinarian.hasMany(models.VetSchedule, { foreignKey: "idVeterinario" });
+};
+
 module.exports = Veterinarian;
