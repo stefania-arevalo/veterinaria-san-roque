@@ -54,48 +54,63 @@ const ESTADO_TRANSITIONS = {
 
 // ── COMPONENTE AGENDA VISUAL ──────────────────────────────────────────
 const AgendaVisual = ({ staff, appointments, fechaSeleccionada, onEditCita }) => {
-  const [horariosPorVet, setHorariosPorVet] = useState({});
-  const [vetSeleccionado, setVetSeleccionado] = useState(null);
+  const [horarios, setHorarios] = useState([]);
+  const [horariosVet, setHorariosVet] = useState({});
+  const cancelRef = useRef(false);
 
-  // Determinar qué día de la semana es la fecha seleccionada
-  const getDiaSemana = (fechaISO) => {
-    if (!fechaISO) return null;
-    const [y, m, d] = fechaISO.split('-').map(Number);
-    const dias = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
-    return dias[new Date(y, m - 1, d).getDay()];
-  };
+  const personalVisible = useMemo(() => staff.slice(0, 4), [staff]);
 
-  const diaNombre = getDiaSemana(fechaSeleccionada);
 
-  // Cargar horarios de TODOS los veterinarios desde /vetschedules
-  // y quedarnos solo con los del día seleccionado
   useEffect(() => {
     if (!fechaSeleccionada) return;
+    cancelRef.current = false;   // nueva fecha → fetch válido
 
-    axios.get('/vetschedules', { headers: headers() })
-      .then(res => {
-        const todos = res.data || [];
-        // Agrupar por idVeterinario, filtrando por día
-        const agrupado = {};
-        todos.forEach(vs => {
-          const diaHorario = vs.Schedule?.diaSemana;
-          if (!diaNombre || diaHorario?.toLowerCase() !== diaNombre?.toLowerCase()) return;
-          const idVet = vs.idVeterinario;
-          if (!agrupado[idVet]) agrupado[idVet] = [];
-          agrupado[idVet].push(vs.Schedule);
-        });
-        setHorariosPorVet(agrupado);
-      })
-      .catch(() => setHorariosPorVet({}));
-  }, [fechaSeleccionada, diaNombre]);
+    const partes   = fechaSeleccionada.split('-');
+    const fecha    = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+    const dias     = ['Domingo','Lunes','Martes','Miercoles','Jueves','Viernes','Sabado'];
+    const diaSemana = dias[fecha.getDay()];
 
-  // Seleccionar el primer veterinario disponible por defecto
-  useEffect(() => {
-    const vetsConHorario = Object.keys(horariosPorVet);
-    if (vetsConHorario.length > 0 && !vetSeleccionado) {
-      setVetSeleccionado(Number(vetsConHorario[0]));
-    }
-  }, [horariosPorVet]);
+    // --- FALLBACK en caso de que el backend no tenga horarios ---
+    const fallbackClinica = (dia) => {
+      if (dia === 'Sabado')
+        return [{ horaInicio: '10:00', horaFin: '12:00', turno: 'Mañana' }];
+      if (['Lunes','Martes','Miercoles','Jueves','Viernes'].includes(dia))
+        return [
+          { horaInicio: '09:00', horaFin: '12:30', turno: 'Mañana' },
+          { horaInicio: '17:30', horaFin: '21:00', turno: 'Tarde'  },
+        ];
+      return [];
+    };
+
+    // Un solo Promise.all para el horario de la clínica + el de cada persona.
+    // Así todos los datos llegan juntos y no hay parpadeo.
+    Promise.all([
+      // Horario general de la clínica
+      axios.get(`/schedules?diaSemana=${encodeURIComponent(diaSemana)}`, { headers: headers() })
+        .then(r => r.data || [])
+        .catch(() => fallbackClinica(diaSemana)),
+
+      // Horario individual de cada persona visible
+      // Si el backend no tiene tabla para ese personal, devuelve [] → el
+      // componente usa el horario de la clínica como fallback automático.
+      ...personalVisible.map(persona =>
+        axios.get(
+          `/schedules?diaSemana=${encodeURIComponent(diaSemana)}&idPersonal=${persona.idPersonal}`,
+          { headers: headers() }
+        )
+          .then(r => ({ idPersonal: persona.idPersonal, horarios: r.data || [] }))
+          .catch(() => ({ idPersonal: persona.idPersonal, horarios: [] }))
+      ),
+    ]).then(([horariosClinica, ...vetResults]) => {
+      if (cancelRef.current) return;   // llegó un fetch de una fecha anterior — descartamos
+      setHorarios(horariosClinica);
+      const map = {};
+      vetResults.forEach(r => { map[r.idPersonal] = r.horarios; });
+      setHorariosVet(map);
+    });
+
+    return () => { cancelRef.current = true; };   // cleanup: si cambia la fecha antes de responder
+  }, [fechaSeleccionada, personalVisible]);
 
   const toMins = (t) => {
     if (!t) return 0;
@@ -109,37 +124,38 @@ const AgendaVisual = ({ staff, appointments, fechaSeleccionada, onEditCita }) =>
   };
 
   const SLOT = 30;
-
-  // Horarios del veterinario seleccionado para este día
-  const horariosVetActual = vetSeleccionado
-    ? (horariosPorVet[vetSeleccionado] || [])
-    : [];
-
-  const rangoInicio = horariosVetActual.length > 0
-    ? Math.min(...horariosVetActual.map(h => toMins(h.horaInicio)))
+  const rangoInicio = horarios.length > 0
+    ? Math.min(...horarios.map(h => toMins(h.horaInicio)))
     : toMins('09:00');
-  const rangoFin = horariosVetActual.length > 0
-    ? Math.max(...horariosVetActual.map(h => toMins(h.horaFin)))
+  const rangoFin = horarios.length > 0
+    ? Math.max(...horarios.map(h => toMins(h.horaFin)))
     : toMins('21:00');
 
   const slots = [];
   for (let m = rangoInicio; m < rangoFin; m += SLOT) slots.push(m);
 
   const esAbierto = (slotMins) =>
-    horariosVetActual.some(h =>
-      slotMins >= toMins(h.horaInicio) && slotMins < toMins(h.horaFin)
-    );
+    horarios.some(h => slotMins >= toMins(h.horaInicio) && slotMins < toMins(h.horaFin));
 
-  const getCitasEnSlot = (idPersonal, slotMins) => {
+  const esAbiertoParaPersona = (slotMins, idPersonal) => {
+    const horariosPersona = horariosVet[idPersonal];
+    if (!horariosPersona || horariosPersona.length === 0) {
+      // Sin tabla propia → usamos horario general de la clínica
+      return esAbierto(slotMins);
+    }
+    return horariosPersona.some(h => slotMins >= toMins(h.horaInicio) && slotMins < toMins(h.horaFin));
+  };
+
+  const getCitasEnSlot = (persona, slotMins) => {
     const resultado = [];
     appointments
       .filter(app => app.fecha === fechaSeleccionada)
       .forEach(app => {
         const appMins = toMins(app.hora);
         if (appMins !== slotMins) return;
-        const esVetDeCita = Number(app.idVeterinario) === Number(idPersonal);
+        const esVetDeCita = Number(app.idVeterinario) === Number(persona.idPersonal);
         const misServicios = (app.detalles || []).filter(
-          d => Number(d.idPersonalRealiza) === Number(idPersonal)
+          d => Number(d.idPersonalRealiza) === Number(persona.idPersonal)
         );
         if (esVetDeCita || misServicios.length > 0) {
           resultado.push({ app, misServicios });
@@ -148,276 +164,233 @@ const AgendaVisual = ({ staff, appointments, fechaSeleccionada, onEditCita }) =>
     return resultado;
   };
 
-  // Colores de tipo de cita — mantenidos igual
   const TIPO_COLOR = {
-    1: { border: '#276b42', bg: '#eaf3de', tagBg: '#c0dd97', tagColor: '#1a3d28', label: 'Control'    },
-    2: { border: '#a32d2d', bg: '#fcebeb', tagBg: '#f7c1c1', tagColor: '#791F1F', label: 'Emergencia' },
-    3: { border: '#276b42', bg: '#f8fbf9', tagBg: '#d1ddd4', tagColor: '#1a3d28', label: 'General'    },
+    1: { border: '#378ADD', bg: '#E6F1FB', tagBg: '#B5D4F4', tagColor: '#0C447C', label: 'Control'    },
+    2: { border: '#E24B4A', bg: '#FCEBEB', tagBg: '#F7C1C1', tagColor: '#791F1F', label: 'Emergencia' },
+    3: { border: '#639922', bg: '#EAF3DE', tagBg: '#C0DD97', tagColor: '#3B6D11', label: 'General'    },
   };
 
-  // Personal filtrado: solo el vet seleccionado en la columna principal,
-  // pero mostramos todos los que trabajan ese día como tabs de selección
-  const vetsConHorarioHoy = staff.filter(p =>
-    horariosPorVet[p.idPersonal] !== undefined
-  );
-
-  const personaActual = staff.find(p => Number(p.idPersonal) === Number(vetSeleccionado));
-
+  const AVATAR_COLOR = {
+    1: { bg: '#E6F1FB', color: '#0C447C' },
+    2: { bg: '#EAF3DE', color: '#3B6D11' },
+    3: { bg: '#FAEEDA', color: '#854F0B' },
+    4: { bg: '#EEEDFE', color: '#3C3489' },
+  };
+  const getAvatarColor = (p) => {
+    const rol = p.User?.Role?.idRol ?? p.User?.idRol ?? 99;
+    return AVATAR_COLOR[rol] || { bg: '#F1EFE8', color: '#5F5E5A' };
+  };
   const getNombre = (p) =>
     `${p.nombres || p.Staff?.nombres || '?'} ${p.apellidos || p.Staff?.apellidos || ''}`.trim();
   const getInicial = (p) => (p.nombres || p.Staff?.nombres || '?')[0].toUpperCase();
+  const getRol    = (p) => p.User?.Role?.descripcion || '—';
 
-  const citasDelDia = appointments.filter(a =>
-    a.fecha === fechaSeleccionada &&
-    Number(a.idVeterinario) === Number(vetSeleccionado)
-  ).length;
+  const gridCols = `56px repeat(${personalVisible.length}, minmax(0, 1fr))`;
 
-  const sinHorarios = vetsConHorarioHoy.length === 0;
-  const cerrado = horariosVetActual.length === 0 && !sinHorarios;
+  const partes = fechaSeleccionada ? fechaSeleccionada.split('-') : [];
+  const diasSemana = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const diaNombre = partes.length === 3
+    ? diasSemana[new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2])).getDay()]
+    : '';
+
+  const cerrado = horarios.length === 0;
+  const totalCitasDia = appointments.filter(a => a.fecha === fechaSeleccionada).length;
 
   return (
     <>
-      {/* ── Selector de veterinario ── */}
-      <div style={{
-        marginBottom: 14,
-        padding: '12px 16px',
-        background: '#f8fbf9',
-        borderRadius: 12,
-        border: '1px solid #d1ddd4',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        flexWrap: 'wrap',
-      }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: '#6b8f76', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-          Ver agenda de:
-        </span>
-        {sinHorarios ? (
-          <span style={{ fontSize: 13, color: '#6b8f76', fontStyle: 'italic' }}>
-            Ningún veterinario tiene horario asignado para este día ({diaNombre})
-          </span>
-        ) : (
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {vetsConHorarioHoy.map(p => {
-              const activo = Number(p.idPersonal) === Number(vetSeleccionado);
-              return (
-                <button
-                  key={p.idPersonal}
-                  onClick={() => setVetSeleccionado(Number(p.idPersonal))}
-                  style={{
-                    padding: '6px 14px',
-                    borderRadius: 20,
-                    border: `1.5px solid ${activo ? '#276b42' : '#d1ddd4'}`,
-                    background: activo ? '#276b42' : 'white',
-                    color: activo ? 'white' : '#1a3d28',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s',
-                  }}
-                >
-                  {getInicial(p)} {getNombre(p).split(' ')[0]}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Resumen del día para el vet seleccionado */}
-        {personaActual && (
-          <div style={{ marginLeft: 'auto', fontSize: 12, color: '#6b8f76', fontWeight: 600 }}>
-            {diaNombre} · {citasDelDia} cita{citasDelDia !== 1 ? 's' : ''} ·{' '}
-            {horariosVetActual.length > 0
-              ? horariosVetActual.map(h =>
-                  `${h.turno || ''} ${h.horaInicio?.substring(0, 5)}–${h.horaFin?.substring(0, 5)}`
-                ).join(' / ')
-              : 'Sin horario hoy'}
-          </div>
-        )}
-      </div>
-
-      {/* ── Leyenda de tipos ── */}
-      <div style={{ display: 'flex', gap: 14, marginBottom: 12, flexWrap: 'wrap' }}>
-        {Object.entries(TIPO_COLOR).map(([k, v]) => (
-          <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#6b8f76' }}>
-            <div style={{ width: 10, height: 10, borderRadius: 2, background: v.border }} />
-            {v.label}
-          </div>
-        ))}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#6b8f76' }}>
-          <div style={{ width: 10, height: 10, borderRadius: 2, background: '#e8eee9' }} />
-          Fuera de horario
-        </div>
-      </div>
-
-      {sinHorarios ? (
-        <div style={{
-          background: '#f8fbf9', border: '1.5px solid #d1ddd4', borderRadius: 14,
-          padding: '48px 24px', textAlign: 'center', color: '#6b8f76',
-        }}>
-          <div style={{ fontSize: 32, marginBottom: 8 }}>📅</div>
-          <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4, color: '#1a3d28' }}>Sin horarios asignados</div>
-          <div style={{ fontSize: 13 }}>
-            Ningún veterinario tiene turnos configurados para el {diaNombre}.
-            <br />Revisá la configuración de horarios en el módulo de administración.
-          </div>
-        </div>
-      ) : cerrado ? (
-        <div style={{
-          background: '#f8fbf9', border: '1.5px solid #d1ddd4', borderRadius: 14,
-          padding: '48px 24px', textAlign: 'center', color: '#6b8f76',
-        }}>
-          <div style={{ fontSize: 32, marginBottom: 8 }}>🔒</div>
-          <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4, color: '#1a3d28' }}>
-            {personaActual ? `${getNombre(personaActual)} no trabaja este día` : 'Sin horario'}
-          </div>
-          <div style={{ fontSize: 13 }}>No hay turnos asignados para este veterinario el {diaNombre}.</div>
-        </div>
-      ) : !personaActual ? null : (
-        <div style={{ border: '1.5px solid #d1ddd4', borderRadius: 14, overflow: 'hidden' }}>
-          <div style={{ overflowY: 'auto', maxHeight: '70vh' }}>
-            {/* Header del veterinario */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '56px 1fr',
-              background: '#f8fbf9',
-              borderBottom: '1.5px solid #d1ddd4',
-              position: 'sticky', top: 0, zIndex: 10,
-            }}>
-              <div style={{ borderRight: '1px solid #d1ddd4', minWidth: 56 }} />
-              <div style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{
-                  width: 36, height: 36, borderRadius: '50%',
-                  background: '#eaf3de', color: '#276b42',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 15, fontWeight: 700,
-                }}>
-                  {getInicial(personaActual)}
-                </div>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#1a3d28' }}>
-                    Dr/a. {getNombre(personaActual)}
-                  </div>
-                  <div style={{ fontSize: 11, color: '#6b8f76' }}>
-                    {horariosVetActual.map(h =>
-                      `${h.turno}: ${h.horaInicio?.substring(0, 5)} – ${h.horaFin?.substring(0, 5)}`
-                    ).join('  ·  ')}
-                  </div>
-                </div>
-              </div>
+      {/* ── Leyenda y resumen ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          {Object.entries(TIPO_COLOR).map(([k, v]) => (
+            <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#64748b' }}>
+              <div style={{ width: 10, height: 10, borderRadius: 2, background: v.border }} />
+              {v.label}
             </div>
+          ))}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#64748b' }}>
+            <div style={{ width: 10, height: 10, borderRadius: 2, background: '#e2e8f0' }} />
+            Clínica cerrada
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#64748b' }}>
+            <div style={{ width: 10, height: 10, borderRadius: 2, background: '#f0fdf4', border: '1.5px solid #16a34a' }} />
+            Fuera del horario del profesional
+          </div>
+        </div>
+        <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>
+          {diaNombre} · {totalCitasDia} cita{totalCitasDia !== 1 ? 's' : ''} ·{' '}
+          {horarios.length > 0
+            ? horarios.map(h => `${h.turno || ''} ${h.horaInicio?.substring(0,5)}–${h.horaFin?.substring(0,5)}`).join(' / ')
+            : 'Sin horario'}
+        </div>
+      </div>
 
-            {/* Filas de slots */}
-            {slots.map((slotMins) => {
-              const abierto = esAbierto(slotMins);
-              const horaStr = toHHMM(slotMins);
-              const citasSlot = abierto
-                ? getCitasEnSlot(personaActual.idPersonal, slotMins)
-                : [];
 
-              return (
-                <div key={slotMins} style={{ display: 'grid', gridTemplateColumns: '56px 1fr' }}>
-                  {/* Hora */}
-                  <div style={{
-                    borderTop: '1px solid #e8eee9',
-                    borderRight: '1px solid #d1ddd4',
-                    background: abierto ? 'white' : '#f8fbf9',
-                    padding: '6px 4px 0',
-                    textAlign: 'right',
-                    fontSize: 10, fontWeight: 600,
-                    color: abierto ? '#6b8f76' : '#d1ddd4',
-                    minHeight: 48,
+      {cerrado ? (
+        <div style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', borderRadius: 14, padding: '48px 24px', textAlign: 'center', color: '#94a3b8' }}>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>🔒</div>
+          <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Clínica cerrada</div>
+          <div style={{ fontSize: 13 }}>No hay atención programada para este día.</div>
+        </div>
+      ) : (
+        <div style={{ border: '1.5px solid #e2e8f0', borderRadius: 14, overflow: 'hidden' }}>
+          <div style={{ overflowY: 'auto', maxHeight: '70vh', position: 'relative' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: gridCols, minWidth: 0 }}>
+
+              {/* Headers sticky */}
+              <div style={{
+                position: 'sticky', top: 0, zIndex: 10,
+                background: '#f8fafc', borderBottom: '1.5px solid #e2e8f0',
+                borderRight: '1px solid #e2e8f0', padding: '10px 4px', minWidth: 56,
+              }} />
+
+              {personalVisible.map((persona, i) => {
+                const av = getAvatarColor(persona);
+                const tieneHorarioPropio = (horariosVet[persona.idPersonal] || []).length > 0;
+                return (
+                  <div key={persona.idPersonal} style={{
+                    position: 'sticky', top: 0, zIndex: 10,
+                    background: '#f8fafc',
+                    borderBottom: '1.5px solid #e2e8f0',
+                    borderRight: i < personalVisible.length - 1 ? '1px solid #e2e8f0' : 'none',
+                    padding: '10px 8px', textAlign: 'center',
                   }}>
-                    {horaStr}
+                    <div style={{
+                      width: 32, height: 32, borderRadius: '50%',
+                      background: av.bg, color: av.color,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 13, fontWeight: 600, margin: '0 auto 5px',
+                    }}>
+                      {getInicial(persona)}
+                    </div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#166534', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {getNombre(persona).split(' ')[0]} {getNombre(persona).split(' ')[1] || ''}
+                    </div>
+                    <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 1 }}>{getRol(persona)}</div>
+                    {/* Indicador de si usa horario propio o de la clínica */}
+                    <div style={{
+                      fontSize: 9, marginTop: 3, fontWeight: 600,
+                      color: tieneHorarioPropio ? '#166534' : '#94a3b8',
+                    }}>
+                      {tieneHorarioPropio ? '🗓 horario propio' : '🏥 horario clínica'}
+                    </div>
                   </div>
+                );
+              })}
 
-                  {/* Celda de citas */}
-                  <div style={{
-                    borderTop: '1px solid #e8eee9',
-                    background: abierto ? 'white' : '#f8fbf9',
-                    padding: abierto ? '4px 8px' : '0',
-                    minHeight: 48,
-                    position: 'relative',
-                  }}>
-                    {!abierto && (
-                      <div style={{
-                        position: 'absolute', top: '50%', left: 8,
-                        transform: 'translateY(-50%)',
-                        fontSize: 9, color: '#d1ddd4', fontWeight: 600,
-                      }}>
-                        fuera de horario
-                      </div>
-                    )}
+              {/* Filas de slots */}
+              {slots.map((slotMins) => {
+                const abiertoClinica = esAbierto(slotMins);
+                const horaStr  = toHHMM(slotMins);
+                const esCierre = !abiertoClinica && slotMins > rangoInicio && slotMins < rangoFin;
 
-                    {abierto && citasSlot.length === 0 && (
-                      <div style={{
-                        height: '100%', minHeight: 40,
-                        border: '1px dashed #e8eee9',
-                        borderRadius: 6,
-                      }} />
-                    )}
+                return (
+                  <React.Fragment key={slotMins}>
+                    {/* Celda hora */}
+                    <div style={{
+                      borderTop: '1px solid #f1f5f9',
+                      borderRight: '1px solid #e2e8f0',
+                      background: abiertoClinica ? 'white' : '#f8fafc',
+                      padding: '6px 4px 0',
+                      textAlign: 'right',
+                      fontSize: 10, fontWeight: 600,
+                      color: abiertoClinica ? '#64748b' : '#cbd5e1',
+                      minHeight: 48,
+                    }}>
+                      {horaStr}
+                    </div>
 
-                    {abierto && citasSlot.map(({ app, misServicios }) => {
-                      const cancelada = app.idEstadoCita === 3;
-                      const tc = TIPO_COLOR[app.idTipoCita] || TIPO_COLOR[3];
-                      const est = CITA_ESTADOS[app.idEstadoCita] || CITA_ESTADOS[1];
+                    {/* Celdas de personal */}
+                    {personalVisible.map((persona, i) => {
+                      // La clínica define si el slot existe; el vet define si está disponible
+                      const abiertoPersona = abiertoClinica && esAbiertoParaPersona(slotMins, persona.idPersonal);
+                      const fueraDeHorarioPersonal = abiertoClinica && !abiertoPersona;
+                      const citasSlot = abiertoPersona ? getCitasEnSlot(persona, slotMins) : [];
 
                       return (
-                        <div
-                          key={app.idCita}
-                          onClick={() => onEditCita(app)}
-                          style={{
-                            background: cancelada ? '#f8fbf9' : tc.bg,
-                            borderLeft: `3px solid ${cancelada ? '#a32d2d' : tc.border}`,
-                            borderRadius: 7, padding: '6px 8px', marginBottom: 4,
-                            cursor: 'pointer',
-                            opacity: cancelada ? 0.55 : 1,
-                            fontSize: 12,
-                            boxShadow: '0 1px 4px rgba(26,61,40,0.08)',
-                            transition: 'box-shadow 0.15s',
-                          }}
-                          onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(26,61,40,0.15)'}
-                          onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 4px rgba(26,61,40,0.08)'}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
-                            <div style={{ fontWeight: 700, color: '#1a3d28', lineHeight: 1.3 }}>
-                              🐾 {app.Mascota?.nombre || '—'}
-                            </div>
-                            <span style={{
-                              background: cancelada ? '#fcebeb' : est.bg,
-                              color: cancelada ? '#a32d2d' : est.color,
-                              fontSize: 9, fontWeight: 700,
-                              padding: '1px 6px', borderRadius: 4, marginLeft: 4, whiteSpace: 'nowrap',
+                        <div key={`${slotMins}-${persona.idPersonal}`} style={{
+                          borderTop: '1px solid #f1f5f9',
+                          borderRight: i < personalVisible.length - 1 ? '1px solid #eff3f8' : 'none',
+                          // Verde muy suave si la clínica está abierta pero el vet no trabaja en ese slot
+                          background: fueraDeHorarioPersonal ? '#f0fdf4' : abiertoClinica ? 'white' : '#f8fafc',
+                          padding: abiertoClinica ? '4px' : '0',
+                          minHeight: 48,
+                          position: 'relative',
+                        }}>
+                          {!abiertoClinica && esCierre && i === 0 && (
+                            <div style={{
+                              position: 'absolute', top: '50%', left: 4,
+                              transform: 'translateY(-50%)',
+                              fontSize: 9, color: '#cbd5e1', fontWeight: 600, whiteSpace: 'nowrap',
                             }}>
-                              {cancelada ? '🚫 ANULADA' : est.label}
-                            </span>
-                          </div>
-
-                          {misServicios.length > 0 ? (
-                            misServicios.map(d => (
-                              <div key={d.idDetalle} style={{ color: '#6b8f76', fontSize: 10, lineHeight: 1.3 }}>
-                                {d.PrecioServicio?.Service?.descripcion || `Serv. #${d.idDetalle}`}
-                              </div>
-                            ))
-                          ) : (
-                            <div style={{ color: '#6b8f76', fontSize: 10, fontStyle: 'italic' }}>Responsable</div>
+                              sin atención
+                            </div>
                           )}
-
-                          <span style={{
-                            display: 'inline-block', marginTop: 3,
-                            background: tc.tagBg, color: tc.tagColor,
-                            fontSize: 9, fontWeight: 700,
-                            padding: '1px 6px', borderRadius: 4,
-                          }}>
-                            {app.TipoCita?.descripcion || tc.label}
-                          </span>
+                          {fueraDeHorarioPersonal && (
+                            <div style={{
+                              position: 'absolute', top: '50%', left: '50%',
+                              transform: 'translate(-50%,-50%)',
+                              fontSize: 9, color: '#86efac', fontWeight: 600, whiteSpace: 'nowrap',
+                            }}>
+                              —
+                            </div>
+                          )}
+                          {abiertoPersona && citasSlot.map(({ app, misServicios }) => {
+                            const cancelada = app.idEstadoCita === 3;
+                            const tc  = TIPO_COLOR[app.idTipoCita] || TIPO_COLOR[3];
+                            const est = CITA_ESTADOS[app.idEstadoCita] || CITA_ESTADOS[1];
+                            return (
+                              <div
+                                key={app.idCita}
+                                onClick={() => onEditCita(app)}
+                                style={{
+                                  background: cancelada ? '#f9fafb' : tc.bg,
+                                  borderLeft: `3px solid ${cancelada ? '#ef4444' : tc.border}`,
+                                  borderRadius: 6, padding: '5px 7px', marginBottom: 3,
+                                  cursor: 'pointer',
+                                  opacity: cancelada ? 0.6 : 1,
+                                  fontSize: 11,
+                                }}
+                              >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                                  <div style={{ fontWeight: 600, color: '#166534', lineHeight: 1.3 }}>
+                                    {app.Mascota?.nombre || '—'}
+                                  </div>
+                                  <span style={{
+                                    background: cancelada ? '#fecaca' : est.bg,
+                                    color: cancelada ? '#991b1b' : est.color,
+                                    fontSize: 9, fontWeight: 700,
+                                    padding: '1px 5px', borderRadius: 4, marginLeft: 4, whiteSpace: 'nowrap',
+                                  }}>
+                                    {cancelada ? '🚫 ANULADA' : est.label}
+                                  </span>
+                                </div>
+                                {misServicios.length > 0 ? (
+                                  misServicios.map(d => (
+                                    <div key={d.idDetalle} style={{ color: '#475569', fontSize: 10, lineHeight: 1.3 }}>
+                                      {d.PrecioServicio?.Service?.descripcion || `Serv. #${d.idDetalle}`}
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div style={{ color: '#94a3b8', fontSize: 10, fontStyle: 'italic' }}>Responsable</div>
+                                )}
+                                <span style={{
+                                  display: 'inline-block', marginTop: 2,
+                                  background: tc.tagBg, color: tc.tagColor,
+                                  fontSize: 9, fontWeight: 700,
+                                  padding: '1px 5px', borderRadius: 4,
+                                }}>
+                                  {app.TipoCita?.descripcion || tc.label}
+                                </span>
+                              </div>
+                            );
+                          })}
                         </div>
                       );
                     })}
-                  </div>
-                </div>
-              );
-            })}
+                  </React.Fragment>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
@@ -431,7 +404,7 @@ function AlertModal({ emoji, emojiBg, title, message, onConfirm, onCancel, confi
     <div style={{ position: "fixed", inset: 0, background: "rgba(10,20,40,0.65)", backdropFilter: "blur(8px)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
       <div style={{ background: "white", borderRadius: 24, padding: "44px 40px", maxWidth: 420, width: "100%", textAlign: "center", boxShadow: "0 32px 80px rgba(0,0,0,0.28)" }}>
         <div style={{ width: 72, height: 72, borderRadius: "50%", background: emojiBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 34, margin: "0 auto 20px" }}>{emoji}</div>
-        <h2 style={{ margin: "0 0 10px", fontSize: 21, fontWeight: 800, color: "#0f2a4a" }}>{title}</h2>
+        <h2 style={{ margin: "0 0 10px", fontSize: 21, fontWeight: 800, color: "#166534" }}>{title}</h2>
         <p style={{ margin: "0 0 28px", fontSize: 14, color: "#64748b", lineHeight: 1.6 }} dangerouslySetInnerHTML={{ __html: message }} />
         <div style={{ display: "flex", gap: 12 }}>
           {onCancel && (
@@ -490,7 +463,7 @@ function ServiceModal({ isOpen, onClose, onAddService, servicePrices, petSize, f
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 2000 }} />
       <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "min(95vw,880px)", maxHeight: "88vh", background: "white", borderRadius: 18, zIndex: 2001, display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 32px 80px rgba(0,0,0,0.3)" }}>
 
-        <div style={{ padding: "18px 24px", background: "#0f2a4a", color: "white", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ padding: "18px 24px", background: "#166534", color: "white", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <h3 style={{ margin: 0, fontSize: 18 }}>Catálogo de Servicios</h3>
             {petSize && <p style={{ margin: "4px 0 0", fontSize: 12, opacity: 0.7 }}>Filtrado automáticamente por tamaño del paciente</p>}
@@ -529,7 +502,7 @@ function ServiceModal({ isOpen, onClose, onAddService, servicePrices, petSize, f
                 <tr key={sp.idPrecioServicio} style={{ borderBottom: "1px solid #f8fafc", transition: "background 0.15s" }}
                   onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"}
                   onMouseLeave={e => e.currentTarget.style.background = "white"}>
-                  <td style={{ padding: "12px 16px", fontWeight: 700, color: "#0f2a4a" }}>{sp.Service?.descripcion}</td>
+                  <td style={{ padding: "12px 16px", fontWeight: 700, color: "#166534" }}>{sp.Service?.descripcion}</td>
                   <td style={{ padding: "12px 16px" }}>
                     <span style={{ background: "#eff6ff", color: "#3b82f6", padding: "2px 8px", borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
                       {sp.Service?.ServiceType?.descripcion || "—"}
@@ -544,7 +517,7 @@ function ServiceModal({ isOpen, onClose, onAddService, servicePrices, petSize, f
                   <td style={{ padding: "12px 16px", fontWeight: 800, color: "#16a34a" }}>${sp.precio}</td>
                   <td style={{ padding: "12px 16px" }}>
                     <button onClick={() => { onAddService(sp); onClose(); }}
-                      style={{ padding: "8px 16px", background: "#0f2a4a", color: "white", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 12 }}>
+                      style={{ padding: "8px 16px", background: "#166534", color: "white", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 12 }}>
                       Seleccionar
                     </button>
                   </td>
@@ -1001,7 +974,7 @@ function AttendServiceModal({ cita, staff, onClose, onSave }) {
         {/* Cabecera del Modal */}
         <div style={{ padding: "24px 28px", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: "#0f2a4a" }}>
+            <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: "#166534" }}>
               Atención: {cita.Mascota?.nombre || "Paciente"}
             </h2>
             <p style={{ margin: "4px 0 0", fontSize: 13, color: "#64748b" }}>
@@ -1196,7 +1169,7 @@ function AttendServiceModal({ cita, staff, onClose, onSave }) {
                     <div key={d.idDetalle} style={{ padding: 16, borderRadius: 14, border: "1.5px solid #e2e8f0", background: finalizado ? "#f0fdf4" : enCurso ? "#eff6ff" : "white" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
                         <div>
-                          <div style={{ fontWeight: 700, color: "#0f2a4a" }}>{d.PrecioServicio?.Service?.descripcion}</div>
+                          <div style={{ fontWeight: 700, color: "#166534" }}>{d.PrecioServicio?.Service?.descripcion}</div>
                           <div style={{ fontSize: 12, color: "#64748b" }}>Precio: ${d.PrecioServicio?.precio} · Responsable: {d.Ejecutor?.nombres || "Sin asignar"}</div>
                         </div>
                         <span style={{ background: est.bg, color: est.color, padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 800 }}>{est.label}</span>
@@ -1250,7 +1223,7 @@ function AttendServiceModal({ cita, staff, onClose, onSave }) {
                               <div style={{ fontSize: 12, fontWeight: 800, color: "#854d0e" }}>💉 SELECCIÓN DE VACUNA *</div>
                               
                               <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                                <div style={{ flex: 1, padding: 10, borderRadius: 8, border: "1.5px solid #facc15", background: "white", fontSize: 14, fontWeight: datosVacuna[d.idDetalle]?.idVacuna ? "700" : "400", color: datosVacuna[d.idDetalle]?.idVacuna ? "#0f2a4a" : "#94a3b8" }}>
+                                <div style={{ flex: 1, padding: 10, borderRadius: 8, border: "1.5px solid #facc15", background: "white", fontSize: 14, fontWeight: datosVacuna[d.idDetalle]?.idVacuna ? "700" : "400", color: datosVacuna[d.idDetalle]?.idVacuna ? "#166534" : "#94a3b8" }}>
                                   {datosVacuna[d.idDetalle]?.nombreVacuna || "Ninguna vacuna seleccionada..."}
                                 </div>
                                 <button 
@@ -1314,7 +1287,7 @@ function AttendServiceModal({ cita, staff, onClose, onSave }) {
             emoji={alertMsg.type === "success" ? "✅" : alertMsg.type === "info" ? "ℹ️" : "❌"}
             title={alertMsg.type === "success" ? "Operación Exitosa" : alertMsg.type === "info" ? "Información" : "Error"}
             message={alertMsg.text}
-            confirmBg={alertMsg.type === "success" ? "#10b981" : alertMsg.type === "info" ? "#0f2a4a" : "#ef4444"}
+            confirmBg={alertMsg.type === "success" ? "#10b981" : alertMsg.type === "info" ? "#166534" : "#ef4444"}
             onConfirm={() => {
               if (alertMsg.onConfirmExtra) alertMsg.onConfirmExtra();
               setAlertMsg(null);
@@ -1358,7 +1331,7 @@ function AttendServiceModal({ cita, staff, onClose, onSave }) {
                   onConfirmExtra: () => { onSave(); onClose(); }
                 });
               }}
-              style={{ padding: "10px 24px", borderRadius: 10, border: "none", background: "#0f2a4a", color: "white", fontWeight: 700, cursor: "pointer" }}
+              style={{ padding: "10px 24px", borderRadius: 10, border: "none", background: "#166534", color: "white", fontWeight: 700, cursor: "pointer" }}
             >
               Cerrar Ventana
             </button>
@@ -1674,7 +1647,7 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
         <div style={{ position: "fixed", inset: 0, zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.5)" }}>
           <div style={{ background: "white", borderRadius: 20, padding: "32px", maxWidth: 350, width: "90%", textAlign: "center", boxShadow: "0 20px 50px rgba(0,0,0,0.3)" }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>⚠️</div>
-            <h3 style={{ margin: "0 0 10px", fontSize: 18, fontWeight: 800, color: "#0f2a4a" }}>Atención</h3>
+            <h3 style={{ margin: "0 0 10px", fontSize: 18, fontWeight: 800, color: "#166534" }}>Atención</h3>
             <p style={{ margin: "0 0 24px", fontSize: 14, color: "#64748b", lineHeight: 1.5 }}>
               {!form.idMascota 
                 ? <>Debe primero <strong>seleccionar un paciente</strong> antes de buscar servicios.</>
@@ -1682,7 +1655,7 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
               }
             </p>
             <button onClick={() => setShowMascotaError(false)}
-              style={{ width: "100%", padding: 12, borderRadius: 10, border: "none", background: "#0f2a4a", color: "white", cursor: "pointer", fontWeight: 700 }}>
+              style={{ width: "100%", padding: 12, borderRadius: 10, border: "none", background: "#166534", color: "white", cursor: "pointer", fontWeight: 700 }}>
               Entendido
             </button>
           </div>
@@ -1711,7 +1684,7 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
             boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)" 
           }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>🔄</div>
-            <h3 style={{ margin: "0 0 10px", fontSize: 20, fontWeight: 800, color: "#0f2a4a" }}>¿Cambiar tipo de cita?</h3>
+            <h3 style={{ margin: "0 0 10px", fontSize: 20, fontWeight: 800, color: "#166534" }}>¿Cambiar tipo de cita?</h3>
             <p style={{ margin: "0 0 24px", fontSize: 14, color: "#64748b", lineHeight: 1.6 }}>
               Has seleccionado servicios que podrían no ser válidos para este tipo de cita. 
               Si continúas, <strong>se borrarán los servicios actuales</strong> para evitar errores.
@@ -1749,7 +1722,7 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
                 }}
                 style={{ 
                   flex: 1, padding: "12px", borderRadius: 12, border: "none", 
-                  background: "#0f2a4a", color: "white", fontWeight: 600, cursor: "pointer" 
+                  background: "#166534", color: "white", fontWeight: 600, cursor: "pointer" 
                 }}
               >
                 Sí, cambiar
@@ -1764,7 +1737,7 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
         <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.5)" }}>
           <div style={{ background: "white", borderRadius: 20, padding: "36px 32px", maxWidth: 380, width: "90%", textAlign: "center", boxShadow: "0 20px 50px rgba(0,0,0,0.3)" }}>
             <div style={{ fontSize: 36, marginBottom: 14 }}>🔄</div>
-            <h3 style={{ margin: "0 0 10px", fontSize: 18, fontWeight: 800, color: "#0f2a4a" }}>¿Cambiar paciente?</h3>
+            <h3 style={{ margin: "0 0 10px", fontSize: 18, fontWeight: 800, color: "#166534" }}>¿Cambiar paciente?</h3>
             <p style={{ margin: "0 0 24px", fontSize: 14, color: "#64748b", lineHeight: 1.6 }}>
               Los <strong>servicios seleccionados se borrarán</strong> porque el tamaño del nuevo paciente puede ser diferente.
             </p>
@@ -1772,7 +1745,7 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
               <button onClick={() => setPendingPet(null)}
                 style={{ flex: 1, padding: 12, borderRadius: 10, border: "1.5px solid #e2e8f0", background: "white", cursor: "pointer", fontWeight: 600 }}>Cancelar</button>
               <button onClick={confirmPetChange}
-                style={{ flex: 1, padding: 12, borderRadius: 10, border: "none", background: "#0f2a4a", color: "white", cursor: "pointer", fontWeight: 700 }}>Sí, cambiar</button>
+                style={{ flex: 1, padding: 12, borderRadius: 10, border: "none", background: "#166534", color: "white", cursor: "pointer", fontWeight: 700 }}>Sí, cambiar</button>
             </div>
           </div>
         </div>
@@ -1782,7 +1755,7 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
 
         <div style={{ padding: "20px 28px", borderBottom: "1.5px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fafbfc", flexShrink: 0 }}>
           <div>
-            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#0f2a4a" }}>
+            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#166534" }}>
               {isEdit ? "Editar turno" : "📅 Nuevo turno"}
             </h3>
             {isEdit && <p style={{ margin: "3px 0 0", fontSize: 12, color: "#64748b" }}>Cita #{cita.idCita}</p>}
@@ -1827,7 +1800,7 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
                 // Solo lectura en edición y reagenda — sin cambios
                 <div style={{
                   ...inp,
-                  background: "#f8fafc", color: "#0f2a4a",
+                  background: "#f8fafc", color: "#166534",
                   fontWeight: 700, display: "flex", alignItems: "center",
                   cursor: "not-allowed", border: "1.5px solid #e2e8f0",
                 }}>
@@ -1942,7 +1915,7 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
             <div>
               <label style={lbl}>Tipo de cita *</label>
               {(isEdit || esReprogram) ? (
-                <div style={{ ...inp, background: "#f8fafc", color: "#0f2a4a", fontWeight: 700, display: "flex", alignItems: "center", cursor: "not-allowed", border: "1.5px solid #e2e8f0" }}>
+                <div style={{ ...inp, background: "#f8fafc", color: "#166534", fontWeight: 700, display: "flex", alignItems: "center", cursor: "not-allowed", border: "1.5px solid #e2e8f0" }}>
                   {appointmentTypes.find(t => String(t.idTipoCita) === String(form.idTipoCita))?.descripcion || "—"}
                 </div>
               ) : (
@@ -1974,7 +1947,7 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
 
           <div style={{ borderTop: "1.5px solid #e2e8f0", paddingTop: 20 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-              <h4 style={{ margin: 0, fontSize: 13, fontWeight: 800, color: "#0f2a4a", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              <h4 style={{ margin: 0, fontSize: 13, fontWeight: 800, color: "#166534", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                 Servicios {detalles.length > 0 && <span style={{ color: "#1a6bc4" }}>({detalles.length})</span>}
               </h4>
               <button type="button" 
@@ -1983,7 +1956,7 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
                   if (!form.idTipoCita) { setShowMascotaError(true); } 
                   else { setServiceModal(true); }
                 }}
-                style={{ padding: "8px 18px", background: "#0f2a4a", color: "white", border: "none", borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
+                style={{ padding: "8px 18px", background: "#166534", color: "white", border: "none", borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
                 + Buscar servicio
               </button>
             </div>
@@ -2037,7 +2010,7 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
 
                   return (
                     <tr key={idx} style={{ borderBottom: "1px solid #f8fafc", opacity: esReprogramadoSrv ? 0.6 : 1 }}>
-                      <td style={{ padding: "10px 12px", fontWeight: 700, color: esReprogramadoSrv ? "#94a3b8" : "#0f2a4a" }}>
+                      <td style={{ padding: "10px 12px", fontWeight: 700, color: esReprogramadoSrv ? "#94a3b8" : "#166534" }}>
                         <span style={{ textDecoration: esReprogramadoSrv ? "line-through" : "none" }}>
                           {servicio._descripcion}
                         </span>
@@ -2124,7 +2097,7 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
             <button type="button" onClick={onClose}
               style={{ flex: 1, padding: 13, borderRadius: 12, border: "1.5px solid #e2e8f0", background: "white", cursor: "pointer", fontWeight: 600, fontSize: 14 }}>Cancelar</button>
             <button type="submit" disabled={loading}
-              style={{ flex: 2, padding: 13, borderRadius: 12, border: "none", background: "linear-gradient(135deg,#0f2a4a,#1a4070)", color: "white", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+              style={{ flex: 2, padding: 13, borderRadius: 12, border: "none", background: "linear-gradient(135deg,#166534,#1f5c38)", color: "white", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
               {loading ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear turno"}
             </button>
           </div>
@@ -2198,7 +2171,7 @@ function HistorialModal({ idCita, idMascota, nombreMascota, onClose }) {
       <div style={{ background: "white", borderRadius: 24, width: "100%", maxWidth: 580, maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 25px 60px rgba(0,0,0,0.35)" }}>
 
         {/* ── Header ── */}
-        <div style={{ background: "#0f2a4a", color: "white", padding: "18px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
+        <div style={{ background: "#166534", color: "white", padding: "18px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
           <div>
             <p style={{ margin: 0, fontSize: 12, opacity: 0.6 }}>Historial clínico</p>
             <h3 style={{ margin: "2px 0 0", fontSize: 18, fontWeight: 700 }}>{nombreMascota}</h3>
@@ -2246,7 +2219,7 @@ function HistorialModal({ idCita, idMascota, nombreMascota, onClose }) {
                 ].map(({ label, value, small }) => (
                   <div key={label}>
                     <p style={{ margin: "0 0 3px", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</p>
-                    <p style={{ margin: 0, fontSize: small ? 13 : 20, fontWeight: small ? 500 : 600, color: "#0f2a4a" }}>{value}</p>
+                    <p style={{ margin: 0, fontSize: small ? 13 : 20, fontWeight: small ? 500 : 600, color: "#166534" }}>{value}</p>
                   </div>
                 ))}
               </div>
@@ -2267,7 +2240,7 @@ function HistorialModal({ idCita, idMascota, nombreMascota, onClose }) {
                 </div>
                 <div>
                   <p style={{ margin: "0 0 5px", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>Diagnóstico</p>
-                  <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "#0f2a4a" }}>{historial.diagnostico}</p>
+                  <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "#166534" }}>{historial.diagnostico}</p>
                 </div>
               </div>
 
@@ -2281,7 +2254,7 @@ function HistorialModal({ idCita, idMascota, nombreMascota, onClose }) {
                     {vacunas.map(v => (
                       <div key={v.idVacunaAplicada} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: "#fefce8", borderRadius: 10, border: "1px solid #fef08a" }}>
                         <div>
-                          <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "#0f2a4a" }}>
+                          <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "#166534" }}>
                             {v.Vacuna?.Producto?.nombre || v.Vacuna?.enfermedadPreventiva || `Vacuna #${v.idVacuna}`}
                           </p>
                           <p style={{ margin: "2px 0 0", fontSize: 12, color: "#92400e" }}>
@@ -2301,7 +2274,7 @@ function HistorialModal({ idCita, idMascota, nombreMascota, onClose }) {
         </div>
 
         <div style={{ padding: "14px 24px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", flexShrink: 0 }}>
-          <button onClick={onClose} style={{ width: "100%", padding: 12, borderRadius: 12, border: "none", background: "#0f2a4a", color: "white", fontWeight: 700, cursor: "pointer", fontSize: 14 }}>
+          <button onClick={onClose} style={{ width: "100%", padding: 12, borderRadius: 12, border: "none", background: "#166534", color: "white", fontWeight: 700, cursor: "pointer", fontSize: 14 }}>
             Cerrar
           </button>
         </div>
@@ -2365,7 +2338,7 @@ function DetailModal({ cita, onClose }) {
     <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, background: "rgba(10,20,40,0.7)", backdropFilter: "blur(8px)" }}>
       <div style={{ background: "white", borderRadius: 24, width: "100%", maxWidth: 580, maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 25px 60px rgba(0,0,0,0.3)" }}>
 
-        <div style={{ background: "#0f2a4a", color: "white", padding: "18px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
+        <div style={{ background: "#166534", color: "white", padding: "18px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <h3 style={{ margin: 0, fontSize: 17 }}>Cita #{cita.idCita}</h3>
@@ -2390,7 +2363,7 @@ function DetailModal({ cita, onClose }) {
           ].map(([k, v]) => (
             <div key={k}>
               <span style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", display: "block" }}>{k}</span>
-              <span style={{ fontSize: 14, fontWeight: 600, color: "#0f2a4a" }}>{v}</span>
+              <span style={{ fontSize: 14, fontWeight: 600, color: "#166534" }}>{v}</span>
             </div>
           ))}
         </div>
@@ -2440,7 +2413,7 @@ function DetailModal({ cita, onClose }) {
               <div key={d.idDetalle} style={{ padding: "12px 0", borderBottom: "1px solid #f1f5f9" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <div>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: "#0f2a4a" }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: "#166534" }}>
                       {d.PrecioServicio?.Service?.descripcion || `Servicio #${d.idDetalle}`}
                     </div>
                     <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
@@ -2480,7 +2453,7 @@ function DetailModal({ cita, onClose }) {
                 <div key={t.idTratamiento} style={{ padding: "14px 16px", borderRadius: 12, border: "1.5px solid #e9d5ff", background: "#faf5ff" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: 14, color: "#0f2a4a" }}>{t.descripcion}</div>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: "#166534" }}>{t.descripcion}</div>
                       <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
                         {t.TipoTratamiento?.nombre || "—"} · 📅 {t.fechaInicio}{t.fechaFin ? ` → ${t.fechaFin}` : ""}
                       </div>
@@ -2526,7 +2499,7 @@ function DetailModal({ cita, onClose }) {
                       <div style={{ fontSize: 11, fontWeight: 700, color: "#7c3aed", textTransform: "uppercase" }}>Medicamentos</div>
                       {t.medicamentos.map(m => (
                         <div key={m.idTratMed} style={{ background: "white", borderRadius: 8, padding: "8px 12px", border: "1px solid #e9d5ff", fontSize: 13 }}>
-                          <div style={{ fontWeight: 600, color: "#0f2a4a" }}>
+                          <div style={{ fontWeight: 600, color: "#166534" }}>
                             {m.Producto?.nombre || `Producto #${m.idProd_Pres}`}
                             <span style={{ marginLeft: 8, color: "#64748b", fontWeight: 400 }}>× {m.cantidad}</span>
                           </div>
@@ -2744,7 +2717,7 @@ export default function AppointmentPage() {
         <AlertModal emoji="🏥" emojiBg="linear-gradient(135deg,#e0f2fe,#7dd3fc)"
           title="Confirmar Llegada"
           message="¿Ha llegado el cliente a la clínica para ser atendido?"
-          confirmText="Sí, llegó" confirmBg="#0f2a4a"
+          confirmText="Sí, llegó" confirmBg="#166534"
           cancelText="No aún" onConfirm={execConfirmarLlegada} onCancel={() => setAlertModal(null)} />
       )}
       {alertModal?.type === "success" && (
@@ -2764,7 +2737,7 @@ export default function AppointmentPage() {
       {/* ── Header ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
         <div>
-          <h2 style={{ margin: 0, color: '#0f2a4a', fontWeight: 800 }}>Gestión de Citas</h2>
+          <h2 style={{ margin: 0, color: '#166534', fontWeight: 800 }}>Gestión de Citas</h2>
           <p style={{ margin: 0, color: '#64748b', fontSize: '14px' }}>Administra los turnos de la clínica</p>
         </div>
 
@@ -2779,7 +2752,7 @@ export default function AppointmentPage() {
             borderRadius: '12px',
             border: '1.5px solid #e2e8f0',
             background: 'white',
-            color: '#0f2a4a',
+            color: '#166534',
             fontWeight: '600',
             cursor: 'pointer'
           }}
@@ -2789,7 +2762,7 @@ export default function AppointmentPage() {
 
         {canCreate && (
           <button onClick={() => setModal({ type: "new" })}
-            style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 18px", borderRadius: 12, background: "linear-gradient(135deg,#0f2a4a,#1a4070)", color: "white", border: "none", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+            style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 18px", borderRadius: 12, background: "linear-gradient(135deg,#166534,#1f5c38)", color: "white", border: "none", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
             + Nueva Cita
           </button>
         )}
@@ -2941,11 +2914,11 @@ export default function AppointmentPage() {
                         )}
                       </td>
                       
-                      <td style={{ padding: "12px 16px", fontSize: 13, color: "#0f2a4a", background: cellBgColor }}>
+                      <td style={{ padding: "12px 16px", fontSize: 13, color: "#166534", background: cellBgColor }}>
                         <div style={{ fontWeight: 700 }}>{fmtFecha(a.fecha)}</div>
                         <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>⏱️ {a.hora}</div>
                       </td>
-                      <td style={{ padding: "12px 16px", fontSize: 14, fontWeight: 700, color: "#0f2a4a", background: cellBgColor }}> {a.Mascota?.nombre || "—"}</td>
+                      <td style={{ padding: "12px 16px", fontSize: 14, fontWeight: 700, color: "#166534", background: cellBgColor }}> {a.Mascota?.nombre || "—"}</td>
                       <td style={{ padding: "12px 16px", fontSize: 13, color: "#64748b", background: cellBgColor }}>
                         {a.Mascota?.Dueño ? `${a.Mascota.Dueño.nombres} ${a.Mascota.Dueño.apellidos}` : "—"}
                       </td>
@@ -3023,7 +2996,7 @@ export default function AppointmentPage() {
                           
                           {/* Botón Ver: Siempre disponible para todos */}
                           <button onClick={() => setModal({ type: "detail", data: a })}
-                            style={{ padding: "6px 11px", borderRadius: 8, border: `1.5px solid ${VET_COLORS.border}`, background: "white", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#0f2a4a" }}>
+                            style={{ padding: "6px 11px", borderRadius: 8, border: `1.5px solid ${VET_COLORS.border}`, background: "white", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#166534" }}>
                             Ver
                           </button>
 
@@ -3032,14 +3005,14 @@ export default function AppointmentPage() {
                             <>
                               {canConfirmar && (
                                 <button onClick={() => handleConfirmarLlegada(a.idCita)}
-                                  style={{ padding: "6px 11px", borderRadius: 8, border: "none", background: "linear-gradient(135deg,#0f2a4a,#1a4070)", color: "white", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+                                  style={{ padding: "6px 11px", borderRadius: 8, border: "none", background: "linear-gradient(135deg,#166534,#1f5c38)", color: "white", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
                                   Llegó
                                 </button>
                               )}
                               
                               {canEdit && (
                                 <button onClick={() => setModal({ type: "edit", data: a })}
-                                  style={{ padding: "6px 11px", borderRadius: 8, border: `1.5px solid ${VET_COLORS.border}`, background: "white", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#0f2a4a" }}>
+                                  style={{ padding: "6px 11px", borderRadius: 8, border: `1.5px solid ${VET_COLORS.border}`, background: "white", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#166534" }}>
                                   Editar
                                 </button>
                               )}
@@ -3047,7 +3020,7 @@ export default function AppointmentPage() {
                               {/* Botón Reagendar: Solo Admin/Asistente */}
                               {[1, 3].includes(userRole) && (
                                 <button onClick={() => handleOpenReagendar(a)}
-                                  style={{ padding: "6px 11px", borderRadius: 8, border: "1.5px solid #1a4070", background: "white", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#1a4070" }}>
+                                  style={{ padding: "6px 11px", borderRadius: 8, border: "1.5px solid #1f5c38", background: "white", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#1f5c38" }}>
                                   Reagendar
                                 </button>
                               )}
@@ -3065,7 +3038,7 @@ export default function AppointmentPage() {
                           {/* Aquí es donde el veterinario finalmente ve el botón "Atender" */}
                           {a.idEstadoCita === 2 && canAttend && (
                             <button onClick={() => setModal({ type: "attend", data: a })}
-                              style={{ padding: "6px 11px", borderRadius: 8, border: "none", background: "linear-gradient(135deg,#0f2a4a,#1a4070)", color: "white", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+                              style={{ padding: "6px 11px", borderRadius: 8, border: "none", background: "linear-gradient(135deg,#166534,#1f5c38)", color: "white", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
                               Atender
                             </button>
                           )}
