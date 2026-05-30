@@ -34,7 +34,6 @@ const Schedule = sequelize.define("Schedule", {
     timestamps: false,
     indexes: [
         { 
-            unique: true, 
             fields: ['diaSemana', 'turno'] // La combinación es única
         }
     ],
@@ -48,7 +47,6 @@ const Schedule = sequelize.define("Schedule", {
 
 
 Schedule.associate = (models) => {
-    Schedule.belongsTo(models.VetSchedule, { foreignKey: "idHorario" });
+    Schedule.hasMany(models.VetSchedule, { foreignKey: "idHorario" }); 
 };
-
 module.exports = Schedule;

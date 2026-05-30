@@ -21,17 +21,16 @@ const VetSchedule = sequelize.define("VetSchedule", {
 
 
 VetSchedule.associate = (models) => {
-    
-    // RELACIÓN VET_SCHEDULE -> VETERINARIAN
+    // RELACIÓN VET_SCHEDULE -> VETERINARIAN (o Staff, verifica el nombre exacto de tu modelo de veterinarios)
     VetSchedule.belongsTo(models.Veterinarian, { 
         foreignKey: 'idVeterinario', 
         targetKey: 'idPersonal' 
     });
 
-    // RELACIÓN VET_SCHEDULE -> SCHEDULE
+    // RELACIÓN VET_SCHEDULE -> SCHEDULE (Crucial para traer las horas desde la tabla intermedia)
     VetSchedule.belongsTo(models.Schedule, { 
-        foreignKey: "idHorario" 
+        foreignKey: "idHorario",
+        as: "HorarioDetail" // Un alias ayuda a identificarlo en el include
     });
 };
-
 module.exports = VetSchedule;

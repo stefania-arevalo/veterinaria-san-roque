@@ -95,7 +95,7 @@ const AgendaVisual = ({ staff, appointments, fechaSeleccionada, onEditCita }) =>
       // componente usa el horario de la clínica como fallback automático.
       ...personalVisible.map(persona =>
         axios.get(
-          `/schedules?diaSemana=${encodeURIComponent(diaSemana)}&idPersonal=${persona.idPersonal}`,
+          `/vetschedules?diaSemana=${encodeURIComponent(diaSemana)}&idPersonal=${persona.idPersonal}`,
           { headers: headers() }
         )
           .then(r => ({ idPersonal: persona.idPersonal, horarios: r.data || [] }))
