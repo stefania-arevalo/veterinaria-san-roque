@@ -34,10 +34,31 @@ async function createVetSchedule(req, res) {
 
 // 2. GET ALL: Todos los roles pueden ver
 async function getVetSchedules(req, res) {
+    // 1. Capturamos los filtros que envía el frontend (?diaSemana=Martes&idPersonal=3)
+    const { diaSemana, idPersonal } = req.query;
+
+    let whereVetSchedule = {};
+    let whereSchedule = {};
+
+    // Si viene idPersonal, filtramos en la tabla intermedia VetSchedule
+    if (idPersonal) {
+        whereVetSchedule.idVeterinario = idPersonal;
+    }
+
+    // Si viene diaSemana, filtramos en la tabla asociativa de Schedule
+    if (diaSemana) {
+        whereSchedule.diaSemana = { [Op.like]: `%${diaSemana}%` };
+    }
+
     try {
         const list = await VetSchedule.findAll({ 
+            where: whereVetSchedule,
             include: [
-                { model: Schedule, attributes: ['diaSemana', 'turno', 'horaInicio', 'horaFin'] },
+                { 
+                    model: Schedule, 
+                    where: whereSchedule,
+                    attributes: ['idHorario', 'diaSemana', 'turno', 'horaInicio', 'horaFin']
+                },
                 {
                     model: Veterinarian,
                     attributes: ['especialidad'], 
@@ -45,9 +66,26 @@ async function getVetSchedules(req, res) {
                 }
             ]
         });
-        return res.status(200).send(list);
+
+        // 2. Mapeamos la respuesta para que la estructura sea plana y compatible con lo que lee tu Frontend
+        const respuestaFormateada = list.map(item => {
+            // Extraemos los datos de la relación de manera segura
+            const horario = item.Schedule || {};
+            return {
+                idHorario: horario.idHorario,
+                diaSemana: horario.diaSemana,
+                turno: horario.turno,
+                horaInicio: horario.horaInicio,
+                horaFin: horario.horaFin
+            };
+        });
+
+        return res.status(200).send(respuestaFormateada);
+
     } catch (error) {
-        return res.status(500).send({ msg: "Error al obtener la lista." });
+    
+        console.error("Error en getVetSchedules Backend:", error);
+        return res.status(500).send({ msg: "Error interno al obtener la lista de horarios." });
     }
 }
 
