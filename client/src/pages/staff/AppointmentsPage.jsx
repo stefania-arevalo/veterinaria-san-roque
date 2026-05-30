@@ -54,29 +54,48 @@ const ESTADO_TRANSITIONS = {
 
 // ── COMPONENTE AGENDA VISUAL ──────────────────────────────────────────
 const AgendaVisual = ({ staff, appointments, fechaSeleccionada, onEditCita }) => {
-  const [horarios, setHorarios] = useState([]);
+  const [horariosPorVet, setHorariosPorVet] = useState({});
+  const [vetSeleccionado, setVetSeleccionado] = useState(null);
 
+  // Determinar qué día de la semana es la fecha seleccionada
+  const getDiaSemana = (fechaISO) => {
+    if (!fechaISO) return null;
+    const [y, m, d] = fechaISO.split('-').map(Number);
+    const dias = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
+    return dias[new Date(y, m - 1, d).getDay()];
+  };
+
+  const diaNombre = getDiaSemana(fechaSeleccionada);
+
+  // Cargar horarios de TODOS los veterinarios desde /vetschedules
+  // y quedarnos solo con los del día seleccionado
   useEffect(() => {
     if (!fechaSeleccionada) return;
-    const partes = fechaSeleccionada.split('-');
-    const fecha = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
-    const dias = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
-    const diaSemana = dias[fecha.getDay()];
-    axios.get(`/schedules?diaSemana=${encodeURIComponent(diaSemana)}`, { headers: headers() })
-      .then(r => setHorarios(r.data || []))
-      .catch(() => {
-        if (diaSemana === 'Sabado') {
-          setHorarios([{ horaInicio: '10:00', horaFin: '12:00', turno: 'Mañana' }]);
-        } else if (['Lunes','Martes','Miercoles','Jueves','Viernes'].includes(diaSemana)) {
-          setHorarios([
-            { horaInicio: '09:00', horaFin: '12:30', turno: 'Mañana' },
-            { horaInicio: '17:30', horaFin: '21:00', turno: 'Tarde' },
-          ]);
-        } else {
-          setHorarios([]);
-        }
-      });
-  }, [fechaSeleccionada]);
+
+    axios.get('/vetschedules', { headers: headers() })
+      .then(res => {
+        const todos = res.data || [];
+        // Agrupar por idVeterinario, filtrando por día
+        const agrupado = {};
+        todos.forEach(vs => {
+          const diaHorario = vs.Schedule?.diaSemana;
+          if (!diaNombre || diaHorario?.toLowerCase() !== diaNombre?.toLowerCase()) return;
+          const idVet = vs.idVeterinario;
+          if (!agrupado[idVet]) agrupado[idVet] = [];
+          agrupado[idVet].push(vs.Schedule);
+        });
+        setHorariosPorVet(agrupado);
+      })
+      .catch(() => setHorariosPorVet({}));
+  }, [fechaSeleccionada, diaNombre]);
+
+  // Seleccionar el primer veterinario disponible por defecto
+  useEffect(() => {
+    const vetsConHorario = Object.keys(horariosPorVet);
+    if (vetsConHorario.length > 0 && !vetSeleccionado) {
+      setVetSeleccionado(Number(vetsConHorario[0]));
+    }
+  }, [horariosPorVet]);
 
   const toMins = (t) => {
     if (!t) return 0;
@@ -90,29 +109,37 @@ const AgendaVisual = ({ staff, appointments, fechaSeleccionada, onEditCita }) =>
   };
 
   const SLOT = 30;
-  const rangoInicio = horarios.length > 0
-    ? Math.min(...horarios.map(h => toMins(h.horaInicio)))
+
+  // Horarios del veterinario seleccionado para este día
+  const horariosVetActual = vetSeleccionado
+    ? (horariosPorVet[vetSeleccionado] || [])
+    : [];
+
+  const rangoInicio = horariosVetActual.length > 0
+    ? Math.min(...horariosVetActual.map(h => toMins(h.horaInicio)))
     : toMins('09:00');
-  const rangoFin = horarios.length > 0
-    ? Math.max(...horarios.map(h => toMins(h.horaFin)))
+  const rangoFin = horariosVetActual.length > 0
+    ? Math.max(...horariosVetActual.map(h => toMins(h.horaFin)))
     : toMins('21:00');
 
   const slots = [];
   for (let m = rangoInicio; m < rangoFin; m += SLOT) slots.push(m);
 
   const esAbierto = (slotMins) =>
-    horarios.some(h => slotMins >= toMins(h.horaInicio) && slotMins < toMins(h.horaFin));
+    horariosVetActual.some(h =>
+      slotMins >= toMins(h.horaInicio) && slotMins < toMins(h.horaFin)
+    );
 
-  const getCitasEnSlot = (persona, slotMins) => {
+  const getCitasEnSlot = (idPersonal, slotMins) => {
     const resultado = [];
     appointments
       .filter(app => app.fecha === fechaSeleccionada)
       .forEach(app => {
         const appMins = toMins(app.hora);
         if (appMins !== slotMins) return;
-        const esVetDeCita = Number(app.idVeterinario) === Number(persona.idPersonal);
+        const esVetDeCita = Number(app.idVeterinario) === Number(idPersonal);
         const misServicios = (app.detalles || []).filter(
-          d => Number(d.idPersonalRealiza) === Number(persona.idPersonal)
+          d => Number(d.idPersonalRealiza) === Number(idPersonal)
         );
         if (esVetDeCita || misServicios.length > 0) {
           resultado.push({ app, misServicios });
@@ -121,207 +148,276 @@ const AgendaVisual = ({ staff, appointments, fechaSeleccionada, onEditCita }) =>
     return resultado;
   };
 
+  // Colores de tipo de cita — mantenidos igual
   const TIPO_COLOR = {
-    1: { border: '#378ADD', bg: '#E6F1FB', tagBg: '#B5D4F4', tagColor: '#0C447C', label: 'Control'    },
-    2: { border: '#E24B4A', bg: '#FCEBEB', tagBg: '#F7C1C1', tagColor: '#791F1F', label: 'Emergencia' },
-    3: { border: '#639922', bg: '#EAF3DE', tagBg: '#C0DD97', tagColor: '#3B6D11', label: 'General'    },
+    1: { border: '#276b42', bg: '#eaf3de', tagBg: '#c0dd97', tagColor: '#1a3d28', label: 'Control'    },
+    2: { border: '#a32d2d', bg: '#fcebeb', tagBg: '#f7c1c1', tagColor: '#791F1F', label: 'Emergencia' },
+    3: { border: '#276b42', bg: '#f8fbf9', tagBg: '#d1ddd4', tagColor: '#1a3d28', label: 'General'    },
   };
 
-  const AVATAR_COLOR = {
-    1: { bg: '#E6F1FB', color: '#0C447C' },
-    2: { bg: '#EAF3DE', color: '#3B6D11' },
-    3: { bg: '#FAEEDA', color: '#854F0B' },
-    4: { bg: '#EEEDFE', color: '#3C3489' },
-  };
-  const getAvatarColor = (p) => {
-    const rol = p.User?.Role?.idRol ?? p.User?.idRol ?? 99;
-    return AVATAR_COLOR[rol] || { bg: '#F1EFE8', color: '#5F5E5A' };
-  };
+  // Personal filtrado: solo el vet seleccionado en la columna principal,
+  // pero mostramos todos los que trabajan ese día como tabs de selección
+  const vetsConHorarioHoy = staff.filter(p =>
+    horariosPorVet[p.idPersonal] !== undefined
+  );
+
+  const personaActual = staff.find(p => Number(p.idPersonal) === Number(vetSeleccionado));
+
   const getNombre = (p) =>
     `${p.nombres || p.Staff?.nombres || '?'} ${p.apellidos || p.Staff?.apellidos || ''}`.trim();
   const getInicial = (p) => (p.nombres || p.Staff?.nombres || '?')[0].toUpperCase();
-  const getRol    = (p) => p.User?.Role?.descripcion || '—';
 
-  const personalVisible = staff.slice(0, 4);
-  const gridCols = `56px repeat(${personalVisible.length}, minmax(0, 1fr))`;
+  const citasDelDia = appointments.filter(a =>
+    a.fecha === fechaSeleccionada &&
+    Number(a.idVeterinario) === Number(vetSeleccionado)
+  ).length;
 
-  const partes = fechaSeleccionada ? fechaSeleccionada.split('-') : [];
-  const diasSemana = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-  const diaNombre = partes.length === 3
-    ? diasSemana[new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2])).getDay()]
-    : '';
-
-  const cerrado = horarios.length === 0;
-  const totalCitasDia = appointments.filter(a => a.fecha === fechaSeleccionada).length;
+  const sinHorarios = vetsConHorarioHoy.length === 0;
+  const cerrado = horariosVetActual.length === 0 && !sinHorarios;
 
   return (
     <>
-      {/* ── Leyenda y resumen ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          {Object.entries(TIPO_COLOR).map(([k, v]) => (
-            <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#64748b' }}>
-              <div style={{ width: 10, height: 10, borderRadius: 2, background: v.border }} />
-              {v.label}
-            </div>
-          ))}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#64748b' }}>
-            <div style={{ width: 10, height: 10, borderRadius: 2, background: '#e2e8f0' }} />
-            Clínica cerrada
+      {/* ── Selector de veterinario ── */}
+      <div style={{
+        marginBottom: 14,
+        padding: '12px 16px',
+        background: '#f8fbf9',
+        borderRadius: 12,
+        border: '1px solid #d1ddd4',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        flexWrap: 'wrap',
+      }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: '#6b8f76', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          Ver agenda de:
+        </span>
+        {sinHorarios ? (
+          <span style={{ fontSize: 13, color: '#6b8f76', fontStyle: 'italic' }}>
+            Ningún veterinario tiene horario asignado para este día ({diaNombre})
+          </span>
+        ) : (
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {vetsConHorarioHoy.map(p => {
+              const activo = Number(p.idPersonal) === Number(vetSeleccionado);
+              return (
+                <button
+                  key={p.idPersonal}
+                  onClick={() => setVetSeleccionado(Number(p.idPersonal))}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: 20,
+                    border: `1.5px solid ${activo ? '#276b42' : '#d1ddd4'}`,
+                    background: activo ? '#276b42' : 'white',
+                    color: activo ? 'white' : '#1a3d28',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {getInicial(p)} {getNombre(p).split(' ')[0]}
+                </button>
+              );
+            })}
           </div>
-        </div>
-        <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>
-          {diaNombre} · {totalCitasDia} cita{totalCitasDia !== 1 ? 's' : ''} ·{' '}
-          {horarios.length > 0
-            ? horarios.map(h => `${h.turno || ''} ${h.horaInicio?.substring(0,5)}–${h.horaFin?.substring(0,5)}`).join(' / ')
-            : 'Sin horario'}
+        )}
+
+        {/* Resumen del día para el vet seleccionado */}
+        {personaActual && (
+          <div style={{ marginLeft: 'auto', fontSize: 12, color: '#6b8f76', fontWeight: 600 }}>
+            {diaNombre} · {citasDelDia} cita{citasDelDia !== 1 ? 's' : ''} ·{' '}
+            {horariosVetActual.length > 0
+              ? horariosVetActual.map(h =>
+                  `${h.turno || ''} ${h.horaInicio?.substring(0, 5)}–${h.horaFin?.substring(0, 5)}`
+                ).join(' / ')
+              : 'Sin horario hoy'}
+          </div>
+        )}
+      </div>
+
+      {/* ── Leyenda de tipos ── */}
+      <div style={{ display: 'flex', gap: 14, marginBottom: 12, flexWrap: 'wrap' }}>
+        {Object.entries(TIPO_COLOR).map(([k, v]) => (
+          <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#6b8f76' }}>
+            <div style={{ width: 10, height: 10, borderRadius: 2, background: v.border }} />
+            {v.label}
+          </div>
+        ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#6b8f76' }}>
+          <div style={{ width: 10, height: 10, borderRadius: 2, background: '#e8eee9' }} />
+          Fuera de horario
         </div>
       </div>
 
-      {cerrado ? (
-        <div style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', borderRadius: 14, padding: '48px 24px', textAlign: 'center', color: '#94a3b8' }}>
-          <div style={{ fontSize: 32, marginBottom: 8 }}>🔒</div>
-          <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Clínica cerrada</div>
-          <div style={{ fontSize: 13 }}>No hay atención programada para este día.</div>
+      {sinHorarios ? (
+        <div style={{
+          background: '#f8fbf9', border: '1.5px solid #d1ddd4', borderRadius: 14,
+          padding: '48px 24px', textAlign: 'center', color: '#6b8f76',
+        }}>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>📅</div>
+          <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4, color: '#1a3d28' }}>Sin horarios asignados</div>
+          <div style={{ fontSize: 13 }}>
+            Ningún veterinario tiene turnos configurados para el {diaNombre}.
+            <br />Revisá la configuración de horarios en el módulo de administración.
+          </div>
         </div>
-      ) : (
-        <div style={{ border: '1.5px solid #e2e8f0', borderRadius: 14, overflow: 'hidden' }}>
-          <div style={{ overflowY: 'auto', maxHeight: '70vh', position: 'relative' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: gridCols, minWidth: 0 }}>
-
-              {/* Headers sticky */}
-              <div style={{
-                position: 'sticky', top: 0, zIndex: 10,
-                background: '#f8fafc', borderBottom: '1.5px solid #e2e8f0',
-                borderRight: '1px solid #e2e8f0', padding: '10px 4px', minWidth: 56,
-              }} />
-              {personalVisible.map((persona, i) => {
-                const av = getAvatarColor(persona);
-                return (
-                  <div key={persona.idPersonal} style={{
-                    position: 'sticky', top: 0, zIndex: 10,
-                    background: '#f8fafc',
-                    borderBottom: '1.5px solid #e2e8f0',
-                    borderRight: i < personalVisible.length - 1 ? '1px solid #e2e8f0' : 'none',
-                    padding: '10px 8px', textAlign: 'center',
-                  }}>
-                    <div style={{
-                      width: 32, height: 32, borderRadius: '50%',
-                      background: av.bg, color: av.color,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 13, fontWeight: 600, margin: '0 auto 5px',
-                    }}>
-                      {getInicial(persona)}
-                    </div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: '#0f2a4a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {getNombre(persona).split(' ')[0]} {getNombre(persona).split(' ')[1] || ''}
-                    </div>
-                    <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 1 }}>{getRol(persona)}</div>
+      ) : cerrado ? (
+        <div style={{
+          background: '#f8fbf9', border: '1.5px solid #d1ddd4', borderRadius: 14,
+          padding: '48px 24px', textAlign: 'center', color: '#6b8f76',
+        }}>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>🔒</div>
+          <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4, color: '#1a3d28' }}>
+            {personaActual ? `${getNombre(personaActual)} no trabaja este día` : 'Sin horario'}
+          </div>
+          <div style={{ fontSize: 13 }}>No hay turnos asignados para este veterinario el {diaNombre}.</div>
+        </div>
+      ) : !personaActual ? null : (
+        <div style={{ border: '1.5px solid #d1ddd4', borderRadius: 14, overflow: 'hidden' }}>
+          <div style={{ overflowY: 'auto', maxHeight: '70vh' }}>
+            {/* Header del veterinario */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '56px 1fr',
+              background: '#f8fbf9',
+              borderBottom: '1.5px solid #d1ddd4',
+              position: 'sticky', top: 0, zIndex: 10,
+            }}>
+              <div style={{ borderRight: '1px solid #d1ddd4', minWidth: 56 }} />
+              <div style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: '50%',
+                  background: '#eaf3de', color: '#276b42',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 15, fontWeight: 700,
+                }}>
+                  {getInicial(personaActual)}
+                </div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#1a3d28' }}>
+                    Dr/a. {getNombre(personaActual)}
                   </div>
-                );
-              })}
+                  <div style={{ fontSize: 11, color: '#6b8f76' }}>
+                    {horariosVetActual.map(h =>
+                      `${h.turno}: ${h.horaInicio?.substring(0, 5)} – ${h.horaFin?.substring(0, 5)}`
+                    ).join('  ·  ')}
+                  </div>
+                </div>
+              </div>
+            </div>
 
-              {/* Filas de slots */}
-              {slots.map((slotMins) => {
-                const abierto = esAbierto(slotMins);
-                const horaStr = toHHMM(slotMins);
-                const esCierre = !abierto && slotMins > rangoInicio && slotMins < rangoFin;
+            {/* Filas de slots */}
+            {slots.map((slotMins) => {
+              const abierto = esAbierto(slotMins);
+              const horaStr = toHHMM(slotMins);
+              const citasSlot = abierto
+                ? getCitasEnSlot(personaActual.idPersonal, slotMins)
+                : [];
 
-                return (
-                  <React.Fragment key={slotMins}>
-                    {/* Celda hora */}
-                    <div style={{
-                      borderTop: '1px solid #f1f5f9',
-                      borderRight: '1px solid #e2e8f0',
-                      background: abierto ? 'white' : '#f8fafc',
-                      padding: '6px 4px 0',
-                      textAlign: 'right',
-                      fontSize: 10, fontWeight: 600,
-                      color: abierto ? '#64748b' : '#cbd5e1',
-                      minHeight: 48,
-                    }}>
-                      {horaStr}
-                    </div>
+              return (
+                <div key={slotMins} style={{ display: 'grid', gridTemplateColumns: '56px 1fr' }}>
+                  {/* Hora */}
+                  <div style={{
+                    borderTop: '1px solid #e8eee9',
+                    borderRight: '1px solid #d1ddd4',
+                    background: abierto ? 'white' : '#f8fbf9',
+                    padding: '6px 4px 0',
+                    textAlign: 'right',
+                    fontSize: 10, fontWeight: 600,
+                    color: abierto ? '#6b8f76' : '#d1ddd4',
+                    minHeight: 48,
+                  }}>
+                    {horaStr}
+                  </div>
 
-                    {/* Celdas de personal */}
-                    {personalVisible.map((persona, i) => {
-                      const citasSlot = abierto ? getCitasEnSlot(persona, slotMins) : [];
+                  {/* Celda de citas */}
+                  <div style={{
+                    borderTop: '1px solid #e8eee9',
+                    background: abierto ? 'white' : '#f8fbf9',
+                    padding: abierto ? '4px 8px' : '0',
+                    minHeight: 48,
+                    position: 'relative',
+                  }}>
+                    {!abierto && (
+                      <div style={{
+                        position: 'absolute', top: '50%', left: 8,
+                        transform: 'translateY(-50%)',
+                        fontSize: 9, color: '#d1ddd4', fontWeight: 600,
+                      }}>
+                        fuera de horario
+                      </div>
+                    )}
+
+                    {abierto && citasSlot.length === 0 && (
+                      <div style={{
+                        height: '100%', minHeight: 40,
+                        border: '1px dashed #e8eee9',
+                        borderRadius: 6,
+                      }} />
+                    )}
+
+                    {abierto && citasSlot.map(({ app, misServicios }) => {
+                      const cancelada = app.idEstadoCita === 3;
+                      const tc = TIPO_COLOR[app.idTipoCita] || TIPO_COLOR[3];
+                      const est = CITA_ESTADOS[app.idEstadoCita] || CITA_ESTADOS[1];
+
                       return (
-                        <div key={`${slotMins}-${persona.idPersonal}`} style={{
-                          borderTop: '1px solid #f1f5f9',
-                          borderRight: i < personalVisible.length - 1 ? '1px solid #eff3f8' : 'none',
-                          background: abierto ? 'white' : '#f8fafc',
-                          padding: abierto ? '4px' : '0',
-                          minHeight: 48,
-                          position: 'relative',
-                        }}>
-                          {!abierto && esCierre && i === 0 && (
-                            <div style={{
-                              position: 'absolute', top: '50%', left: 4,
-                              transform: 'translateY(-50%)',
-                              fontSize: 9, color: '#cbd5e1', fontWeight: 600, whiteSpace: 'nowrap',
-                            }}>
-                              sin atención
+                        <div
+                          key={app.idCita}
+                          onClick={() => onEditCita(app)}
+                          style={{
+                            background: cancelada ? '#f8fbf9' : tc.bg,
+                            borderLeft: `3px solid ${cancelada ? '#a32d2d' : tc.border}`,
+                            borderRadius: 7, padding: '6px 8px', marginBottom: 4,
+                            cursor: 'pointer',
+                            opacity: cancelada ? 0.55 : 1,
+                            fontSize: 12,
+                            boxShadow: '0 1px 4px rgba(26,61,40,0.08)',
+                            transition: 'box-shadow 0.15s',
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(26,61,40,0.15)'}
+                          onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 4px rgba(26,61,40,0.08)'}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+                            <div style={{ fontWeight: 700, color: '#1a3d28', lineHeight: 1.3 }}>
+                              🐾 {app.Mascota?.nombre || '—'}
                             </div>
-                          )}
-                          {abierto && citasSlot.map(({ app, misServicios }) => {
-                            const cancelada = app.idEstadoCita === 3;
-                            const tc = TIPO_COLOR[app.idTipoCita] || TIPO_COLOR[3];
-                            const est = CITA_ESTADOS[app.idEstadoCita] || CITA_ESTADOS[1];
-                            return (
-                              <div
-                                key={app.idCita}
-                                onClick={() => onEditCita(app)}
-                                style={{
-                                  background: cancelada ? '#f9fafb' : tc.bg,
-                                  borderLeft: `3px solid ${cancelada ? '#ef4444' : tc.border}`,
-                                  borderRadius: 6, padding: '5px 7px', marginBottom: 3,
-                                 
-                                  opacity: cancelada ? 0.6 : 1,
-                                  fontSize: 11,
-                                }}
-                              >
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-                                  <div style={{ fontWeight: 600, color: '#0f2a4a', lineHeight: 1.3 }}>
-                                    {app.Mascota?.nombre || '—'}
-                                  </div>
-                                  <span style={{
-                                    background: cancelada ? '#fecaca' : est.bg,
-                                    color: cancelada ? '#991b1b' : est.color,
-                                    fontSize: 9, fontWeight: 700,
-                                    padding: '1px 5px', borderRadius: 4, marginLeft: 4, whiteSpace: 'nowrap',
-                                  }}>
-                                    {cancelada ? '🚫 ANULADA' : est.label}
-                                  </span>
-                                </div>
-                                {misServicios.length > 0 ? (
-                                  misServicios.map(d => (
-                                    <div key={d.idDetalle} style={{ color: '#475569', fontSize: 10, lineHeight: 1.3 }}>
-                                      {d.PrecioServicio?.Service?.descripcion || `Serv. #${d.idDetalle}`}
-                                    </div>
-                                  ))
-                                ) : (
-                                  <div style={{ color: '#94a3b8', fontSize: 10, fontStyle: 'italic' }}>Responsable</div>
-                                )}
-                                <span style={{
-                                  display: 'inline-block', marginTop: 2,
-                                  background: tc.tagBg, color: tc.tagColor,
-                                  fontSize: 9, fontWeight: 700,
-                                  padding: '1px 5px', borderRadius: 4,
-                                }}>
-                                  {app.TipoCita?.descripcion || tc.label}
-                                </span>
+                            <span style={{
+                              background: cancelada ? '#fcebeb' : est.bg,
+                              color: cancelada ? '#a32d2d' : est.color,
+                              fontSize: 9, fontWeight: 700,
+                              padding: '1px 6px', borderRadius: 4, marginLeft: 4, whiteSpace: 'nowrap',
+                            }}>
+                              {cancelada ? '🚫 ANULADA' : est.label}
+                            </span>
+                          </div>
+
+                          {misServicios.length > 0 ? (
+                            misServicios.map(d => (
+                              <div key={d.idDetalle} style={{ color: '#6b8f76', fontSize: 10, lineHeight: 1.3 }}>
+                                {d.PrecioServicio?.Service?.descripcion || `Serv. #${d.idDetalle}`}
                               </div>
-                            );
-                          })}
+                            ))
+                          ) : (
+                            <div style={{ color: '#6b8f76', fontSize: 10, fontStyle: 'italic' }}>Responsable</div>
+                          )}
+
+                          <span style={{
+                            display: 'inline-block', marginTop: 3,
+                            background: tc.tagBg, color: tc.tagColor,
+                            fontSize: 9, fontWeight: 700,
+                            padding: '1px 6px', borderRadius: 4,
+                          }}>
+                            {app.TipoCita?.descripcion || tc.label}
+                          </span>
                         </div>
                       );
                     })}
-                  </React.Fragment>
-                );
-              })}
-
-            </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
