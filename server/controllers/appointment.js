@@ -2,20 +2,20 @@ const { Op } = require("sequelize");
 const sequelize = require("../db");
 const { isEditable } = require('../utils/appointmentHelpers');
 
-const Appointment      = require("../models/appointment");
+const Appointment       = require("../models/appointment");
 const AppointmentDetail = require("../models/appointmentDetail");
-const ServicePrice     = require("../models/servicePrice");
-const Service          = require("../models/service");
-const Staff            = require("../models/staff");
-const VetSchedule      = require("../models/vetSchedule");
-const Schedule         = require("../models/schedule");
-const Pet              = require("../models/pet");
-const Client           = require("../models/client");
-const Breed            = require("../models/breed");
-const Species          = require("../models/species");
-const AppointmentType  = require("../models/appointmentType");
-const AppointmentState = require("../models/appointmentState");
-const User             = require("../models/user");
+const ServicePrice      = require("../models/servicePrice");
+const Service           = require("../models/service");
+const Staff             = require("../models/staff");
+const VetSchedule       = require("../models/vetSchedule");
+const Schedule          = require("../models/schedule");
+const Pet               = require("../models/pet");
+const Client            = require("../models/client");
+const Breed             = require("../models/breed");
+const Species           = require("../models/species");
+const AppointmentType   = require("../models/appointmentType");
+const AppointmentState  = require("../models/appointmentState");
+const User              = require("../models/user");
 
 // ─── Helpers de tiempo ───────────────────────────────────────────────────────
 
@@ -37,9 +37,14 @@ function getDiaSemana(fechaStr) {
 }
 
 // ─── Validación de rol vs tipo de servicio ───────────────────────────────────
-// Tipos médico/quirúrgico/control: 1, 3, 4 → solo rol 2 (Veterinario)
-// Tipo estética: 2 → roles 1-4 (todos menos cliente)
-// Retorna { ok, msg }
+//
+//  idTipoServicio:
+//    1 = Médico      → solo Veterinario (rol 2)
+//    2 = Estética    → cualquier staff (rol 1-4), NO clientes (rol 5)
+//    3 = Quirúrgico  → solo Veterinario (rol 2)
+//    4 = Control     → solo Veterinario (rol 2)
+//
+// Retorna { ok: bool, msg: string }
 
 async function validarEjecutorServicio(idPrecioServicio, ejecutorId) {
     const precio = await ServicePrice.findByPk(idPrecioServicio, {
@@ -56,22 +61,22 @@ async function validarEjecutorServicio(idPrecioServicio, ejecutorId) {
 
     const rol = ejecutor.User?.idRol;
 
-    // Médico / Quirúrgico / Control → solo veterinarios (rol 2)
+    // Médico / Quirúrgico / Control → SOLO veterinarios (rol 2)
     if ([1, 3, 4].includes(tipoServicio)) {
         if (rol !== 2) {
             return {
                 ok: false,
-                msg: `"${precio.Service.descripcion}" solo puede ser realizado por un Veterinario.`
+                msg: `El servicio "${precio.Service.descripcion}" es de tipo médico/quirúrgico/control y solo puede ser realizado por un Veterinario.`
             };
         }
     }
 
-    // Estética → cualquier rol de personal (1-4), no clientes (5)
+    // Estética → cualquier rol de staff (1-4), no clientes (5)
     if (tipoServicio === 2) {
         if (!rol || rol === 5) {
             return {
                 ok: false,
-                msg: `"${precio.Service.descripcion}" no puede ser realizado por un Cliente.`
+                msg: `El servicio "${precio.Service.descripcion}" no puede ser realizado por un Cliente.`
             };
         }
     }
@@ -79,58 +84,75 @@ async function validarEjecutorServicio(idPrecioServicio, ejecutorId) {
     return { ok: true };
 }
 
-// ─── Disponibilidad individual de un miembro del personal ────────────────────
-// Valida horario laboral Y superposición contra otros servicios asignados a esa persona.
+// ─── Verificar horario laboral del personal ───────────────────────────────────
 //
-// REGLA DE HORARIOS:
-//   - Veterinarios: tienen su propio horario en HORARIO_VETERINARIO (VetSchedule).
-//     Si no tienen ninguno cargado, se usa el horario general de la clínica (Schedule).
-//   - Todo el demás personal (Admin, Asistente, Vendedor): se valida contra el
-//     horario general de la clínica (Schedule), porque no tienen tabla propia.
+// REGLA:
+//   - Veterinarios (rol 2): tienen su propio horario en HORARIO_VETERINARIO.
+//     Si no tienen ninguno cargado, se usa el horario general (Schedule).
+//   - Resto del staff (Admin, Asistente, Vendedor): se valida contra el
+//     horario general de la clínica (Schedule). No tienen tabla propia.
 //
-// idCitaActual: se pasa en edición para ignorar los detalles de esa misma cita.
+// Retorna { ok: bool, msg: string }
 
-async function checkStaffAvailability(fecha, hora, idPersonal, duracionMinutos, idCitaActual = null) {
+async function verificarHorarioLaboral(fecha, hora, duracionMinutos, idPersonal) {
     const newStart = timeToMinutes(hora);
     const newEnd   = newStart + duracionMinutos;
     const dia      = getDiaSemana(fecha);
 
-    // 1. Intentar obtener horario propio del veterinario (HORARIO_VETERINARIO)
+    // Intentar horario propio de veterinario
     const vetSchedules = await VetSchedule.findAll({
         where: { idVeterinario: idPersonal },
         include: [{ model: Schedule }]
     });
 
-    let atiendeHoy = false;
-
     if (vetSchedules.length > 0) {
-        // Tiene horario propio cargado → lo usamos
-        atiendeHoy = vetSchedules.some(s =>
+        // Tiene horario propio → usarlo
+        const atiendeHoy = vetSchedules.some(s =>
             s.Schedule.diaSemana.toLowerCase() === dia.toLowerCase() &&
             newStart >= timeToMinutes(s.Schedule.horaInicio) &&
             newEnd   <= timeToMinutes(s.Schedule.horaFin)
         );
+        if (!atiendeHoy) {
+            return {
+                ok: false,
+                msg: `El personal (ID ${idPersonal}) no tiene horario de atención el ${dia} en el rango ${hora}–${minutesToTime(newEnd)}.`
+            };
+        }
     } else {
-        // Sin horario propio (asistente, admin, vendedor, o vet sin horario cargado)
-        // → validamos contra el horario general de la clínica (HORARIOS_ATENCION)
+        // Sin horario propio → usar horario general de la clínica
         const horariosClinica = await Schedule.findAll({
             where: { diaSemana: dia }
         });
-        atiendeHoy = horariosClinica.some(h =>
+        const atiendeHoy = horariosClinica.some(h =>
             newStart >= timeToMinutes(h.horaInicio) &&
             newEnd   <= timeToMinutes(h.horaFin)
         );
+        if (!atiendeHoy) {
+            return {
+                ok: false,
+                msg: `La clínica no atiende el ${dia} en el rango ${hora}–${minutesToTime(newEnd)}.`
+            };
+        }
     }
 
-    if (!atiendeHoy) {
-        return {
-            isValid: false,
-            msg: `El personal (ID ${idPersonal}) no está disponible el ${dia} en ese rango horario.`
-        };
-    }
+    return { ok: true };
+}
 
-    // 2. Detectar superposiciones: buscamos TODOS los servicios asignados a este personal ese día,
-    //    sin importar si es el veterinario anfitrión o un ejecutor de servicio.
+// ─── Verificar superposición de agenda del personal ──────────────────────────
+//
+// Busca todos los servicios ya asignados a este personal en esa fecha
+// y detecta si alguno se superpone con el nuevo rango [hora, hora + duracion).
+//
+// Cada servicio tiene su propia duración (no la de la cita completa).
+// idCitaActual: en edición, excluye los detalles de esa misma cita para
+//               no chocarse consigo mismo.
+//
+// Retorna { ok: bool, msg: string }
+
+async function verificarSuperposicion(fecha, hora, duracionMinutos, idPersonal, idCitaActual = null) {
+    const newStart = timeToMinutes(hora);
+    const newEnd   = newStart + duracionMinutos;
+
     const whereDetalle = { idPersonalRealiza: idPersonal };
     if (idCitaActual) {
         whereDetalle.idCita = { [Op.ne]: idCitaActual };
@@ -142,8 +164,7 @@ async function checkStaffAvailability(fecha, hora, idPersonal, duracionMinutos, 
             {
                 model: Appointment,
                 as: 'Cita',
-                // Solo citas del mismo día que no estén canceladas
-                where: { fecha, idEstadoCita: { [Op.ne]: 3 } }
+                where: { fecha, idEstadoCita: { [Op.ne]: 3 } }   // misma fecha, no canceladas
             },
             {
                 model: ServicePrice,
@@ -154,34 +175,55 @@ async function checkStaffAvailability(fecha, hora, idPersonal, duracionMinutos, 
 
     for (const detalle of serviciosAsignados) {
         if (!detalle.Cita) continue;
-        const s = timeToMinutes(detalle.Cita.hora);
-        const durExistente = detalle.PrecioServicio?.duracionEstimada || 30;
-        const e = s + durExistente;
 
-        if (newStart < e && newEnd > s) {
+        // El bloque ocupado es: desde la hora de la cita hasta hora + duración del servicio puntual
+        const existStart = timeToMinutes(detalle.Cita.hora);
+        const durExistente = detalle.PrecioServicio?.duracionEstimada || 30;
+        const existEnd   = existStart + durExistente;
+
+        // Superposición: los rangos se solapan si newStart < existEnd && newEnd > existStart
+        if (newStart < existEnd && newEnd > existStart) {
             return {
-                isValid: false,
-                msg: `Conflicto de agenda (personal ID ${idPersonal}): ya tiene un servicio de ${detalle.Cita.hora.substring(0,5)} a ${minutesToTime(e)}.`
+                ok: false,
+                msg: `Conflicto de agenda: el personal (ID ${idPersonal}) ya tiene un servicio de ${detalle.Cita.hora.substring(0,5)} a ${minutesToTime(existEnd)}.`
             };
         }
     }
 
+    return { ok: true };
+}
+
+// ─── Validación completa de disponibilidad de un miembro del staff ────────────
+//
+// Combina verificarHorarioLaboral + verificarSuperposicion.
+// duracionMinutos = duración total de los servicios que ESTE PERSONAL ejecuta
+//                  en la nueva cita (no la duración de toda la cita).
+
+async function checkStaffAvailability(fecha, hora, idPersonal, duracionMinutos, idCitaActual = null) {
+    const horario = await verificarHorarioLaboral(fecha, hora, duracionMinutos, idPersonal);
+    if (!horario.ok) return { isValid: false, msg: horario.msg };
+
+    const superposicion = await verificarSuperposicion(fecha, hora, duracionMinutos, idPersonal, idCitaActual);
+    if (!superposicion.ok) return { isValid: false, msg: superposicion.msg };
+
     return { isValid: true };
 }
 
-// ─── Duración total que ocupa el veterinario anfitrión ───────────────────────
-// Solo suma los servicios que él mismo ejecuta.
+// ─── Duración total de los servicios que ejecuta UN personal en una lista ─────
+//
+// Suma solo las duraciones de los servicios donde idPersonalRealiza === idPersonal.
+// Si el campo viene vacío, se asume que lo hace el veterinario anfitrión (idVetDefault).
 
-async function calcularDuracionPersonal(servicios, idPersonal) {
+async function calcularDuracionPersonal(servicios, idPersonal, idVetDefault = null) {
     let total = 0;
     for (const s of servicios) {
-        const ejecutor = s.idPersonalRealiza || idPersonal;
-        if (Number(ejecutor) !== Number(idPersonal)) continue;
+        const ejecutorId = s.idPersonalRealiza ? Number(s.idPersonalRealiza) : Number(idVetDefault);
+        if (Number(ejecutorId) !== Number(idPersonal)) continue;
 
         const precio = await ServicePrice.findByPk(s.idPrecioServicio);
         total += precio?.duracionEstimada || 30;
     }
-    return total || 30;
+    return total || 30;   // mínimo 30 min para no bloquear con 0
 }
 
 // ─── CREATE ──────────────────────────────────────────────────────────────────
@@ -191,11 +233,10 @@ async function createAppointment(req, res, next) {
     try {
         const { fecha, hora, idMascota, idTipoCita, idEstadoCita, idVeterinario, servicios } = req.body;
 
-        // PASO 1 — Validar que el veterinario anfitrión existe Y tiene rol 2
+        // PASO 1 — Veterinario anfitrión: debe existir y tener rol 2
         const vetAnfitrion = await Staff.findByPk(idVeterinario, {
             include: [{ model: User, as: 'User' }]
         });
-
         if (!vetAnfitrion) {
             await t.rollback();
             return res.status(404).send({ msg: `No existe personal con ID ${idVeterinario}.` });
@@ -205,57 +246,46 @@ async function createAppointment(req, res, next) {
             return res.status(400).send({ msg: 'El veterinario anfitrión debe tener rol de Veterinario.' });
         }
 
-        // PASO 2 — Validar disponibilidad del veterinario anfitrión
-        // (solo para los servicios que él mismo ejecuta)
+        // PASO 2 & 3 — Validar servicios y disponibilidad de cada ejecutor
         if (servicios && servicios.length > 0) {
-            const durVet = await calcularDuracionPersonal(servicios, idVeterinario);
-            const dispVet = await checkStaffAvailability(fecha, hora, idVeterinario, durVet);
-            if (!dispVet.isValid) {
-                await t.rollback();
-                return res.status(400).send({ msg: `Veterinario anfitrión: ${dispVet.msg}` });
-            }
-        }
 
-        // PASO 3 — Validar cada servicio individualmente
-        if (servicios && servicios.length > 0) {
-            // Rastreamos ejecutores ya validados para no duplicar checkStaffAvailability
-            const ejecutoresYaValidados = new Set();
+            // Mapa: idPersonal → duración total de sus servicios en esta cita
+            const duracionPorPersonal = {};
 
             for (const s of servicios) {
                 const ejecutorId = s.idPersonalRealiza ? Number(s.idPersonalRealiza) : Number(idVeterinario);
 
-                // 3a. Validar reglas de rol (médico → solo vet, estética → no cliente)
+                // 2a. Validar regla de rol (médico/quirúrgico/control → solo vet; estética → no cliente)
                 const validRol = await validarEjecutorServicio(s.idPrecioServicio, ejecutorId);
                 if (!validRol.ok) {
                     await t.rollback();
                     return res.status(400).send({ msg: validRol.msg });
                 }
 
-                // 3b. Validar disponibilidad horaria del ejecutor (una vez por persona)
-                //     El veterinario anfitrión ya fue validado en el Paso 2, lo saltamos
-                //     solo si tiene servicios propios (ya chequeado). Si es otro ejecutor, validamos.
-                if (!ejecutoresYaValidados.has(ejecutorId)) {
-                    ejecutoresYaValidados.add(ejecutorId);
+                // Acumular duración por persona
+                const precio = await ServicePrice.findByPk(s.idPrecioServicio);
+                const durServicio = precio?.duracionEstimada || 30;
+                duracionPorPersonal[ejecutorId] = (duracionPorPersonal[ejecutorId] || 0) + durServicio;
+            }
 
-                    // Calcular duración total de todos los servicios que ejecuta este personal
-                    const durPersonal = await calcularDuracionPersonal(servicios, ejecutorId);
-                    const disp = await checkStaffAvailability(fecha, hora, ejecutorId, durPersonal);
-                    if (!disp.isValid) {
-                        await t.rollback();
-                        return res.status(400).send({ msg: disp.msg });
-                    }
+            // 2b. Validar disponibilidad horaria de cada ejecutor involucrado
+            for (const [idPersonal, duracion] of Object.entries(duracionPorPersonal)) {
+                const disp = await checkStaffAvailability(fecha, hora, Number(idPersonal), duracion);
+                if (!disp.isValid) {
+                    await t.rollback();
+                    return res.status(400).send({ msg: disp.msg });
                 }
             }
         }
 
-        // PASO 4 — Crear cabecera de la cita
+        // PASO 4 — Crear cabecera
         const appointment = await Appointment.create({
             fecha, hora, idMascota, idTipoCita, idVeterinario,
             idEstadoCita: idEstadoCita || 1,
             idRegistradoPor: req.user.idPersonal,
         }, { transaction: t });
 
-        // PASO 5 — Crear detalles de servicios
+        // PASO 5 — Crear detalles
         if (servicios && servicios.length > 0) {
             const detalles = servicios.map(s => ({
                 idCita:            appointment.idCita,
@@ -419,15 +449,13 @@ async function getAppointmentsByStaff(req, res, next) {
 }
 
 // ─── UPDATE ───────────────────────────────────────────────────────────────────
-// Solo actualiza la cabecera (fecha, hora, vet, estado).
-// Los servicios individuales se actualizan desde el endpoint de appointmentDetail.
 
 async function updateAppointment(req, res, next) {
     const t = await sequelize.transaction();
     try {
         const { id } = req.params;
         const data = req.body;
-        delete data.idRegistradoPor; // nunca se modifica
+        delete data.idRegistradoPor;
 
         const currentAppointment = await Appointment.findByPk(id, {
             include: [{ model: AppointmentDetail, as: 'detalles' }]
@@ -447,22 +475,30 @@ async function updateAppointment(req, res, next) {
             );
         }
 
-        // Si cambia fecha/hora/vet, revalidamos disponibilidad del anfitrión
         const fechaCheck = data.fecha || currentAppointment.fecha;
         const horaCheck  = data.hora  || currentAppointment.hora;
         const vetCheck   = data.idVeterinario || currentAppointment.idVeterinario;
 
-        // Calculamos la duración sumando los servicios que ejecuta el vet anfitrión
+        // Revalidar disponibilidad del veterinario anfitrión
+        // usando solo la duración de los servicios que él mismo ejecuta
         const detallesActuales = currentAppointment.detalles || [];
-        let durVet = 0;
-        for (const det of detallesActuales) {
-            if (Number(det.idPersonalRealiza) !== Number(vetCheck)) continue;
-            const precio = await ServicePrice.findByPk(det.idPrecioServicio);
-            durVet += precio?.duracionEstimada || 30;
-        }
-        if (durVet === 0) durVet = 30;
+        const duracionPorPersonal = {};
 
-        const disp = await checkStaffAvailability(fechaCheck, horaCheck, vetCheck, durVet, id);
+        for (const det of detallesActuales) {
+            const precio = await ServicePrice.findByPk(det.idPrecioServicio);
+            const dur = precio?.duracionEstimada || 30;
+            const pid = Number(det.idPersonalRealiza);
+            duracionPorPersonal[pid] = (duracionPorPersonal[pid] || 0) + dur;
+        }
+
+        // Si el vet anfitrión no ejecuta ningún servicio, usar 30 min como mínimo
+        if (!duracionPorPersonal[Number(vetCheck)]) {
+            duracionPorPersonal[Number(vetCheck)] = 30;
+        }
+
+        // Solo revalidamos el vet anfitrión en el update de cabecera.
+        // Los ejecutores de servicios individuales se revalidan desde appointmentDetail.
+        const disp = await checkStaffAvailability(fechaCheck, horaCheck, vetCheck, duracionPorPersonal[Number(vetCheck)], id);
         if (!disp.isValid) {
             await t.rollback();
             return res.status(400).send({ msg: disp.msg });
@@ -529,6 +565,11 @@ async function updateStatus(req, res) {
 }
 
 // ─── AVAILABILITY ─────────────────────────────────────────────────────────────
+//
+// Devuelve los slots libres del día para un staff.
+// Un slot está "ocupado" si el personal tiene algún AppointmentDetail cuya
+// cita empieza en ese slot (simplificación de 30 min por slot).
+// Para una precisión real de rangos, el frontend debería consultar checkStaffAvailability.
 
 async function getAvailability(req, res, next) {
     try {
@@ -537,29 +578,48 @@ async function getAvailability(req, res, next) {
             return res.status(400).json({ msg: 'Faltan datos obligatorios (fecha y staffId).' });
         }
 
-        const inicioJornada   = '09:00';
-        const finJornada      = '19:00';
+        const inicioJornada    = '09:00';
+        const finJornada       = '19:00';
         const intervaloMinutos = 30;
 
-        const citasOcupadas = await Appointment.findAll({
-            where: { fecha: date, idEstadoCita: { [Op.ne]: 3 } },
-            include: [{
-                model: AppointmentDetail,
-                as: 'detalles',
-                required: true,
-                where: { idPersonalRealiza: staffId }
-            }]
+        // Traer todos los detalles de ese staff ese día (con la duración de cada servicio)
+        const detalles = await AppointmentDetail.findAll({
+            where: { idPersonalRealiza: staffId },
+            include: [
+                {
+                    model: Appointment,
+                    as: 'Cita',
+                    where: { fecha: date, idEstadoCita: { [Op.ne]: 3 } }
+                },
+                {
+                    model: ServicePrice,
+                    as: 'PrecioServicio'
+                }
+            ]
         });
 
-        const horasOcupadas = citasOcupadas.map(c => c.hora.substring(0, 5));
+        // Construir lista de bloques ocupados: [{ start, end }]
+        const bloquesOcupados = detalles
+            .filter(d => d.Cita)
+            .map(d => {
+                const start = timeToMinutes(d.Cita.hora);
+                const dur   = d.PrecioServicio?.duracionEstimada || 30;
+                return { start, end: start + dur };
+            });
 
+        // Generar slots y filtrar los que no se solapan con ningún bloque
         const slotsDisponibles = [];
         let current = new Date(`${date}T${inicioJornada}:00`);
         const end   = new Date(`${date}T${finJornada}:00`);
 
         while (current < end) {
-            const timeStr = current.toTimeString().substring(0, 5);
-            if (!horasOcupadas.includes(timeStr)) slotsDisponibles.push(timeStr);
+            const timeStr  = current.toTimeString().substring(0, 5);
+            const slotMin  = timeToMinutes(timeStr);
+            const slotFin  = slotMin + intervaloMinutos;
+
+            const ocupado = bloquesOcupados.some(b => slotMin < b.end && slotFin > b.start);
+            if (!ocupado) slotsDisponibles.push(timeStr);
+
             current.setMinutes(current.getMinutes() + intervaloMinutos);
         }
 
