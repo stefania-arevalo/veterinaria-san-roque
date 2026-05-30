@@ -1,3 +1,4 @@
+const { Op } = require("sequelize"); 
 const VetSchedule = require("../models/vetSchedule");
 const Veterinarian = require("../models/veterinarian");
 const Staff = require("../models/staff");
@@ -5,16 +6,14 @@ const Schedule = require("../models/schedule");
 
 // 1. CREATE: Solo Admin + Verificación de Rol Veterinario
 async function createVetSchedule(req, res) {
-    const { idRol } = req.user; // Obtenido del middleware de auth
+    const { idRol } = req.user; 
     const { idVeterinario, idHorario } = req.body;
 
-    // Bloqueo por Rol: Solo Admin (idRol === 1) puede crear
     if (idRol !== 1) {
         return res.status(403).send({ msg: "No tienes permisos para asignar horarios." });
     }
 
     try {
-        // VALIDACIÓN CRÍTICA: ¿El idPersonal pertenece a un Veterinario?
         const isVet = await Veterinarian.findByPk(idVeterinario);
         if (!isVet) {
             return res.status(400).send({ 
@@ -32,20 +31,17 @@ async function createVetSchedule(req, res) {
     }
 }
 
-// 2. GET ALL: Todos los roles pueden ver
+// 2. GET ALL (CON FILTROS CORREGIDOS): Todos los roles pueden ver
 async function getVetSchedules(req, res) {
-    // 1. Capturamos los filtros que envía el frontend (?diaSemana=Martes&idPersonal=3)
     const { diaSemana, idPersonal } = req.query;
 
     let whereVetSchedule = {};
     let whereSchedule = {};
 
-    // Si viene idPersonal, filtramos en la tabla intermedia VetSchedule
     if (idPersonal) {
         whereVetSchedule.idVeterinario = idPersonal;
     }
 
-    // Si viene diaSemana, filtramos en la tabla asociativa de Schedule
     if (diaSemana) {
         whereSchedule.diaSemana = { [Op.like]: `%${diaSemana}%` };
     }
@@ -56,6 +52,7 @@ async function getVetSchedules(req, res) {
             include: [
                 { 
                     model: Schedule, 
+                    as: "HorarioDetail", // 🌟 CORREGIDO: Usamos el alias exacto que definiste en tu modelo
                     where: whereSchedule,
                     attributes: ['idHorario', 'diaSemana', 'turno', 'horaInicio', 'horaFin']
                 },
@@ -67,30 +64,29 @@ async function getVetSchedules(req, res) {
             ]
         });
 
-        // 2. Mapeamos la respuesta para que la estructura sea plana y compatible con lo que lee tu Frontend
+        // Mapeamos la respuesta usando la relación con su alias correspondiente
         const respuestaFormateada = list.map(item => {
-            // Extraemos los datos de la relación de manera segura
-            const horario = item.Schedule || {};
+            // 🌟 CORREGIDO: Extraemos los datos desde 'HorarioDetail'
+            const horario = item.HorarioDetail || {}; 
             return {
-                idHorario: horario.idHorario,
-                diaSemana: horario.diaSemana,
-                turno: horario.turno,
-                horaInicio: horario.horaInicio,
-                horaFin: horario.horaFin
+                idHorario: horario.idHorario || null,
+                diaSemana: horario.diaSemana || null,
+                turno: horario.turno || null,
+                horaInicio: horario.horaInicio || null,
+                horaFin: horario.horaFin || null
             };
         });
 
         return res.status(200).send(respuestaFormateada);
 
     } catch (error) {
-    
         console.error("Error en getVetSchedules Backend:", error);
         return res.status(500).send({ msg: "Error interno al obtener la lista de horarios." });
     }
 }
 
+// 3. GET SINGLE: Buscar asignación específica
 async function getVetSchedule(req, res) {
-    // CAMBIO AQUÍ: Debe coincidir con :idVeterinario y :idHorario de la ruta
     const { idVeterinario, idHorario } = req.params; 
     
     try {
@@ -100,7 +96,10 @@ async function getVetSchedule(req, res) {
                 idHorario: idHorario 
             },
             include: [
-                { model: Schedule },
+                { 
+                    model: Schedule,
+                    as: "HorarioDetail" // 🌟 CORREGIDO: Mismo alias aquí también
+                },
                 {
                     model: Veterinarian,
                     include: [{ model: Staff, attributes: ['nombres', 'apellidos'] }]
@@ -112,7 +111,6 @@ async function getVetSchedule(req, res) {
         
         return res.status(200).send(item);
     } catch (error) {
-        // Tip: Siempre logueá el error en consola para saber qué falló exactamente
         console.error("Error en getVetSchedule:", error);
         return res.status(500).send({ msg: "Error interno al buscar el horario." });
     }
