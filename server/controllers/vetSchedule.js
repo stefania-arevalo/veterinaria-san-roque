@@ -1,4 +1,3 @@
-// 🌟 IMPORTANTE: Requerimos Op de Sequelize para los filtros
 const { Op } = require("sequelize"); 
 const VetSchedule = require("../models/vetSchedule");
 const Veterinarian = require("../models/veterinarian");
@@ -7,17 +6,14 @@ const Schedule = require("../models/schedule");
 
 // 1. CREATE: Solo Admin + Verificación de Rol Veterinario
 async function createVetSchedule(req, res) {
-    const { idRol } = req.user; // Obtenido del middleware de auth
+    const { idRol } = req.user; 
     const { idVeterinario, idHorario } = req.body;
 
-    // Bloqueo por Rol: Solo Admin (idRol === 1) puede crear
     if (idRol !== 1) {
         return res.status(403).send({ msg: "No tienes permisos para asignar horarios." });
     }
 
     try {
-        // VALIDACIÓN CRÍTICA: ¿El idPersonal pertenece a un Veterinario?
-        // Usamos findOne simple para evitar que Sequelize intente resolver includes automáticos rotos
         const isVet = await Veterinarian.findOne({ where: { idPersonal: idVeterinario } });
         if (!isVet) {
             return res.status(400).send({ 
@@ -25,7 +21,6 @@ async function createVetSchedule(req, res) {
             });
         }
 
-        // Verificamos si el horario existe antes de asociarlo
         const existsSchedule = await Schedule.findByPk(idHorario);
         if (!existsSchedule) {
             return res.status(404).send({ msg: "El horario que intentas asignar no existe." });
@@ -63,7 +58,7 @@ async function getVetSchedules(req, res) {
             include: [
                 { 
                     model: Schedule, 
-                    as: "HorarioDetail", // 🌟 Alias obligatorio de tu modelo
+                    // 🌟 CORREGIDO: Ya no incluimos el atributo 'as', Sequelize usa el nombre por defecto
                     where: whereSchedule,
                     attributes: ['idHorario', 'diaSemana', 'turno', 'horaInicio', 'horaFin']
                 },
@@ -75,9 +70,9 @@ async function getVetSchedules(req, res) {
             ]
         });
 
-        // Mapeamos la respuesta de forma plana y segura para el Frontend
+        // 🌟 MAPEO SEGURO SÍNCRONO: Resiste cualquier variante que Sequelize use por defecto
         const respuestaFormateada = list.map(item => {
-            const horario = item.HorarioDetail || {};
+            const horario = item.Schedule || item.schedule || item.HorarioDetail || {};
             return {
                 idHorario: horario.idHorario || null,
                 diaSemana: horario.diaSemana || null,
@@ -106,10 +101,7 @@ async function getVetSchedule(req, res) {
                 idHorario: idHorario 
             },
             include: [
-                { 
-                    model: Schedule,
-                    as: "HorarioDetail" // 🌟 Alias obligatorio aquí también
-                },
+                { model: Schedule }, // Sin alias
                 {
                     model: Veterinarian,
                     include: [{ model: Staff, attributes: ['nombres', 'apellidos'] }]
