@@ -81,29 +81,51 @@ async function validarEjecutorServicio(idPrecioServicio, ejecutorId) {
 
 // ─── Disponibilidad individual de un miembro del personal ────────────────────
 // Valida horario laboral Y superposición contra otros servicios asignados a esa persona.
-// idCitaActual: se ignora en edición para no chocarse con los propios detalles.
+//
+// REGLA DE HORARIOS:
+//   - Veterinarios: tienen su propio horario en HORARIO_VETERINARIO (VetSchedule).
+//     Si no tienen ninguno cargado, se usa el horario general de la clínica (Schedule).
+//   - Todo el demás personal (Admin, Asistente, Vendedor): se valida contra el
+//     horario general de la clínica (Schedule), porque no tienen tabla propia.
+//
+// idCitaActual: se pasa en edición para ignorar los detalles de esa misma cita.
 
 async function checkStaffAvailability(fecha, hora, idPersonal, duracionMinutos, idCitaActual = null) {
     const newStart = timeToMinutes(hora);
     const newEnd   = newStart + duracionMinutos;
     const dia      = getDiaSemana(fecha);
 
-    // 1. Verificar horario laboral del personal
-    const schedules = await VetSchedule.findAll({
+    // 1. Intentar obtener horario propio del veterinario (HORARIO_VETERINARIO)
+    const vetSchedules = await VetSchedule.findAll({
         where: { idVeterinario: idPersonal },
         include: [{ model: Schedule }]
     });
 
-    const atiendeHoy = schedules.some(s =>
-        s.Schedule.diaSemana.toLowerCase() === dia.toLowerCase() &&
-        newStart >= timeToMinutes(s.Schedule.horaInicio) &&
-        newEnd   <= timeToMinutes(s.Schedule.horaFin)
-    );
+    let atiendeHoy = false;
+
+    if (vetSchedules.length > 0) {
+        // Tiene horario propio cargado → lo usamos
+        atiendeHoy = vetSchedules.some(s =>
+            s.Schedule.diaSemana.toLowerCase() === dia.toLowerCase() &&
+            newStart >= timeToMinutes(s.Schedule.horaInicio) &&
+            newEnd   <= timeToMinutes(s.Schedule.horaFin)
+        );
+    } else {
+        // Sin horario propio (asistente, admin, vendedor, o vet sin horario cargado)
+        // → validamos contra el horario general de la clínica (HORARIOS_ATENCION)
+        const horariosClinica = await Schedule.findAll({
+            where: { diaSemana: dia }
+        });
+        atiendeHoy = horariosClinica.some(h =>
+            newStart >= timeToMinutes(h.horaInicio) &&
+            newEnd   <= timeToMinutes(h.horaFin)
+        );
+    }
 
     if (!atiendeHoy) {
         return {
             isValid: false,
-            msg: `El personal (ID ${idPersonal}) no tiene horario de atención el ${dia} en ese rango horario.`
+            msg: `El personal (ID ${idPersonal}) no está disponible el ${dia} en ese rango horario.`
         };
     }
 
