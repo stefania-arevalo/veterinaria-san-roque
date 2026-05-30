@@ -163,7 +163,7 @@ function ClientModal({ client, localities, onClose, onSave, mode }) {
   useEffect(() => {
     if (!hasUser && !isView && (isEdit || mode === "new")) {
       setLoadingUsers(true);
-      axios.get(apiUrl("/users"), { headers: authHeaders() })
+      axios.get("/users", { headers: authHeaders() })
         .then(res => {
           const data = Array.isArray(res.data) ? res.data : [];
           setExistingUsers(data.filter(u => u.idRol === 5 && !u.Client && !u.Staff));
