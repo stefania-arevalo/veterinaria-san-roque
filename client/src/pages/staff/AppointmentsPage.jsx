@@ -1475,14 +1475,15 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
     }
   
     setDetalles(prev => [...prev, {
-      idPrecioServicio: sp.idPrecioServicio,
-      idEstadoServicio: 1,
-      idPersonalRealiza: (tipoCita === 1 || tipoCita === 2) ? form.idVeterinario : "",
-      observaciones: "",
-      _descripcion: sp.Service?.descripcion,
-      _precio: sp.precio,
-      _tamaño: sp.AnimalSize?.descripcion || null,
-      _idTipoServicio: tipoServicio // Guardamos esto para validaciones rápidas
+      idPrecioServicio:  sp.idPrecioServicio,
+      idEstadoServicio:  1,
+      // Default: el veterinario anfitrión. El usuario puede cambiarlo según el tipo de servicio.
+      idPersonalRealiza: form.idVeterinario || "",
+      observaciones:     "",
+      _descripcion:      sp.Service?.descripcion,
+      _precio:           sp.precio,
+      _tamaño:           sp.AnimalSize?.descripcion || null,
+      _idTipoServicio:   tipoServicio, // 1=Médico 2=Estética 3=Quirúrgico 4=Control
     }]);
   };
 
@@ -1603,18 +1604,17 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
     }
   };
   const obtenerResponsablesPorServicio = (servicio) => {
-    const desc = (servicio._descripcion || "").toLowerCase();
-    
-    // LÓGICA DE NEGOCIO:
-    // Si el servicio es Médico o Quirúrgico (Consulta, Vacuna, Cirugía) -> Solo Veterinarios
-    if (desc.includes("consulta") || desc.includes("vacun") || desc.includes("cirug") || desc.includes("médico")) {
+    // Usamos el idTipoServicio guardado en el objeto, no buscamos por texto.
+    // 1=Médico  3=Quirúrgico  4=Control → solo veterinarios (rol 2)
+    // 2=Estética → todo el personal (vets + staff), sin clientes
+    const tipoSrv = Number(servicio._idTipoServicio || 0);
+    if ([1, 3, 4].includes(tipoSrv)) {
       return vets;
     }
-    
-    // Si es Estética (Baño, Corte) -> Todo el personal disponible (Vets + Staff)
+    // Estética u otro: unión de vets + staff sin duplicados
     return [
-      ...vets, 
-      ...staff.filter(s => !vets.find(v => v.idPersonal === s.idPersonal))
+      ...vets,
+      ...staff.filter(s => !vets.find(v => v.idPersonal === s.idPersonal)),
     ];
   };
   
@@ -1623,20 +1623,10 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
 
   const transiciones  = isEdit ? (ESTADO_TRANSITIONS[form.idEstadoCita] || []) : [];
   const estadoActual  = CITA_ESTADOS[form.idEstadoCita] || CITA_ESTADOS[1];
-  const listaResponsables = (() => {
-    const tipo = Number(form.idTipoCita);
-    
-    // Si es Tipo 1 (Consulta) o 2 (Cirugía/Especial), solo Veterinarios
-    if (tipo === 1 || tipo === 2) {
-      return vets; 
-    }
-    
-    // Si es Tipo 3 (General/Estética) u otros, pueden ser Veterinaros, Staff o Asistentes
-    return [
-      ...vets, 
-      ...staff.filter(s => !vets.find(v => v.idPersonal === s.idPersonal))
-    ];
-  })();
+  const listaResponsables = [
+    ...vets,
+    ...staff.filter(s => !vets.find(v => v.idPersonal === s.idPersonal)),
+  ];
   
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -1976,21 +1966,15 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
                 </thead>
                 <tbody>
                 {detalles.map((servicio, idx) => {
-                  // 1. LÓGICA POR TIPO DE SERVICIO (No por cita)
-                  // Obtenemos la descripción para saber si es médico
-                  const desc = (servicio._descripcion || "").toLowerCase();
-                  
-                  // Definimos si el servicio requiere SÍ O SÍ un veterinario
-                  const esServicioMedico = 
-                    desc.includes("consulta") || 
-                    desc.includes("vacun") || 
-                    desc.includes("cirug") || 
-                    desc.includes("médico") ||
-                    desc.includes("quirúrgico");
+                  // 1. FILTRADO DE RESPONSABLES POR TIPO DE SERVICIO (no por texto)
+                  // _idTipoServicio: 1=Médico 3=Quirúrgico 4=Control → solo vets
+                  //                  2=Estética → vets + staff (sin clientes)
+                  const tipoSrvFila = Number(servicio._idTipoServicio || 0);
+                  const esServicioMedico = [1, 3, 4].includes(tipoSrvFila);
 
                   // 2. FILTRADO DE RESPONSABLES
-                  const responsablesPermitidos = esServicioMedico 
-                    ? vets 
+                  const responsablesPermitidos = esServicioMedico
+                    ? vets
                     : [...vets, ...staff.filter(s => !vets.find(v => v.idPersonal === s.idPersonal))];
 
                   // 3. FUNCIÓN PARA OBTENER NOMBRE (Manejando la herencia de Staff)
