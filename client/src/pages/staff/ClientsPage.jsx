@@ -107,6 +107,204 @@ function ConfirmModal({ title, message, onConfirm, onCancel, loading, danger }) 
   );
 }
 
+// ── Panel lateral de mascotas ─────────────────────────────────────
+function PetsDrawer({ client, allPets, onClose }) {
+  const pets = allPets.filter(p => p.idCliente === client.idCliente);
+
+  const speciesIcon = (nombre) => {
+    if (!nombre) return "🐾";
+    const n = nombre.toLowerCase();
+    if (n.includes("can") || n.includes("perr")) return "🐕";
+    if (n.includes("gat") || n.includes("fel")) return "🐈";
+    if (n.includes("ave") || n.includes("paj")) return "🦜";
+    if (n.includes("cone")) return "🐇";
+    if (n.includes("hamst") || n.includes("roedor")) return "🐹";
+    return "🐾";
+  };
+
+  const formatDate = (d) => {
+    if (!d) return "Sin dato";
+    const date = new Date(d);
+    return date.toLocaleDateString("es-AR", { day: "2-digit", month: "long", year: "numeric" });
+  };
+
+  return (
+    <>
+      {/* Overlay semitransparente */}
+      <div
+        onClick={onClose}
+        style={{
+          position: "fixed", inset: 0, zIndex: 150,
+          background: "rgba(10,30,20,0.35)",
+          backdropFilter: "blur(2px)",
+        }}
+      />
+
+      {/* Panel lateral */}
+      <div style={{
+        position: "fixed", top: 0, right: 0, bottom: 0, zIndex: 160,
+        width: "100%", maxWidth: 400,
+        background: C.white,
+        borderLeft: `1px solid ${C.border}`,
+        boxShadow: "-8px 0 40px rgba(0,0,0,0.15)",
+        display: "flex", flexDirection: "column",
+        animation: "slideIn 0.22s ease",
+      }}>
+        <style>{`
+          @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to   { transform: translateX(0);    opacity: 1; }
+          }
+        `}</style>
+
+        {/* Cabecera del panel */}
+        <div style={{
+          background: C.green900, color: "white",
+          padding: "18px 20px", flexShrink: 0,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+        }}>
+          <div>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 3 }}>
+              Mascotas del cliente
+            </div>
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>
+              {client.nombres} {client.apellidos}
+            </h3>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginTop: 2 }}>
+              DNI {client.dni}
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: "rgba(255,255,255,0.12)", border: "none", color: "white",
+              width: 34, height: 34, borderRadius: 9, cursor: "pointer", fontSize: 17,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >✕</button>
+        </div>
+
+        {/* Resumen */}
+        <div style={{
+          padding: "12px 20px",
+          borderBottom: `1px solid ${C.borderLight}`,
+          background: C.surface,
+          display: "flex", alignItems: "center", gap: 8,
+        }}>
+          <span style={{
+            background: C.green100, color: C.green800,
+            fontWeight: 700, fontSize: 13,
+            padding: "4px 12px", borderRadius: 20,
+          }}>
+            🐾 {pets.length} mascota{pets.length !== 1 ? "s" : ""} registrada{pets.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+
+        {/* Lista de mascotas */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+          {pets.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "48px 0" }}>
+              <div style={{ fontSize: 44, marginBottom: 12 }}>🐾</div>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: C.text }}>Sin mascotas registradas</p>
+              <p style={{ margin: "6px 0 0", fontSize: 12, color: C.muted }}>
+                Este cliente aún no tiene pacientes en el sistema.
+              </p>
+            </div>
+          ) : pets.map((pet) => {
+            const especieNombre =
+              pet.Raza?.Especie?.nombre ||
+              pet.Breed?.Especie?.nombre ||
+              pet.Breed?.Species?.nombre ||
+              null;
+            const razaNombre =
+              pet.Raza?.descripcion ||
+              pet.Raza?.nombre ||
+              pet.Breed?.nombre ||
+              null;
+
+            return (
+              <div
+                key={pet.idMascota}
+                style={{
+                  background: C.white,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 14,
+                  padding: "14px 16px",
+                  transition: "box-shadow 0.15s, border-color 0.15s",
+                  cursor: "default",
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.boxShadow = "0 4px 16px rgba(26,61,40,0.1)";
+                  e.currentTarget.style.borderColor = C.green200;
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.boxShadow = "none";
+                  e.currentTarget.style.borderColor = C.border;
+                }}
+              >
+                {/* Fila superior: ícono + nombre + sexo */}
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+                  <div style={{
+                    width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+                    background: C.green100,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 22,
+                  }}>
+                    {speciesIcon(especieNombre)}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{pet.nombre}</div>
+                    <div style={{ fontSize: 12, color: C.muted, marginTop: 1 }}>
+                      {especieNombre || "Especie no especificada"}
+                      {razaNombre ? ` · ${razaNombre}` : ""}
+                    </div>
+                  </div>
+                  {/* Badge sexo */}
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 20,
+                    background: pet.sexo === "M" ? "#e6f1fb" : "#fce7f3",
+                    color: pet.sexo === "M" ? C.blue : "#9d174d",
+                  }}>
+                    {pet.sexo === "M" ? "Macho" : "Hembra"}
+                  </span>
+                </div>
+
+                {/* Grilla de detalles */}
+                <div style={{
+                  display: "grid", gridTemplateColumns: "1fr 1fr",
+                  gap: "6px 12px",
+                  padding: "10px 12px",
+                  background: C.surface,
+                  borderRadius: 9,
+                  fontSize: 12,
+                }}>
+                  <div>
+                    <div style={{ color: C.muted, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>Tamaño</div>
+                    <div style={{ color: C.text, fontWeight: 600 }}>{pet.AnimalSize?.descripcion || "—"}</div>
+                  </div>
+                  <div>
+                    <div style={{ color: C.muted, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>Colores</div>
+                    <div style={{ color: C.text, fontWeight: 600 }}>{pet.colores || "—"}</div>
+                  </div>
+                  <div style={{ gridColumn: "1/-1" }}>
+                    <div style={{ color: C.muted, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>Fecha de nacimiento</div>
+                    <div style={{ color: C.text, fontWeight: 600 }}>{formatDate(pet.fechaNac)}</div>
+                  </div>
+                </div>
+
+                {/* ID badge */}
+                <div style={{ marginTop: 8, textAlign: "right" }}>
+                  <span style={{ fontSize: 10, color: C.muted }}>Paciente #{pet.idMascota}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ── Modal cliente ─────────────────────────────────────────────────
 function ClientModal({ client, localities, onClose, onSave, mode }) {
   const { user } = useAuth();
@@ -146,20 +344,13 @@ function ClientModal({ client, localities, onClose, onSave, mode }) {
   const [error,             setError]             = useState("");
   const [showConfirm,       setShowConfirm]       = useState(false);
   const [showPassword,      setShowPassword]       = useState(false);
-
-  // Modo de acceso cuando no tiene usuario: "none" | "create" | "existing"
   const [accessMode,        setAccessMode]        = useState("none");
-
-  // Usuarios disponibles para asociar
   const [existingUsers,     setExistingUsers]     = useState([]);
   const [loadingUsers,      setLoadingUsers]      = useState(false);
   const [selectedUserId,    setSelectedUserId]    = useState("");
-
-  // Confirmar desvincular
   const [confirmUnlink,     setConfirmUnlink]     = useState(false);
   const [unlinking,         setUnlinking]         = useState(false);
 
-  // Cargar usuarios compatibles (idRol 5, sin cliente ni staff)
   useEffect(() => {
     if (!hasUser && !isView && (isEdit || mode === "new")) {
       setLoadingUsers(true);
@@ -221,7 +412,6 @@ function ClientModal({ client, localities, onClose, onSave, mode }) {
         clienteId = res.data.idCliente;
       }
 
-      // Acceso: crear usuario nuevo
       if (!hasUser && accessMode === "create" && form.usuario && form.password) {
         await createAndLinkUser({
           usuario:    form.usuario,
@@ -232,7 +422,6 @@ function ClientModal({ client, localities, onClose, onSave, mode }) {
         });
       }
 
-      // Acceso: asociar usuario existente
       if (!hasUser && accessMode === "existing" && selectedUserId) {
         await linkExistingUser({
           idUsuario:  selectedUserId,
@@ -241,7 +430,6 @@ function ClientModal({ client, localities, onClose, onSave, mode }) {
         });
       }
 
-      // Acceso: editar cuenta existente (estado + contraseña)
       if (hasUser && isAdmin) {
         const ud = { estado: form.estado };
         if (form.estado && form.password) ud.contraseña = form.password;
@@ -291,7 +479,7 @@ function ClientModal({ client, localities, onClose, onSave, mode }) {
         />
       )}
 
-      <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(10,30,20,0.5)", backdropFilter: "blur(5px)" }}>
+      <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(10,30,20,0.5)", backdropFilter: "blur(5px)" }}>
         <div style={{ position: "absolute", inset: 0 }} onClick={onClose} />
 
         <div style={{ position: "relative", background: C.white, borderRadius: 18, width: "100%", maxWidth: 560, maxHeight: "92vh", display: "flex", flexDirection: "column", margin: "0 16px", border: `1px solid ${C.border}`, boxShadow: "0 24px 60px rgba(0,0,0,0.18)", overflow: "hidden" }}>
@@ -313,7 +501,6 @@ function ClientModal({ client, localities, onClose, onSave, mode }) {
           <div style={{ flex: 1, overflowY: "auto", padding: "22px 24px" }}>
             <form onSubmit={handlePreSubmit}>
 
-              {/* Datos personales */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                 <div><label style={lbl}>Nombres *</label><input name="nombres" value={form.nombres} onChange={hc} readOnly={isView} required style={inp} placeholder="Juan" /></div>
                 <div><label style={lbl}>Apellidos *</label><input name="apellidos" value={form.apellidos} onChange={hc} readOnly={isView} required style={inp} placeholder="Pérez" /></div>
@@ -344,10 +531,8 @@ function ClientModal({ client, localities, onClose, onSave, mode }) {
                   🔐 Acceso al sistema
                 </h4>
 
-                {/* ── YA TIENE USUARIO ── */}
                 {hasUser ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                    {/* Info de la cuenta */}
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: C.green100, borderRadius: 9, border: `1px solid ${C.green200}` }}>
                       <div>
                         <div style={{ fontSize: 11, color: C.muted }}>Usuario</div>
@@ -357,7 +542,6 @@ function ClientModal({ client, localities, onClose, onSave, mode }) {
                       <UserStateBadge estado={form.estado} />
                     </div>
 
-                    {/* Editar estado + contraseña (solo admin) */}
                     {isAdmin && !isView && (
                       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", color: C.text }}>
@@ -375,7 +559,6 @@ function ClientModal({ client, localities, onClose, onSave, mode }) {
                       </div>
                     )}
 
-                    {/* Desvincular — solo admin, solo edición */}
                     {isAdmin && !isView && (
                       <div style={{ padding: "12px 14px", background: C.redBg, border: `1px solid #f7c1c1`, borderRadius: 9 }}>
                         <div style={{ fontSize: 12, fontWeight: 700, color: C.red, marginBottom: 6 }}>⚠️ Zona peligrosa</div>
@@ -390,9 +573,7 @@ function ClientModal({ client, localities, onClose, onSave, mode }) {
                   </div>
 
                 ) : !isView ? (
-                  /* ── NO TIENE USUARIO → selector de modo ── */
                   <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                    {/* Opciones: none / create / existing */}
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
                       {[
                         { key: "none",     icon: "⏭️", label: "Sin acceso",         desc: "Solo datos personales" },
@@ -417,7 +598,6 @@ function ClientModal({ client, localities, onClose, onSave, mode }) {
                       ))}
                     </div>
 
-                    {/* Crear usuario nuevo */}
                     {accessMode === "create" && (
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, padding: "14px", background: C.white, borderRadius: 9, border: `1px solid ${C.border}` }}>
                         <div>
@@ -433,7 +613,6 @@ function ClientModal({ client, localities, onClose, onSave, mode }) {
                             </button>
                           </div>
                         </div>
-                        {/* Rol informativo */}
                         <div style={{ gridColumn: "1/-1", display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: "#fce7f3", borderRadius: 8 }}>
                           <span style={{ fontSize: 16 }}>🐾</span>
                           <div>
@@ -444,7 +623,6 @@ function ClientModal({ client, localities, onClose, onSave, mode }) {
                       </div>
                     )}
 
-                    {/* Asociar usuario existente */}
                     {accessMode === "existing" && (
                       <div style={{ padding: "14px", background: C.white, borderRadius: 9, border: `1px solid ${C.border}` }}>
                         {loadingUsers ? (
@@ -458,11 +636,7 @@ function ClientModal({ client, localities, onClose, onSave, mode }) {
                         ) : (
                           <div>
                             <label style={lbl}>Seleccionar usuario</label>
-                            <select
-                              value={selectedUserId}
-                              onChange={e => setSelectedUserId(e.target.value)}
-                              style={{ ...inp, cursor: "pointer" }}
-                            >
+                            <select value={selectedUserId} onChange={e => setSelectedUserId(e.target.value)} style={{ ...inp, cursor: "pointer" }}>
                               <option value="">— Elegir usuario —</option>
                               {existingUsers.map(u => (
                                 <option key={u.idUsuario} value={u.idUsuario}>
@@ -476,7 +650,6 @@ function ClientModal({ client, localities, onClose, onSave, mode }) {
                       </div>
                     )}
 
-                    {/* Sin acceso */}
                     {accessMode === "none" && (
                       <div style={{ padding: "14px", textAlign: "center", background: C.surface, borderRadius: 9, border: `1px dashed ${C.border}` }}>
                         <div style={{ fontSize: 28, marginBottom: 6 }}>📋</div>
@@ -489,7 +662,6 @@ function ClientModal({ client, localities, onClose, onSave, mode }) {
                   </div>
 
                 ) : (
-                  /* ── MODO VIEW sin usuario ── */
                   <p style={{ margin: 0, fontSize: 13, color: C.muted }}>Sin usuario registrado.</p>
                 )}
               </div>
@@ -517,8 +689,10 @@ function ClientModal({ client, localities, onClose, onSave, mode }) {
 export default function ClientsPage() {
   const [clients,     setClients]     = useState([]);
   const [localities,  setLocalities]  = useState([]);
+  const [allPets,     setAllPets]     = useState([]);   // ← nuevo
   const [search,      setSearch]      = useState("");
   const [modal,       setModal]       = useState(null);
+  const [petsDrawer,  setPetsDrawer]  = useState(null); // ← nuevo: cliente seleccionado para ver mascotas
   const [deleting,    setDeleting]    = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const navigate = useNavigate();
@@ -527,12 +701,14 @@ export default function ClientsPage() {
   const loadData = async () => {
     setLoadingData(true);
     try {
-      const [cRes, lRes] = await Promise.all([
+      const [cRes, lRes, pRes] = await Promise.all([
         axios.get("/clients",    { headers: headers() }),
         axios.get("/localities", { headers: headers() }),
+        axios.get("/pets",       { headers: headers() }), // ← nuevo
       ]);
       setClients(cRes.data);
       setLocalities(lRes.data);
+      setAllPets(pRes.data);                              // ← nuevo
     } catch (e) { console.error(e); }
     finally { setLoadingData(false); }
   };
@@ -551,6 +727,10 @@ export default function ClientsPage() {
   const filtered = clients.filter(c =>
     `${c.nombres} ${c.apellidos} ${c.dni}`.toLowerCase().includes(search.toLowerCase())
   );
+
+  // Contar mascotas por cliente con los datos ya cargados
+  const petCountFor = (idCliente) =>
+    allPets.filter(p => p.idCliente === idCliente).length;
 
   return (
     <div style={{ maxWidth: 1280, margin: "0 auto", padding: "20px 24px" }}>
@@ -574,38 +754,83 @@ export default function ClientsPage() {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: C.surface, borderBottom: `1px solid ${C.border}` }}>
-                {["#", "Nombre", "DNI", "Sexo", "Teléfono", "Usuario", "Estado cuenta", "Acciones"].map((h, i) => (
-                  <th key={h} style={{ padding: "11px 16px", textAlign: i === 7 ? "right" : "left", fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</th>
+                {["#", "Nombre", "DNI", "Sexo", "Teléfono", "Mascotas", "Usuario", "Estado cuenta", "Acciones"].map((h, i) => (
+                  <th key={h} style={{ padding: "11px 16px", textAlign: i === 8 ? "right" : "left", fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {loadingData ? (
-                <tr><td colSpan={8} style={{ padding: 48, textAlign: "center", color: C.muted, fontSize: 13 }}>Cargando clientes…</td></tr>
+                <tr><td colSpan={9} style={{ padding: 48, textAlign: "center", color: C.muted, fontSize: 13 }}>Cargando clientes…</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={8} style={{ padding: 48, textAlign: "center", color: C.muted, fontSize: 13 }}>No se encontraron clientes.</td></tr>
-              ) : filtered.map((c, i) => (
-                <tr key={c.idCliente} style={{ borderBottom: i < filtered.length - 1 ? `1px solid ${C.borderLight}` : "none", transition: "background 0.12s" }} onMouseEnter={e => e.currentTarget.style.background = C.surface} onMouseLeave={e => e.currentTarget.style.background = C.white}>
-                  <td style={{ padding: "12px 16px", fontSize: 12, color: C.muted }}>{c.idCliente}</td>
-                  <td style={{ padding: "12px 16px", fontSize: 14, fontWeight: 600, color: C.text }}>{c.nombres} {c.apellidos}</td>
-                  <td style={{ padding: "12px 16px", fontSize: 13, color: C.muted }}>{c.dni}</td>
-                  <td style={{ padding: "12px 16px" }}><SexBadge sexo={c.sexo} /></td>
-                  <td style={{ padding: "12px 16px", fontSize: 13, color: C.muted }}>{c.telefono}</td>
-                  <td style={{ padding: "12px 16px", fontSize: 13, color: C.muted }}>{c.User?.usuario || "—"}</td>
-                  <td style={{ padding: "12px 16px" }}>{c.User ? <UserStateBadge estado={c.User.estado} /> : <span style={{ fontSize: 11, color: C.muted }}>Sin acceso</span>}</td>
-                  <td style={{ padding: "12px 16px", textAlign: "right" }}>
-                    <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
-                      <button onClick={() => setModal({ type: "view", data: c })} style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.white, color: C.text, fontSize: 12, cursor: "pointer" }}>Ver</button>
-                      <button onClick={() => setModal({ type: "edit", data: c })} style={{ padding: "6px 12px", borderRadius: 8, border: `1.5px solid ${C.green700}`, background: C.white, color: C.green700, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Editar</button>
-                      <button onClick={() => setModal({ type: "delete", data: c })} style={{ padding: "6px 12px", borderRadius: 8, border: `1.5px solid ${C.red}`, background: C.white, color: C.red, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Eliminar</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                <tr><td colSpan={9} style={{ padding: 48, textAlign: "center", color: C.muted, fontSize: 13 }}>No se encontraron clientes.</td></tr>
+              ) : filtered.map((c, i) => {
+                const count = petCountFor(c.idCliente);
+                return (
+                  <tr
+                    key={c.idCliente}
+                    style={{ borderBottom: i < filtered.length - 1 ? `1px solid ${C.borderLight}` : "none", transition: "background 0.12s" }}
+                    onMouseEnter={e => e.currentTarget.style.background = C.surface}
+                    onMouseLeave={e => e.currentTarget.style.background = C.white}
+                  >
+                    <td style={{ padding: "12px 16px", fontSize: 12, color: C.muted }}>{c.idCliente}</td>
+                    <td style={{ padding: "12px 16px", fontSize: 14, fontWeight: 600, color: C.text }}>{c.nombres} {c.apellidos}</td>
+                    <td style={{ padding: "12px 16px", fontSize: 13, color: C.muted }}>{c.dni}</td>
+                    <td style={{ padding: "12px 16px" }}><SexBadge sexo={c.sexo} /></td>
+                    <td style={{ padding: "12px 16px", fontSize: 13, color: C.muted }}>{c.telefono}</td>
+
+                    {/* ── Columna mascotas ── */}
+                    <td style={{ padding: "12px 16px" }}>
+                      <button
+                        onClick={() => setPetsDrawer(c)}
+                        title={`Ver mascotas de ${c.nombres}`}
+                        style={{
+                          display: "inline-flex", alignItems: "center", gap: 5,
+                          padding: "5px 11px", borderRadius: 20,
+                          border: `1.5px solid ${count > 0 ? C.green200 : C.border}`,
+                          background: count > 0 ? C.green100 : C.surface,
+                          color: count > 0 ? C.green800 : C.muted,
+                          fontWeight: 700, fontSize: 12, cursor: "pointer",
+                          transition: "all 0.15s",
+                        }}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.background = count > 0 ? C.green200 : "#e8eee9";
+                          e.currentTarget.style.borderColor = count > 0 ? C.green700 : C.muted;
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.background = count > 0 ? C.green100 : C.surface;
+                          e.currentTarget.style.borderColor = count > 0 ? C.green200 : C.border;
+                        }}
+                      >
+                        🐾 {count}
+                      </button>
+                    </td>
+
+                    <td style={{ padding: "12px 16px", fontSize: 13, color: C.muted }}>{c.User?.usuario || "—"}</td>
+                    <td style={{ padding: "12px 16px" }}>{c.User ? <UserStateBadge estado={c.User.estado} /> : <span style={{ fontSize: 11, color: C.muted }}>Sin acceso</span>}</td>
+                    <td style={{ padding: "12px 16px", textAlign: "right" }}>
+                      <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                        <button onClick={() => setModal({ type: "view", data: c })} style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.white, color: C.text, fontSize: 12, cursor: "pointer" }}>Ver</button>
+                        <button onClick={() => setModal({ type: "edit", data: c })} style={{ padding: "6px 12px", borderRadius: 8, border: `1.5px solid ${C.green700}`, background: C.white, color: C.green700, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Editar</button>
+                        <button onClick={() => setModal({ type: "delete", data: c })} style={{ padding: "6px 12px", borderRadius: 8, border: `1.5px solid ${C.red}`, background: C.white, color: C.red, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Eliminar</button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* Panel lateral mascotas */}
+      {petsDrawer && (
+        <PetsDrawer
+          client={petsDrawer}
+          allPets={allPets}
+          onClose={() => setPetsDrawer(null)}
+        />
+      )}
 
       {(modal?.type === "new" || modal?.type === "edit" || modal?.type === "view") && (
         <ClientModal mode={modal.type} client={modal.data} localities={localities} onClose={() => setModal(null)} onSave={() => { setModal(null); loadData(); }} />
