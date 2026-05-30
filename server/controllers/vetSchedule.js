@@ -1,3 +1,4 @@
+// 🌟 IMPORTANTE: Requerimos Op de Sequelize para los filtros
 const { Op } = require("sequelize"); 
 const VetSchedule = require("../models/vetSchedule");
 const Veterinarian = require("../models/veterinarian");
@@ -6,32 +7,42 @@ const Schedule = require("../models/schedule");
 
 // 1. CREATE: Solo Admin + Verificación de Rol Veterinario
 async function createVetSchedule(req, res) {
-    const { idRol } = req.user; 
+    const { idRol } = req.user; // Obtenido del middleware de auth
     const { idVeterinario, idHorario } = req.body;
 
+    // Bloqueo por Rol: Solo Admin (idRol === 1) puede crear
     if (idRol !== 1) {
         return res.status(403).send({ msg: "No tienes permisos para asignar horarios." });
     }
 
     try {
-        const isVet = await Veterinarian.findByPk(idVeterinario);
+        // VALIDACIÓN CRÍTICA: ¿El idPersonal pertenece a un Veterinario?
+        // Usamos findOne simple para evitar que Sequelize intente resolver includes automáticos rotos
+        const isVet = await Veterinarian.findOne({ where: { idPersonal: idVeterinario } });
         if (!isVet) {
             return res.status(400).send({ 
                 msg: "El ID ingresado no corresponde a un Veterinario registrado." 
             });
         }
 
+        // Verificamos si el horario existe antes de asociarlo
+        const existsSchedule = await Schedule.findByPk(idHorario);
+        if (!existsSchedule) {
+            return res.status(404).send({ msg: "El horario que intentas asignar no existe." });
+        }
+
         const nuevo = await VetSchedule.create({ idVeterinario, idHorario });
         return res.status(201).send(nuevo);
 
     } catch (error) {
+        console.error("Error al crear asignación:", error);
         if (error.name === 'SequelizeUniqueConstraintError') 
             return res.status(400).send({ msg: "Esta asignación ya existe." });
         return res.status(500).send({ msg: "Error al realizar la asignación." });
     }
 }
 
-// 2. GET ALL (CON FILTROS CORREGIDOS): Todos los roles pueden ver
+// 2. GET ALL: Todos los roles pueden ver
 async function getVetSchedules(req, res) {
     const { diaSemana, idPersonal } = req.query;
 
@@ -52,7 +63,7 @@ async function getVetSchedules(req, res) {
             include: [
                 { 
                     model: Schedule, 
-                    as: "HorarioDetail", // 🌟 CORREGIDO: Usamos el alias exacto que definiste en tu modelo
+                    as: "HorarioDetail", // 🌟 Alias obligatorio de tu modelo
                     where: whereSchedule,
                     attributes: ['idHorario', 'diaSemana', 'turno', 'horaInicio', 'horaFin']
                 },
@@ -64,10 +75,9 @@ async function getVetSchedules(req, res) {
             ]
         });
 
-        // Mapeamos la respuesta usando la relación con su alias correspondiente
+        // Mapeamos la respuesta de forma plana y segura para el Frontend
         const respuestaFormateada = list.map(item => {
-            // 🌟 CORREGIDO: Extraemos los datos desde 'HorarioDetail'
-            const horario = item.HorarioDetail || {}; 
+            const horario = item.HorarioDetail || {};
             return {
                 idHorario: horario.idHorario || null,
                 diaSemana: horario.diaSemana || null,
@@ -85,7 +95,7 @@ async function getVetSchedules(req, res) {
     }
 }
 
-// 3. GET SINGLE: Buscar asignación específica
+// 3. GET SINGLE: Buscar una asignación en particular
 async function getVetSchedule(req, res) {
     const { idVeterinario, idHorario } = req.params; 
     
@@ -98,7 +108,7 @@ async function getVetSchedule(req, res) {
             include: [
                 { 
                     model: Schedule,
-                    as: "HorarioDetail" // 🌟 CORREGIDO: Mismo alias aquí también
+                    as: "HorarioDetail" // 🌟 Alias obligatorio aquí también
                 },
                 {
                     model: Veterinarian,
