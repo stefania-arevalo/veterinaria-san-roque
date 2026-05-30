@@ -47,6 +47,7 @@ const Schedule = sequelize.define("Schedule", {
 
 
 Schedule.associate = (models) => {
-    Schedule.hasMany(models.VetSchedule, { foreignKey: "idHorario" }); 
+    Schedule.hasMany(models.VetSchedule, { foreignKey: "idHorario", as: "HorarioDetail" });
 };
+
 module.exports = Schedule;
