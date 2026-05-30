@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import axios from "../../api/axios";
 
 const token = () => localStorage.getItem("accessToken");
@@ -1467,7 +1468,10 @@ function PatientHistory({ mascota, onBack }) {
 // ─── Export ───────────────────────────────────────────────────────────────────
 
 export default function ClinicalHistoryPage() {
-  const [selectedPet, setSelectedPet] = useState(null);
+  const location = useLocation();
+  // Si se llegó desde PetsPage con navigate(..., { state: { mascota } }),
+  // arrancamos directamente en el historial de esa mascota.
+  const [selectedPet, setSelectedPet] = useState(location.state?.mascota || null);
 
   return (
     <div style={{ background: C.bg, minHeight: "calc(100vh - 60px)", padding: "20px 24px" }}>

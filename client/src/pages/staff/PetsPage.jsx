@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "../../api/axios";
 
 const token = () => localStorage.getItem("accessToken");
@@ -21,6 +22,8 @@ const C = {
   redBg:       "#fcebeb",
   blue:        "#185fa5",
   blueBg:      "#e6f1fb",
+  teal:        "#0f766e",
+  tealBg:      "#ccfbf1",
 };
 
 // ── Componentes UI ────────────────────────────────────────────────
@@ -353,6 +356,7 @@ export default function PetsPage() {
   const [loading, setLoading] = useState(true);
   const [modal,   setModal]   = useState(null);
   const [deleting,setDeleting]= useState(false);
+  const navigate = useNavigate();
 
   const loadData = async () => {
     setLoading(true);
@@ -382,6 +386,11 @@ export default function PetsPage() {
       setModal(null); loadData();
     } catch (e) { console.error(e); }
     finally { setDeleting(false); }
+  };
+
+  // Navegar al historial clínico preseleccionando esta mascota
+  const goToHistorial = (pet) => {
+    navigate("/admin/mascotas/historial", { state: { mascota: pet } });
   };
 
   const filtered = pets.filter(p =>
@@ -419,7 +428,7 @@ export default function PetsPage() {
               <tr style={{ background: C.surface, borderBottom: `1px solid ${C.border}` }}>
                 {["#", "Nombre", "Dueño", "Especie", "Raza", "Tamaño", "Sexo", "Acciones"].map((h, i) => (
                   <th key={h} style={{
-                    padding: "11px 16px", textAlign: "left",
+                    padding: "11px 16px",
                     fontSize: 10, fontWeight: 700, color: C.muted,
                     textTransform: "uppercase", letterSpacing: "0.05em",
                     textAlign: i === 7 ? "right" : "left",
@@ -453,7 +462,7 @@ export default function PetsPage() {
                     {p.Dueño ? `${p.Dueño.nombres} ${p.Dueño.apellidos}` : "—"}
                   </td>
                   <td style={{ padding: "12px 16px", fontSize: 13, color: C.muted }}>
-                  {p.Breed?.Especie?.nombre || p.Raza?.Especie?.nombre || p.Breed?.Species?.nombre || p.Raza?.Species?.nombre || "—"}
+                    {p.Breed?.Especie?.nombre || p.Raza?.Especie?.nombre || p.Breed?.Species?.nombre || p.Raza?.Species?.nombre || "—"}
                   </td>
                   <td style={{ padding: "12px 16px", fontSize: 13, color: C.muted }}>
                     {p.Breed?.nombre || p.Raza?.descripcion || p.Raza?.nombre || "—"}
@@ -470,6 +479,25 @@ export default function PetsPage() {
                   <td style={{ padding: "12px 16px" }}><SexBadge sexo={p.sexo} /></td>
                   <td style={{ padding: "12px 16px", textAlign: "right" }}>
                     <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+
+                      {/* ── Acceso directo al historial clínico ── */}
+                      <button
+                        onClick={() => goToHistorial(p)}
+                        title="Ver historial clínico"
+                        style={{
+                          padding: "6px 12px", borderRadius: 8,
+                          border: `1.5px solid ${C.teal}`,
+                          background: C.tealBg,
+                          color: C.teal, fontSize: 12, fontWeight: 700,
+                          cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
+                          transition: "all 0.15s",
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = C.teal; e.currentTarget.style.color = "white"; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = C.tealBg; e.currentTarget.style.color = C.teal; }}
+                      >
+                        📋 Historial
+                      </button>
+
                       <button onClick={() => setModal({ type: "view", data: p })} style={{
                         padding: "6px 12px", borderRadius: 8,
                         border: `1px solid ${C.border}`, background: C.white,
