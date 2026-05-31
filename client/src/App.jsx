@@ -143,6 +143,7 @@ function App() {
               }
             />
 
+            {/* Configuración */}
             <Route
               path="configuracion"
               element={
@@ -152,19 +153,33 @@ function App() {
               }
             />
 
-            {/* Reportes */}
-            <Route path="reportes"    element={<ReportsPage />} />
+            {/* Reportes — Solo Admin (idRol: 1) o bajo permiso dinámico */}
+            <Route 
+              path="reportes" 
+              element={
+                <PermissionRoute pagina="reportes">
+                  <ReportsPage />
+                </PermissionRoute>
+              } 
+            />
 
-            {/* 
-              Secciones del menú lateral (Inventario, Servicios, Empleados, etc.)
-              Estas rutas son de configuración/administración.
-              Por defecto solo el Admin las ve; si querés darle acceso
-              a otro rol, habilitalo desde PermissionsPage.
-            */}
-
-            {/* Empleados — solo admin por convención, sin PermissionRoute */}
-            <Route path="empleados/permisos" element={<PermissionsPage />} />
-            <Route path="empleados/usuarios" element={<UsuariosPage />} />
+            {/* Empleados y Usuarios */}
+            <Route 
+              path="empleados/permisos" 
+              element={
+                <PermissionRoute pagina="usuarios">
+                  <PermissionsPage />
+                </PermissionRoute>
+              } 
+            />
+            <Route 
+              path="empleados/usuarios" 
+              element={
+                <PermissionRoute pagina="usuarios">
+                  <UsuariosPage />
+                </PermissionRoute>
+              } 
+            />
 
             {/* Historiales Clinicos Pacientes */}
             <Route

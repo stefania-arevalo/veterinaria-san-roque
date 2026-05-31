@@ -33,7 +33,7 @@ const ROLE_META = {
 const SEXO_MAP = { M: "Masculino", F: "Femenino", O: "Otro" };
 
 const NAV_ITEMS = [
-  { label: "🏠 Inicio",        pagina: "admin",            path: "/admin" },
+  { label: "🏠 Inicio",         pagina: "admin",             path: "/admin" },
   { label: "Ventas",            pagina: "ventas",            path: "/admin/ventas" },
   { label: "Turnos",            pagina: "citas",             path: "/admin/turnos" },
   { label: "Clientes",          pagina: "clientes",          path: "/admin/clientes" },
@@ -153,7 +153,7 @@ function ProfileDrawer({ user, username, onClose }) {
         s.idUsuario === user?.idUsuario || 
         s.User?.idUsuario === user?.user_id || 
         s.User?.idUsuario === user?.idUsuario ||
-        s.idPersonal === user?.idPersonal || // Agregamos este por si cruza por Personal clínico
+        s.idPersonal === user?.idPersonal || 
         s.User?.idPersonal === user?.idPersonal
       );
       setProfile(mine || null);
@@ -206,9 +206,8 @@ function ProfileDrawer({ user, username, onClose }) {
         fontFamily: "'Segoe UI', system-ui, sans-serif",
       }}>
 
-        {/* Header Drawer (Corregido Typo en Layout) */}
         <div style={{ padding: "20px 24px", background: roleMeta.color, color: "white", flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyBetween: "space-between", marginBottom: 12 }}>
             <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Mi perfil</h2>
             <button onClick={onClose} style={{ background: "rgba(255,255,255,0.15)", border: "none", color: "white", width: 32, height: 32, borderRadius: 8, fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
           </div>
@@ -228,7 +227,6 @@ function ProfileDrawer({ user, username, onClose }) {
           </div>
         </div>      
 
-        {/* Cuerpo Drawer */}
         <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
           {loading && (
             <div style={{ textAlign: "center", padding: "40px 0", color: VET_COLORS.textMuted }}>
@@ -357,11 +355,22 @@ export default function AdminLayout() {
   const location  = useLocation();
   const { isMobile } = useWindowSize(); 
 
-  const [showLogout,  setShowLogout]  = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
+  const [showLogout,   setShowLogout]   = useState(false);
+  const [showProfile,  setShowProfile]  = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false); 
   const [mobileAdminOpen, setMobileAdminOpen] = useState(false); 
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  // 🔒 CONTROL DE SEGURIDAD EXCLUSIVO DE RUTAS ADMIN LADO FRONTEND
+  useEffect(() => {
+    const pathsExclusivosAdmin = ["/admin/empleados", "/admin/reportes", "/admin/configuracion"];
+    const esRutaAdmin = pathsExclusivosAdmin.some(path => location.pathname.startsWith(path));
+    
+    // Si la ruta requiere admin y el idRol del usuario NO es 1 (Administrador), lo pateamos
+    if (esRutaAdmin && user && user.idRol !== 1) {
+      navigate("/sin-permiso", { replace: true });
+    }
+  }, [location.pathname, user, navigate]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -419,6 +428,7 @@ export default function AdminLayout() {
                 );
               })}
 
+              {/* 🔒 Menú de administración móvil oculto dinámicamente si no es admin */}
               {user?.idRol === 1 && (
                 <div style={{ marginTop: 8, borderTop: `1px solid ${VET_COLORS.border}`, paddingTop: 8 }}>
                   <button
@@ -459,14 +469,13 @@ export default function AdminLayout() {
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
 
-        {/* Header Corregido y Proporcionado */}
+        {/* Header */}
         <header style={{ 
           display: "flex", alignItems: "center", justifyContent: "space-between", 
           padding: isMobile ? "0 12px" : "0 24px", height: 64, background: "white", 
           borderBottom: `1px solid ${VET_COLORS.border}`, flexShrink: 0 
         }}>
           
-          {/* Lado Izquierdo: Menu Hamburguesa + Logo */}
           <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 6 : 12, flexShrink: 0 }}>
             {isMobile && (
               <button 
@@ -485,7 +494,6 @@ export default function AdminLayout() {
             )}
           </div>
 
-          {/* Centro: Reloj Adaptativo */}
           <div style={{ textAlign: "center", flex: 1, minWidth: 0, padding: "0 8px" }}>
             <div style={{ fontSize: isMobile ? 14 : 18, fontWeight: 700, color: "#1e293b", lineHeight: 1 }}>{formatTime(currentTime)}</div>
             {!isMobile && (
@@ -493,7 +501,6 @@ export default function AdminLayout() {
             )}
           </div>
 
-          {/* Lado Derecho: Avatar de Usuario + Logout */}
           <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 2 : 10, flexShrink: 0 }}>
             <button
               onClick={() => setShowProfile(true)}
@@ -532,7 +539,7 @@ export default function AdminLayout() {
           </div>
         </header>
 
-        {/* Navbar Horizontal Tradicional (Escritorio) */}
+        {/* Navbar Horizontal (Escritorio) */}
         {!isMobile && (
           <div style={{ display: "flex", justifyContent: "center", alignItems: "stretch", background: "white", borderBottom: `1px solid ${VET_COLORS.border}`, padding: "0 20px", flexShrink: 0 }}>
             {NAV_ITEMS.map(item => {
