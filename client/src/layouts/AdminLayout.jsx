@@ -370,7 +370,10 @@ export default function AdminLayout() {
 
   const handleLogoutConfirm = () => { logout(); navigate("/login"); };
 
-  const username   = user?.usuario || "usuario";
+  const username =
+    user?.nombres && user?.apellidos
+      ? `${user.nombres} ${user.apellidos}`
+      : user?.usuario || "usuario";
   const roleMeta   = ROLE_META[user?.idRol] || { label: "Usuario", color: "#475569", bg: "#f1f5f9" };
   const roleLabel  = roleMeta.label;
 
