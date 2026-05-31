@@ -7,7 +7,7 @@ const validate = require("../middlewares/validate");
 
 
 api.get("/user/me", [md_auth.asureAuth, md_auth.hasRole([1, 2, 3, 4, 5])], UserController.getMe);
-api.post("/user", [md_auth.asureAuth, md_auth.hasRole([1]),   validateCreateUser, validate], UserController.createUser);
+api.post("/user", [md_auth.asureAuth, md_auth.hasRole([1, 2, 3, 4]),   validateCreateUser, validate], UserController.createUser);
 // R: Admin, Vet, Asis, Vend pueden ver 
 api.get("/users", [md_auth.asureAuth, md_auth.hasRole([1])], UserController.getUsers);
 // U: Todos entran, el controlador filtra el "Own"
