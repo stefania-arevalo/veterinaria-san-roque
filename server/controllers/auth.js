@@ -36,9 +36,6 @@ async function login(req, res, next) {
     // Buscamos el staff
     const staffData = await Staff.findOne({ where: { idUsuario: userStore.idUsuario } });
     
-    // DEBUG: Si esto imprime "undefined", significa que en tu modelo de Staff la primary key no se llama idPersonal
-    console.log("Datos del staff encontrados:", staffData?.toJSON());
-
     const Client = require("../models/client");
     let clientData = null;
     if (userStore.idRol === 5) {
