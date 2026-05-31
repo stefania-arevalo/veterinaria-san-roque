@@ -96,6 +96,9 @@ async function refreshAccessToken(req, res, next) {
         const payloadData = {
             idUsuario: userStorage.idUsuario,
             idRol: userStorage.idRol,
+            usuario:    userStorage.usuario,
+            nombres:    staffData?.nombres   || clientData?.nombres   || null,
+            apellidos:  staffData?.apellidos || clientData?.apellidos || null,
             idPersonal: staffData ? (staffData.idPersonal || staffData.id) : null,
             idCliente: clientData ? (clientData.idCliente || clientData.id) : null
         };
