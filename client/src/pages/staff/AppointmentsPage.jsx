@@ -58,8 +58,7 @@ const AgendaVisual = ({ staff, appointments, fechaSeleccionada, onEditCita }) =>
   const [horariosVet, setHorariosVet] = useState({});
   const cancelRef = useRef(false);
 
-  const personalVisible = useMemo(() => staff.slice(0, 4), [staff]);
-
+  const personalVisible = useMemo(() => staff.slice(0, 6), [staff]);
 
   useEffect(() => {
     if (!fechaSeleccionada) return;
@@ -149,18 +148,24 @@ const AgendaVisual = ({ staff, appointments, fechaSeleccionada, onEditCita }) =>
   const getCitasEnSlot = (persona, slotMins) => {
     const resultado = [];
     appointments
-      .filter(app => app.fecha === fechaSeleccionada)
-      .forEach(app => {
-        const appMins = toMins(app.hora);
-        if (appMins !== slotMins) return;
-        const esVetDeCita = Number(app.idVeterinario) === Number(persona.idPersonal);
-        const misServicios = (app.detalles || []).filter(
-          d => Number(d.idPersonalRealiza) === Number(persona.idPersonal)
-        );
-        if (esVetDeCita || misServicios.length > 0) {
-          resultado.push({ app, misServicios });
-        }
-      });
+        .filter(app => app.fecha === fechaSeleccionada)
+        .forEach(app => {
+            const appMins = toMins(app.hora);
+ 
+            // La cita pertenece a este slot si su hora cae dentro del rango
+            // [slotMins, slotMins + SLOT)
+            if (appMins < slotMins || appMins >= slotMins + SLOT) return;
+ 
+            const esVetDeCita  = Number(app.idVeterinario) === Number(persona.idPersonal);
+            const misServicios = (app.detalles || []).filter(
+                d => Number(d.idPersonalRealiza) === Number(persona.idPersonal)
+            );
+ 
+            // Mostrar si esta persona es el vet anfitrión O tiene algún servicio asignado
+            if (esVetDeCita || misServicios.length > 0) {
+                resultado.push({ app, misServicios });
+            }
+        });
     return resultado;
   };
 
@@ -2800,10 +2805,13 @@ export default function AppointmentPage() {
       {vistaAgenda ? (
         <>
           <AgendaVisual
-            staff={[...vets, ...staff.filter(s => !vets.find(v => v.idPersonal === s.idPersonal))]}
-            appointments={filtered}
-            fechaSeleccionada={filterDate || new Date().toLocaleDateString("en-CA")}
-            onEditCita={(cita) => setModal({ type: "detail", data: cita })}
+              staff={[
+                  ...vets,
+                  ...staff.filter(s => !vets.find(v => v.idPersonal === s.idPersonal)),
+              ]}
+              appointments={filtered}
+              fechaSeleccionada={filterDate || new Date().toLocaleDateString("en-CA")}
+              onEditCita={(cita) => setModal({ type: "detail", data: cita })}
           />
         </>
       ) : (

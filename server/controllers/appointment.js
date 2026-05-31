@@ -20,8 +20,9 @@ const User              = require("../models/user");
 // ─── Helpers de tiempo ───────────────────────────────────────────────────────
 
 function timeToMinutes(timeStr) {
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    return hours * 60 + minutes;
+    if (!timeStr) return 0;
+    const parts = timeStr.toString().substring(0, 5).split(':').map(Number);
+    return parts[0] * 60 + (parts[1] || 0);
 }
 
 function minutesToTime(totalMinutes) {
@@ -94,6 +95,20 @@ async function validarEjecutorServicio(idPrecioServicio, ejecutorId) {
 //
 // Retorna { ok: bool, msg: string }
 
+// Mapeo de idRol → etiqueta legible
+const ROLES = { 1: 'Admin', 2: 'Veterinario', 3: 'Asistente', 4: 'Vendedor', 5: 'Cliente' };
+
+// Resuelve nombre completo + rol de un miembro del staff
+async function getNombrePersonal(idPersonal) {
+    const staff = await Staff.findByPk(idPersonal, {
+        include: [{ model: User, as: 'User', attributes: ['idRol'] }]
+    });
+    if (!staff) return { nombre: `Personal #${idPersonal}`, rol: '' };
+    const nombre = `${staff.nombres} ${staff.apellidos}`.trim();
+    const rol    = ROLES[staff.User?.idRol] || '';
+    return { nombre, rol };
+}
+
 async function verificarHorarioLaboral(fecha, hora, duracionMinutos, idPersonal) {
     const newStart = timeToMinutes(hora);
     const newEnd   = newStart + duracionMinutos;
@@ -113,9 +128,10 @@ async function verificarHorarioLaboral(fecha, hora, duracionMinutos, idPersonal)
             newEnd   <= timeToMinutes(s.Schedule.horaFin)
         );
         if (!atiendeHoy) {
+            const { nombre, rol } = await getNombrePersonal(idPersonal);
             return {
                 ok: false,
-                msg: `El personal (ID ${idPersonal}) no tiene horario de atención el ${dia} en el rango ${hora}–${minutesToTime(newEnd)}.`
+                msg: `${rol} ${nombre} no tiene horario de atención el ${dia} en el rango ${hora}–${minutesToTime(newEnd)}.`
             };
         }
     } else {
@@ -128,9 +144,10 @@ async function verificarHorarioLaboral(fecha, hora, duracionMinutos, idPersonal)
             newEnd   <= timeToMinutes(h.horaFin)
         );
         if (!atiendeHoy) {
+            const { nombre, rol } = await getNombrePersonal(idPersonal);
             return {
                 ok: false,
-                msg: `La clínica no atiende el ${dia} en el rango ${hora}–${minutesToTime(newEnd)}.`
+                msg: `${rol} ${nombre} no está disponible el ${dia} en el rango ${hora}–${minutesToTime(newEnd)}.`
             };
         }
     }
@@ -183,9 +200,10 @@ async function verificarSuperposicion(fecha, hora, duracionMinutos, idPersonal, 
 
         // Superposición: los rangos se solapan si newStart < existEnd && newEnd > existStart
         if (newStart < existEnd && newEnd > existStart) {
+            const { nombre, rol } = await getNombrePersonal(idPersonal);
             return {
                 ok: false,
-                msg: `Conflicto de agenda: el personal (ID ${idPersonal}) ya tiene un servicio de ${detalle.Cita.hora.substring(0,5)} a ${minutesToTime(existEnd)}.`
+                msg: `Conflicto de agenda: ${rol} ${nombre} ya tiene un servicio de ${detalle.Cita.hora.substring(0,5)} a ${minutesToTime(existEnd)}.`
             };
         }
     }
