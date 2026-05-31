@@ -578,7 +578,8 @@ function ClientModal({ client, localities, onClose, onSave, mode }) {
                       {[
                         { key: "none",     icon: "⏭️", label: "Sin acceso",         desc: "Solo datos personales" },
                         { key: "create",   icon: "➕", label: "Crear usuario nuevo", desc: "Generar credenciales" },
-                        { key: "existing", icon: "🔗", label: "Asociar existente",   desc: "Vincular cuenta libre" },
+                        // 🌟 Solo se incluye si es Administrador
+                        ...(isAdmin ? [{ key: "existing", icon: "🔗", label: "Asociar existente", desc: "Vincular cuenta libre" }] : []),
                       ].map(opt => (
                         <button
                           key={opt.key}
