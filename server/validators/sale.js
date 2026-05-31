@@ -10,16 +10,8 @@ const Batch = require("../models/batch");
 
 const validateCreateSale = [
   body("fecha")
-  .notEmpty().withMessage("La fecha es obligatoria.")
-  .isDate().withMessage("El formato de fecha no es válido.")
-  .custom((value) => {
-    // Comparar solo strings YYYY-MM-DD para evitar problema de timezone
-    const hoy = new Date().toLocaleDateString('en-CA'); // "2026-05-04"
-    if (value < hoy) {
-        throw new Error("La fecha no puede ser anterior al día de hoy.");
-    }
-    return true;
-}),
+    .notEmpty().withMessage("La fecha es obligatoria.")
+    .isDate().withMessage("El formato de fecha no es válido (usar YYYY-MM-DD)."),
 
 body("hora")
   .notEmpty().withMessage("La hora es obligatoria.")
