@@ -56,6 +56,9 @@ async function createSale(req, res, next) {
                     if (!lote || lote.cantidadDisponible < item.cantidad) {
                         throw new Error(`Stock insuficiente para el producto ID ${item.idProducto}`);
                     }
+                    if (lote.fechaVencimiento && new Date(lote.fechaVencimiento) <= new Date()) {
+                        throw new Error(`El lote seleccionado para el producto ID ${item.idProducto} se encuentra vencido y no puede venderse.`);
+                    }
                     await Batch.decrement('cantidadDisponible', { 
                         by: item.cantidad, 
                         where: { idLote: item.idLote }, 
@@ -104,6 +107,9 @@ async function createSale(req, res, next) {
                     const lote = await Batch.findByPk(item.idLote, { transaction: t });
                     if (!lote || lote.cantidadDisponible < item.cantidad) {
                         throw new Error(`Stock insuficiente para el medicamento ID ${item.idTratMed}`);
+                    }
+                    if (lote.fechaVencimiento && new Date(lote.fechaVencimiento) <= new Date()) {
+                        throw new Error(`El medicamento seleccionado se encuentra vencido y no puede venderse.`);
                     }
                     await Batch.decrement('cantidadDisponible', { 
                         by: item.cantidad, 

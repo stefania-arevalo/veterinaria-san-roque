@@ -26,6 +26,9 @@ async function createSaleDetail(req, res, next) {
             if (idLote) {
                 const lote = await Batch.findByPk(idLote, { transaction: t });
                 if (!lote || lote.cantidadDisponible < cantidad) throw new Error("Stock insuficiente.");
+                if (lote.fechaVencimiento && new Date(lote.fechaVencimiento) <= new Date()) {
+                    throw new Error("El lote seleccionado está vencido y no puede venderse.");
+                }
                 await Batch.decrement('cantidadDisponible', { by: cantidad, where: { idLote }, transaction: t });
             }
         } 

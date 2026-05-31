@@ -48,7 +48,13 @@ const getProducts = async (req, res) => {
                         attributes: ['tipo', 'formato', 'cantidad'] 
                     }]
                 },
-                { model: Batch, as: 'Lotes', attributes: ['idLote', 'cantidadDisponible', 'codigoLote', 'fechaVencimiento'] } // Alias explícito
+                { 
+                    model: Batch, 
+                    as: 'Lotes', 
+                    attributes: ['idLote', 'cantidadDisponible', 'codigoLote', 'fechaVencimiento'],
+                    where: { fechaVencimiento: { [Op.gt]: new Date() } },
+                    required: false
+                }
             ]
         });
         
