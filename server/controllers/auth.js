@@ -58,6 +58,8 @@ async function login(req, res, next) {
       access: jwt.createAccessToken({
         idUsuario: userStore.idUsuario,
         idRol: userStore.idRol,
+        nombres:    staffData?.nombres  || clientData?.nombres  || null,
+        apellidos:  staffData?.apellidos || clientData?.apellidos || null,
         // SOLUCIÓN 2: Usamos fallback por si en el modelo se llama 'id' en lugar de 'idPersonal'
         idPersonal: staffData ? (staffData.idPersonal || staffData.id) : null,
         idCliente: clientData ? (clientData.idCliente || clientData.id) : null

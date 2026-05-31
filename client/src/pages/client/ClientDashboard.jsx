@@ -35,7 +35,7 @@ export default function ClientDashboard() {
   const fmtFecha = (iso) => new Date(iso + "T00:00:00").toLocaleDateString("es-AR",
     { weekday: "long", day: "numeric", month: "long" });
 
-  const nombre = user?.usuario || "Cliente";
+  const nombre = user?.nombres || user?.usuario || "Cliente";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
