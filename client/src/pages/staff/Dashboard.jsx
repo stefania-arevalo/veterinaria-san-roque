@@ -456,32 +456,6 @@ export default function Dashboard() {
   return (
     <div style={{ padding: "16px 20px", background: THEME.bg, minHeight: "calc(100vh - 60px)" }}>
       <style>{GLOBAL_CSS}</style>
-
-      {cobrosPendientes.length > 0 && ![2, 3].includes(rolLogueado) && (
-        <div
-          onClick={() => navigate("/admin/turnos?filterPago=POR+COBRAR")}
-          style={{
-            background: "#fffbeb", border: "1px solid #fcd34d", borderLeft: "5px solid #f59e0b",
-            borderRadius: 12, padding: "16px 20px", marginBottom: 20, cursor: "pointer",
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{ fontSize: 22 }}>⚠️</span>
-            <div>
-              <div style={{ color: "#92400e", fontWeight: 800, fontSize: 15 }}>ACCIONES PENDIENTES</div>
-              <div style={{ color: "#b45309", fontSize: 14 }}>
-                Hay {cobrosPendientes.length} cita{cobrosPendientes.length > 1 ? "s" : ""} finalizada{cobrosPendientes.length > 1 ? "s" : ""} que aún no se cobró.
-              </div>
-            </div>
-          </div>
-          <div style={{ background: "#f59e0b", color: "white", padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700 }}>
-            COBRAR AHORA →
-          </div>
-        </div>
-      )}
-
       <div style={{
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
