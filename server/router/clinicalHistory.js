@@ -10,7 +10,7 @@ const api = express.Router();
 api.post("/clinical-history", [md_auth.asureAuth, md_auth.hasRole([1, 2]), validateCreate, validate], ClinicalHistoryController.createHistory);
 api.patch("/clinical-history/:id", [md_auth.asureAuth, md_auth.hasRole([1, 2]), validateId, validateUpdate, validate], ClinicalHistoryController.updateHistory);
 api.delete("/clinical-history/:id", [md_auth.asureAuth, md_auth.hasRole([1, 2]), validateId, validate], ClinicalHistoryController.deleteHistory);
-api.get("/clinical-histories", [md_auth.asureAuth, md_auth.hasRole([1, 2, 5])], ClinicalHistoryController.getAllHistories);
+api.get("/clinical-histories", [md_auth.asureAuth, md_auth.hasRole([1, 2, 3, 4, 5])], ClinicalHistoryController.getAllHistories);
 
 // VER UN HISTORIAL INDIVIDUAL: Admin (1) y Veterinario (2) seguro. 
 // (Nota: Si un cliente (5) o asistente (3) necesita ver el de una mascota específica por una consulta, podrías evaluarlo, pero para máxima seguridad de historiales médicos, dejá solo 1 y 2)
