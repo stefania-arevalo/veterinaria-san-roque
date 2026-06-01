@@ -6,27 +6,38 @@ export function PermissionRoute({ children, pagina }) {
 
   if (loading) return <div>Cargando...</div>;
   if (!user)   return <Navigate to="/login" replace />;
-  if (user.idRol === 1) return children; // Admin siempre pasa
+  
+  // 1️⃣ El Administrador (idRol: 1) tiene las llaves de toda la casa
+  if (user.idRol === 1) return children; 
 
-  // ── Acceso automático por rol (sin necesitar permiso en BD) ──
-  // Basado en tu tabla de permisos del informe:
+  // 2️⃣ Matriz de accesos automáticos estricta (Basada 100% en tu tabla)
+  // Roles: 2 = Veterinario, 3 = Asistente, 4 = Vendedor
   const accesoPorRol = {
-    citas:             [2, 3],
-    clientes:          [2, 3, 4],
-    pacientes:         [2, 3],
-    historial_clinico: [2],
-    tratamientos:      [2, 3],
-    ventas:            [3, 4],
-    compras:           [3, 4],
-    productos:        [3, 4],
+    ventas:            [3, 4],    // Admin, Asistente y Vendedor
+    compras:           [3, 4],    // Admin, Asistente y Vendedor
+    clientes:          [2, 3, 4], // Todo el staff tiene acceso
+    citas:             [2, 3],    // Admin, Vet y Asistente (Vendedor N/A)
+    pacientes:         [2, 3, 4], // Todo el staff puede ver pacientes
+    historial_clinico: [2],       // ⚠️ Solo Veterinario puede entrar a esta sección
+    productos:         [2, 3, 4], // Todo el staff puede ver el Inventario (Solo ver o Gestionar)
+    tratamientos:      [2, 3],    // Admin, Vet y Asistente
+    
+    // 🚫 Secciones EXCLUSIVAS de Admin (Nadie del staff pasa automáticamente)
     configuracion:     [],
+    usuarios:          [],
+    reportes:          []
   };
 
-  if (accesoPorRol[pagina]?.includes(Number(user.idRol))) return children;
+  // Si el rol del usuario está autorizado para esta página, entra directo
+  if (accesoPorRol[pagina]?.includes(Number(user.idRol))) {
+    return children;
+  }
 
-  // Si no está en accesoPorRol, necesita permiso explícito de BD
-  // (útil para roles que el admin habilita manualmente desde PermissionsPage)
-  if (!canAccess(pagina)) return <Navigate to="/sin-permiso" replace />;
+  // 3️⃣ Si no tiene acceso automático, revisamos si el Admin le dio un permiso especial en la BD
+  if (canAccess && canAccess(pagina)) {
+    return children;
+  }
 
-  return children;
+  // 4️⃣ Si fallan todos los controles anteriores: Al calabozo (Redirección limpia a /sin-permiso)
+  return <Navigate to="/sin-permiso" replace />;
 }

@@ -363,7 +363,7 @@ export default function AdminLayout() {
 
   // 🔒 CONTROL DE SEGURIDAD EXCLUSIVO DE RUTAS ADMIN LADO FRONTEND
   useEffect(() => {
-    const pathsExclusivosAdmin = ["/admin/empleados", "/admin/reportes", "/admin/configuracion"];
+    const pathsExclusivosAdmin = ["/admin/reportes", "/admin/configuracion", "/admin/empleados/usuarios","/admin/empleados/permisos","/admin/mascotas/historial"];
     const esRutaAdmin = pathsExclusivosAdmin.some(path => location.pathname.startsWith(path));
     
     // Si la ruta requiere admin y el idRol del usuario NO es 1 (Administrador), lo pateamos
