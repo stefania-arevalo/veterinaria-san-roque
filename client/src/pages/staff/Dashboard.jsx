@@ -186,6 +186,7 @@ function CitaRow({ cita, isRecent }) {
     2: { label: "Confirmada", bg: THEME.greenBg, color: THEME.green },
     3: { label: "Cancelada",  bg: THEME.redBg,   color: THEME.red },
     4: { label: "Atendida",   bg: "#ede9fe",     color: "#7c3aed" },
+    5: { label: "Reprogr.",   bg: "#fff7ed",     color: "#ea580c" },
   };
   const est = estadoMap[cita.idEstadoCita] || { label: "—", bg: "#f1f5f9", color: THEME.muted };
   return (
