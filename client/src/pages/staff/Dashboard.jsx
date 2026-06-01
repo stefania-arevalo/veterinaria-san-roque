@@ -471,9 +471,9 @@ export default function Dashboard() {
       <style>{GLOBAL_CSS}</style>
 
       {/* Alerta de cobros pendientes visible solo si el usuario tiene acceso al módulo de Ventas */}
-      {cobrosPendientes.length > 0 && canSeeVentas && (
+      {cobrosPendientes.length > 0 && canSeeCitas && (
         <div
-          onClick={() => navigate("/admin/ventas")}
+          onClick={() => navigate("/admin/turnos?filterPago=POR+COBRAR")}
           style={{
             background: "#fffbeb", border: "1px solid #fcd34d", borderLeft: "5px solid #f59e0b",
             borderRadius: 12, padding: "16px 20px", marginBottom: 20, cursor: "pointer",
@@ -491,7 +491,7 @@ export default function Dashboard() {
             </div>
           </div>
           <div style={{ background: "#f59e0b", color: "white", padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700 }}>
-            COBRAR AHORA →
+            VER AHORA →
           </div>
         </div>
       )}
