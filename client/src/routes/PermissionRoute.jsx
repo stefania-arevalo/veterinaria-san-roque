@@ -4,8 +4,20 @@ import { useAuth } from "../context/AuthContext";
 export function PermissionRoute({ children, pagina }) {
   const { user, canAccess, loading } = useAuth();
 
-  if (loading) return <div>Cargando...</div>;
-  if (!user)   return <Navigate to="/login" replace />;
+  // Mientras el contexto inicializa el token y los permisos, frenamos el render
+  // para que ningún componente hijo intente disparar redirecciones raras.
+  if (loading) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", color: "#6b7280" }}>
+        <span>Verificando credenciales...</span>
+      </div>
+    );
+  }
+
+  // Si no hay usuario logueado, directo al login
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
   
   // 1️⃣ El Administrador (idRol: 1) tiene las llaves de toda la casa
   if (user.idRol === 1) return children; 

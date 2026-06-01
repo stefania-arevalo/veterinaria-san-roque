@@ -16,6 +16,7 @@ const ACCESO_POR_ROL = {
   compras:           [3, 4],
   productos:         [3, 4],
   configuracion:     [],
+  usuarios:          [],
 };
 
 export function AuthProvider({ children }) {
