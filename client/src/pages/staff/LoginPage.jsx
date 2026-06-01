@@ -557,62 +557,25 @@ export default function LoginPage() {
             flexDirection: "column", 
             alignItems: isMobile ? "center" : "flex-start" 
           }}>
-            <h1 style={{
-              fontSize: isMobile ? "24px" : isTablet ? "38px" : "46px",
-              fontWeight: 800,
-              color: P.forest,
-              textAlign: "center",
-              margin: isMobile ? "0 0 8px 0" : "0 0 16px 0",
-              lineHeight: 1.2,
-              letterSpacing: "-0.8px",
-            }}>
-              Cuidamos a <span style={{ color: P.leaf }}>tu mascota</span> con dedicación
+            <h1 style={{ fontSize: isMobile ? 28 : isTablet ? 38 : 46, fontWeight: 900, color: P.forest, textAlign: isMobile ? "center" : "left", margin: "0 0 16px", lineHeight: 1.15, letterSpacing: "-1.5px" }}>
+              Cuidamos a<br /><span style={{ color: P.leaf }}>tu mascota</span><br />con dedicación
             </h1>
-            <p style={{
-              fontSize: isMobile ? "13px" : "15.5px",
-              textAlign: "center",
-              color: P.muted,
-              lineHeight: 1.5,
-              margin: isMobile ? "0 0 16px 0" : "0 0 32px 0",
-              maxWidth: 500,
-            }}>
-              Consultas veterinarias, vacunación, tratamientos, grooming y portal de clientes en Punta Alta.
+            <p style={{ fontSize: isMobile ? 14 : 15, textAlign: isMobile ? "center" : "left", color: P.muted, lineHeight: 1.65, margin: "0 0 28px", maxWidth: 480 }}>
+              Consultas veterinarias, vacunación, tratamientos, grooming y portal de clientes. Todo centralizado para brindarte la mejor atención en Punta Alta.
             </p>
             
-            <div style={{ 
-              display: "grid", 
-              gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "1fr", 
-              gap: isMobile ? "10px" : "14px", 
-              width: "100%",
-              marginBottom: isMobile ? "20px" : "36px" 
-            }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "16px 20px", marginBottom: 32 }}>
               {[
                 { icon: "📝", l: "Atención clínica", d: "Consultas y diagnósticos médicos." },
                 { icon: "💉", l: "Vacunas y control",  d: "Control sanitario preventivo." },
                 { icon: "✂️", l: "Grooming y estética", d: "Corte y estética especializada." },
                 { icon: "💊", l: "Ventas y stock",    d: "Medicamentos y accesorios." },
               ].map((f, i) => (
-                <div key={i} style={{
-                  display: "flex",
-                  flexDirection: "row",
-                  alignItems: "center",
-                  textAlign: "left",
-                  gap: isMobile ? 8 : 14,
-                  background: isMobile ? "rgba(255, 255, 255, 0.6)" : "transparent",
-                  padding: isMobile ? "8px" : "0px",
-                  borderRadius: isMobile ? "10px" : "0px",
-                  border: isMobile ? `1px solid ${P.borderLight}` : "none",
-                }}>
-                  <div style={{
-                    width: isMobile ? 30 : 38, height: isMobile ? 30 : 38, 
-                    borderRadius: 8, flexShrink: 0,
-                    background: P.white, border: `1px solid ${P.border}`,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: isMobile ? 14 : 16,
-                  }}>{f.icon}</div>
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, background: P.white, border: `1px solid ${P.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, boxShadow: "0 2px 6px rgba(26,61,40,0.05)" }}>{f.icon}</div>
                   <div>
-                    <div style={{ fontSize: isMobile ? 11.5 : 13, fontWeight: 700, color: P.forest, lineHeight: 1.1 }}>{f.l}</div>
-                    {!isMobile && <div style={{ fontSize: 12, color: P.muted, marginTop: 1 }}>{f.d}</div>}
+                    <div style={{ fontSize: 13, fontWeight: 700, color: P.forest, lineHeight: 1.2 }}>{f.l}</div>
+                    <div style={{ fontSize: 11.5, color: P.muted, marginTop: 1, lineHeight: 1.2 }}>{f.d}</div>
                   </div>
                 </div>
               ))}
