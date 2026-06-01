@@ -537,13 +537,13 @@ export default function Dashboard() {
           </>
         )}
 
-        {rolLogueado === 3 && (
+        {[3, 4].includes(rolLogueado) && (
           <Panel title="Cobros pendientes" icon="💰" iconBg={THEME.amberBg} iconColor={THEME.amber}
             count={cobrosPendientes.length || undefined} countColor={THEME.amber}
             action={
-              <button onClick={() => navigate("/admin/turnos?filterPago=POR+COBRAR")}
+              <button onClick={() => navigate("/admin/ventas")}
                 style={{ fontSize: 11, fontWeight: 700, color: THEME.amber, background: THEME.amberBg, border: `1px solid ${THEME.amberBdr}`, borderRadius: 7, padding: "4px 10px", cursor: "pointer" }}>
-                Ver Citas Pendiente de Cobro →
+                Ir a Ventas →
               </button>
             }
           >
