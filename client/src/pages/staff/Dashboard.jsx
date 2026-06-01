@@ -504,8 +504,23 @@ export default function Dashboard() {
                 </>
               ) : <Empty icon="💳" text="No hay ventas registradas." />
             }
+          </Panel>,
+          <Panel title="Cobros pendientes" icon="💰" iconBg={THEME.amberBg} iconColor={THEME.amber}
+            count={cobrosPendientes.length || undefined} countColor={THEME.amber}
+            action={
+              <button onClick={() => navigate("/admin/ventas")}
+                style={{ fontSize: 11, fontWeight: 700, color: THEME.amber, background: THEME.amberBg, border: `1px solid ${THEME.amberBdr}`, borderRadius: 7, padding: "4px 10px", cursor: "pointer" }}>
+                Ir a Ventas →
+              </button>
+            }
+          >
+            {cobrosPendientes.length === 0
+              ? <Empty icon="✅" text="No hay cobros pendientes." />
+              : cobrosPendientes.slice(0, 6).map(c => <CitaRow key={c.idCita} cita={c} isRecent={true} />)
+            }
           </Panel>
         )}
+
 
         {![2, 3].includes(rolLogueado) && (
           <>
@@ -535,23 +550,6 @@ export default function Dashboard() {
               }
             </Panel>
           </>
-        )}
-
-        {[3, 4].includes(rolLogueado) && (
-          <Panel title="Cobros pendientes" icon="💰" iconBg={THEME.amberBg} iconColor={THEME.amber}
-            count={cobrosPendientes.length || undefined} countColor={THEME.amber}
-            action={
-              <button onClick={() => navigate("/admin/ventas")}
-                style={{ fontSize: 11, fontWeight: 700, color: THEME.amber, background: THEME.amberBg, border: `1px solid ${THEME.amberBdr}`, borderRadius: 7, padding: "4px 10px", cursor: "pointer" }}>
-                Ir a Ventas →
-              </button>
-            }
-          >
-            {cobrosPendientes.length === 0
-              ? <Empty icon="✅" text="No hay cobros pendientes." />
-              : cobrosPendientes.slice(0, 6).map(c => <CitaRow key={c.idCita} cita={c} isRecent={true} />)
-            }
-          </Panel>
         )}
 
       </div>
