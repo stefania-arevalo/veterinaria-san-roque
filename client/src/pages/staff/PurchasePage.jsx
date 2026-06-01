@@ -492,6 +492,17 @@ export default function ComprasPage() {
   const [categories, setCategories] = useState([]);
   const [loadingLists, setLoadingLists] = useState(true);
   const [loteAlert, setLoteAlert] = useState(null);
+  // ── Estados para mini modales de nuevo proveedor/visitador ────────
+  const [showNewProvider, setShowNewProvider] = useState(false);
+  const [showNewVisitor, setShowNewVisitor]   = useState(false);
+  const [newProvForm, setNewProvForm] = useState({ 
+    razonSocial: "", cuit: "", telefono: "", 
+    direccion: "", correo: "", idLocalidad: "" 
+  });
+  const [newVisForm, setNewVisForm]   = useState({ nombre: "", apellido: "", telefono: "", correo: "" });
+  const [localities, setLocalities]   = useState([]);
+  const [savingNew, setSavingNew]     = useState(false);
+  const [newError, setNewError]       = useState("");
 
   // Cabecera del remito
   const [form, setForm] = useState({
@@ -522,12 +533,14 @@ export default function ComprasPage() {
       axios.get("/payment-types", { headers: headers() }),
       axios.get("/receipt-types", { headers: headers() }),
       axios.get("/categories", { headers: headers() }),
-    ]).then(([prov, vis, pt, rt, cat]) => {
+      axios.get("/localities",    { headers: headers() }),
+    ]).then(([prov, vis, pt, rt, cat, loc]) => {
       if (prov.status === "fulfilled") setProviders(prov.value.data || []);
       if (vis.status === "fulfilled") setVisitors(vis.value.data || []);
       if (pt.status === "fulfilled") setPaymentTypes(pt.value.data || []);
       if (rt.status === "fulfilled") setReceiptTypes(rt.value.data || []);
       if (cat.status === "fulfilled") setCategories(cat.value.data || []);
+      if (loc.status === "fulfilled")  setLocalities(loc.value.data   || []);
     }).finally(() => setLoadingLists(false));
   }, []);
 
@@ -610,6 +623,54 @@ export default function ComprasPage() {
     return subtotal + totalIva - parseFloat(form.descuento || 0);
   }, [subtotal, totalIva, form.descuento]);
 
+  // ── Guardar nuevo proveedor ───────────────────────────────────────
+  const handleSaveProvider = async () => {
+    setNewError("");
+    if (!newProvForm.razonSocial || !newProvForm.cuit || !newProvForm.telefono || !newProvForm.idLocalidad) {
+      setNewError("Completá todos los campos obligatorios.");
+      return;
+    }
+    setSavingNew(true);
+    try {
+      const res = await axios.post("/provider", newProvForm, { headers: headers() });
+      const created = res.data;
+      setProviders(prev => [...prev, created]);
+      setForm(p => ({ ...p, idProveedor: String(created.idProveedor), idVisitador: "" }));
+      setNewProvForm({ razonSocial: "", cuit: "", telefono: "", idLocalidad: "" });
+      setShowNewProvider(false);
+    } catch (e) {
+      setNewError(e.response?.data?.msg || "Error al crear el proveedor.");
+    } finally {
+      setSavingNew(false);
+    }
+  };
+
+  // ── Guardar nuevo visitador ───────────────────────────────────────
+  const handleSaveVisitor = async () => {
+    setNewError("");
+    if (!newVisForm.nombre || !newVisForm.apellido) {
+      setNewError("Nombre y apellido son obligatorios.");
+      return;
+    }
+    if (!form.idProveedor) {
+      setNewError("Seleccioná un proveedor antes de crear un visitador.");
+      return;
+    }
+    setSavingNew(true);
+    try {
+      const payload = { ...newVisForm, idProveedor: Number(form.idProveedor) };
+      const res = await axios.post("/visitor", payload, { headers: headers() });
+      const created = res.data;
+      setVisitors(prev => [...prev, created]);
+      setForm(p => ({ ...p, idVisitador: String(created.idVisitador) }));
+      setNewVisForm({ nombre: "", apellido: "", telefono: "", correo: "" });
+      setShowNewVisitor(false);
+    } catch (e) {
+      setNewError(e.response?.data?.msg || "Error al crear el visitador.");
+    } finally {
+      setSavingNew(false);
+    }
+  };
   // ── Validación y envío ────────────────────────────────────────────
   const handleSubmit = async () => {
     setError("");
@@ -682,6 +743,102 @@ export default function ComprasPage() {
       {success && (
         <AlertModal emoji="✅" emojiBg={C.green100} title="Operación exitosa" message={success}
           confirmText="Aceptar" confirmBg={C.green800} onConfirm={() => setSuccess("")} />
+      )}
+
+      {/* ── Mini modal: Nuevo Proveedor ── */}
+      {showNewProvider && (
+        <div style={{ position:"fixed", inset:0, zIndex:9999, background:"rgba(10,30,20,0.55)", backdropFilter:"blur(5px)", display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
+          <div style={{ background:C.white, borderRadius:16, padding:"28px 26px", maxWidth:460, width:"100%", border:`1px solid ${C.border}`, boxShadow:"0 20px 60px rgba(0,0,0,0.15)" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+              <h3 style={{ margin:0, fontSize:16, fontWeight:700, color:C.text }}>Nuevo Proveedor</h3>
+              <button onClick={() => { setShowNewProvider(false); setNewError(""); }} style={{ background:"none", border:"none", fontSize:18, cursor:"pointer", color:C.muted }}>✕</button>
+            </div>
+            {newError && <div style={{ background:C.redBg, color:C.red, padding:"8px 12px", borderRadius:8, fontSize:13, marginBottom:14, border:`1px solid #f7c1c1` }}>{newError}</div>}
+            <div style={{ display:"flex", flexDirection:"column", gap:13 }}>
+              <div>
+                <label style={lbl}>Razón Social <span style={{ color:C.red }}>*</span></label>
+                <input value={newProvForm.razonSocial} onChange={e => setNewProvForm(p => ({ ...p, razonSocial: e.target.value }))} placeholder="Nombre o razón social" style={inp} />
+              </div>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                <div>
+                  <label style={lbl}>CUIT <span style={{ color:C.red }}>*</span></label>
+                  <input value={newProvForm.cuit} onChange={e => setNewProvForm(p => ({ ...p, cuit: e.target.value }))} placeholder="20-12345678-9" style={inp} />
+                </div>
+                <div>
+                  <label style={lbl}>Teléfono <span style={{ color:C.red }}>*</span></label>
+                  <input value={newProvForm.telefono} onChange={e => setNewProvForm(p => ({ ...p, telefono: e.target.value }))} placeholder="2991234567" style={inp} />
+                </div>
+                <div>
+                  <label style={lbl}>Correo</label>
+                  <input type="email" value={newProvForm.correo} onChange={e => setNewProvForm(p => ({ ...p, correo: e.target.value }))} placeholder="proveedor@ejemplo.com" style={inp} />
+                </div>
+              </div>
+              <div>
+                <label style={lbl}>Dirección</label>
+                <input value={newProvForm.direccion} onChange={e => setNewProvForm(p => ({ ...p, direccion: e.target.value }))} placeholder="Av. San Martín 1234" style={inp} />
+              </div>
+              <div>
+                <label style={lbl}>Localidad <span style={{ color:C.red }}>*</span></label>
+                <select value={newProvForm.idLocalidad} onChange={e => setNewProvForm(p => ({ ...p, idLocalidad: e.target.value }))} style={{ ...inp, cursor:"pointer" }}>
+                  <option value="">Seleccione...</option>
+                  {localities.map(l => <option key={l.idLocalidad} value={l.idLocalidad}>{l.nombre || l.descripcion}</option>)}
+                </select>
+              </div>
+              <div style={{ display:"flex", gap:10, marginTop:6 }}>
+                <button onClick={() => { setShowNewProvider(false); setNewError(""); }} style={{ flex:1, padding:11, border:`1px solid ${C.border}`, borderRadius:8, background:C.white, fontWeight:600, fontSize:13, cursor:"pointer", color:C.muted }}>Cancelar</button>
+                <button onClick={handleSaveProvider} disabled={savingNew} style={{ flex:1, padding:11, border:"none", borderRadius:8, background:C.green800, color:"white", fontWeight:600, fontSize:13, cursor:"pointer" }}>
+                  {savingNew ? "Guardando..." : "Guardar Proveedor"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Mini modal: Nuevo Visitador ── */}
+      {showNewVisitor && (
+        <div style={{ position:"fixed", inset:0, zIndex:9999, background:"rgba(10,30,20,0.55)", backdropFilter:"blur(5px)", display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
+          <div style={{ background:C.white, borderRadius:16, padding:"28px 26px", maxWidth:460, width:"100%", border:`1px solid ${C.border}`, boxShadow:"0 20px 60px rgba(0,0,0,0.15)" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+              <h3 style={{ margin:0, fontSize:16, fontWeight:700, color:C.text }}>Nuevo Visitador</h3>
+              <button onClick={() => { setShowNewVisitor(false); setNewError(""); }} style={{ background:"none", border:"none", fontSize:18, cursor:"pointer", color:C.muted }}>✕</button>
+            </div>
+            {form.idProveedor && (
+              <div style={{ fontSize:12, color:C.muted, marginBottom:16, padding:"6px 10px", background:C.green100, borderRadius:7, border:`1px solid ${C.green200}` }}>
+                Proveedor: <strong>{providers.find(p => String(p.idProveedor) === String(form.idProveedor))?.razonSocial}</strong>
+              </div>
+            )}
+            {newError && <div style={{ background:C.redBg, color:C.red, padding:"8px 12px", borderRadius:8, fontSize:13, marginBottom:14, border:`1px solid #f7c1c1` }}>{newError}</div>}
+            <div style={{ display:"flex", flexDirection:"column", gap:13 }}>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                <div>
+                  <label style={lbl}>Nombre <span style={{ color:C.red }}>*</span></label>
+                  <input value={newVisForm.nombre} onChange={e => setNewVisForm(p => ({ ...p, nombre: e.target.value }))} placeholder="Juan" style={inp} />
+                </div>
+                <div>
+                  <label style={lbl}>Apellido <span style={{ color:C.red }}>*</span></label>
+                  <input value={newVisForm.apellido} onChange={e => setNewVisForm(p => ({ ...p, apellido: e.target.value }))} placeholder="García" style={inp} />
+                </div>
+              </div>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                <div>
+                  <label style={lbl}>Teléfono</label>
+                  <input value={newVisForm.telefono} onChange={e => setNewVisForm(p => ({ ...p, telefono: e.target.value }))} placeholder="2991234567" style={inp} />
+                </div>
+                <div>
+                  <label style={lbl}>Correo</label>
+                  <input value={newVisForm.correo} onChange={e => setNewVisForm(p => ({ ...p, correo: e.target.value }))} placeholder="juan@ejemplo.com" style={inp} />
+                </div>
+              </div>
+              <div style={{ display:"flex", gap:10, marginTop:6 }}>
+                <button onClick={() => { setShowNewVisitor(false); setNewError(""); }} style={{ flex:1, padding:11, border:`1px solid ${C.border}`, borderRadius:8, background:C.white, fontWeight:600, fontSize:13, cursor:"pointer", color:C.muted }}>Cancelar</button>
+                <button onClick={handleSaveVisitor} disabled={savingNew} style={{ flex:1, padding:11, border:"none", borderRadius:8, background:C.green800, color:"white", fontWeight:600, fontSize:13, cursor:"pointer" }}>
+                  {savingNew ? "Guardando..." : "Guardar Visitador"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {loteAlert && (
@@ -811,16 +968,30 @@ export default function ComprasPage() {
               </Field>
 
               <Field label="Proveedor" required col="span 6">
-                <select name="idProveedor" value={form.idProveedor} onChange={hf} style={{ ...inp, cursor: "pointer" }}>
-                  <option value="">Seleccione un proveedor...</option>
-                  {providers.map(p => <option key={p.idProveedor} value={p.idProveedor}>{p.razonSocial}</option>)}
-                </select>
+                <div style={{ display:"flex", gap:8 }}>
+                  <select name="idProveedor" value={form.idProveedor} onChange={hf} style={{ ...inp, cursor:"pointer", flex:1 }}>
+                    <option value="">Seleccione un proveedor...</option>
+                    {providers.map(p => <option key={p.idProveedor} value={p.idProveedor}>{p.razonSocial}</option>)}
+                  </select>
+                  <button type="button" onClick={() => { setNewError(""); setShowNewProvider(true); }}
+                    style={{ padding:"0 12px", borderRadius:9, border:`1px solid ${C.green200}`, background:C.green100, color:C.green800, fontWeight:700, fontSize:18, cursor:"pointer", flexShrink:0, whiteSpace:"nowrap" }}
+                    title="Crear nuevo proveedor">+</button>
+                </div>
               </Field>
               <Field label="Visitador / Agente" col="span 6">
-                <select name="idVisitador" value={form.idVisitador} onChange={hf} disabled={!form.idProveedor} style={{ ...inp, cursor: form.idProveedor ? "pointer" : "not-allowed", opacity: form.idProveedor ? 1 : 0.6 }}>
-                  <option value="">{form.idProveedor ? "Seleccione un visitador (Opcional)..." : "Seleccione primero un proveedor"}</option>
-                  {visitadoresFiltrados.map(v => <option key={v.idVisitador} value={v.idVisitador}>{v.nombre} {v.apellido}</option>)}
-                </select>
+                <div style={{ display:"flex", gap:8 }}>
+                  <select name="idVisitador" value={form.idVisitador} onChange={hf}
+                    disabled={!form.idProveedor}
+                    style={{ ...inp, cursor: form.idProveedor ? "pointer" : "not-allowed", opacity: form.idProveedor ? 1 : 0.6, flex:1 }}>
+                    <option value="">{form.idProveedor ? "Seleccione un visitador (Opcional)..." : "Seleccione primero un proveedor"}</option>
+                    {visitadoresFiltrados.map(v => <option key={v.idVisitador} value={v.idVisitador}>{v.nombre} {v.apellido}</option>)}
+                  </select>
+                  <button type="button"
+                    onClick={() => { setNewError(""); setShowNewVisitor(true); }}
+                    disabled={!form.idProveedor}
+                    style={{ padding:"0 12px", borderRadius:9, border:`1px solid ${C.green200}`, background: form.idProveedor ? C.green100 : C.border, color: form.idProveedor ? C.green800 : C.muted, fontWeight:700, fontSize:18, cursor: form.idProveedor ? "pointer" : "not-allowed", flexShrink:0 }}
+                    title={form.idProveedor ? "Crear nuevo visitador" : "Seleccioná primero un proveedor"}>+</button>
+                </div>
               </Field>
             </div>
           </div>

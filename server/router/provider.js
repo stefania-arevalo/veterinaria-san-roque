@@ -6,7 +6,7 @@ const { validateCreate, validateUpdate, validateId } = require("../validators/pr
 
 const api = express.Router();
 
-api.post("/provider", [md_auth.asureAuth, md_auth.hasRole([1]), validateCreate, validate], ProviderController.createProvider);
+api.post("/provider", [md_auth.asureAuth, md_auth.hasRole([1, 3, 4]), validateCreate, validate], ProviderController.createProvider);
 api.get("/providers", [md_auth.asureAuth, md_auth.hasRole([1, 2, 3, 4])], ProviderController.getProviders);
 api.get("/provider/:id", [md_auth.asureAuth, md_auth.hasRole([1, 2, 3, 4]), validateId, validate], ProviderController.getProvider);
 api.patch("/provider/:id", [md_auth.asureAuth, md_auth.hasRole([1]), validateId, validateUpdate, validate], ProviderController.updateProvider);

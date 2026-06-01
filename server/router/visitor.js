@@ -4,7 +4,7 @@ const md_auth = require("../middlewares/authenticated");
 const api = express.Router();
 
 // Escritura
-api.post("/visitor", [md_auth.asureAuth, md_auth.hasRole([1])], VisitorController.createVisitor);
+api.post("/visitor", [md_auth.asureAuth, md_auth.hasRole([1, 3, 4])], VisitorController.createVisitor);
 api.patch("/visitor/:id", [md_auth.asureAuth, md_auth.hasRole([1])], VisitorController.updateVisitor);
 api.delete("/visitor/:id", [md_auth.asureAuth, md_auth.hasRole([1])], VisitorController.deleteVisitor);
 
