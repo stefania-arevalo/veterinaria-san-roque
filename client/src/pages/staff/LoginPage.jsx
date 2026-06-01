@@ -528,17 +528,29 @@ export default function LoginPage() {
 
       {/* ── 1. INICIO: Ajustado en simetría perfecta con 'Nosotros' ── */}
       <section id="inicio" style={{
-        padding: isMobile ? "100px 0 60px 0" : "140px 0 100px 0", // Padding superior por la Navbar fija
-        background: `linear-gradient(155deg, ${P.foam} 0%, ${P.white} 55%, ${P.mint} 100%)`,
+        minHeight: isMobile ? "calc(100svh - 64px)" : "calc(100vh - 64px)",
+        paddingTop: isMobile ? "74px" : "64px", 
+        paddingBottom: isMobile ? "16px" : "0px",
+        boxSizing: "border-box",
         display: "flex",
-        flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        width: "100%",
+        background: `linear-gradient(155deg, ${P.foam} 0%, ${P.white} 55%, ${P.mint} 100%)`,
         position: "relative",
-        overflow: "hidden"
+        overflow: "hidden",
       }}>
-        <div style={{ maxWidth: 1100, width: "100%", margin: "0 auto", padding: isMobile ? "0 24px" : "0 48px", display: "flex", alignItems: "center", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 40 : 72 }}>
+        <div style={{
+          maxWidth: 1100,
+          margin: "0 auto",
+          padding: isMobile ? "0px 16px" : "40px 48px",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: isMobile ? "space-around" : "space-between", // Distribuye el espacio eficientemente en mobile
+          alignItems: "center",
+          width: "100%",
+          height: isMobile ? "100%" : "auto",
+          gap: isMobile ? 12 : 60,
+        }}>
           
           <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
             <h1 style={{ fontSize: isMobile ? 28 : isTablet ? 38 : 46, fontWeight: 900, color: P.forest, textAlign: isMobile ? "center" : "left", margin: "0 0 16px", lineHeight: 1.15, letterSpacing: "-1.5px" }}>
