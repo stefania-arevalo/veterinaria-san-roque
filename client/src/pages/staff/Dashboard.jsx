@@ -14,16 +14,6 @@ const getUserFromToken = () => {
   } catch { return null; }
 };
 
-// Helper para verificar los permisos del usuario logueado
-const hasPermission = (pageKey) => {
-  try {
-    const permissions = JSON.parse(localStorage.getItem("userPermissions") || "[]");
-    return permissions.includes(pageKey);
-  } catch {
-    return false;
-  }
-};
-
 const THEME = {
   primary:   "#0f2a4a",
   accent:    "#1a6bc4",
@@ -270,13 +260,9 @@ export default function Dashboard() {
   const rolLogueado   = user?.idRol      ? Number(user.idRol)      : null;
   const idPersonal    = user?.idPersonal ? Number(user.idPersonal) : null;
 
-  // Evaluación de permisos dinámicos
-  const canSeeCitas   = hasPermission("citas");
-  const canSeeVentas  = hasPermission("ventas");
-  const canSeeStock   = hasPermission("compras");
-
   useEffect(() => {
     async function fetchAll() {
+      // Corregido: Desestructuramos el array de respuestas completas primero
       const resultados = await Promise.allSettled([
         axios.get(`/appointments?date=${today}`, { headers }),
         axios.get(`/sales?date=${today}`,        { headers }),
@@ -291,7 +277,7 @@ export default function Dashboard() {
       if (todasCitasRes.status === "fulfilled") {
         const todas = todasCitasRes.value.data || [];
 
-        // Cobros pendientes (solo si tiene acceso a ventas)
+        // Cobros pendientes (para admin/asistente)
         const deudas = todas.filter(c => {
           const esFinalizada = Number(c.idEstadoCita) === 4;
           const lista = c.AppointmentDetails || c.detalles || [];
@@ -299,12 +285,13 @@ export default function Dashboard() {
         });
         setCobrosPendientes(deudas);
 
+        // Recientes (fallback cuando no hay citas hoy)
         setCitasRec(todas.filter(c => c.fecha !== today).slice(0, 6));
       }
 
       if (citasHoyRes.status === "fulfilled") {
         const todas = citasHoyRes.value.data || [];
-        // Filtro específico para médicos veterinarios (Rol 2)
+        // Para el vet: filtramos por su idPersonal
         if (rolLogueado === 2 && idPersonal) {
           setCitas(todas.filter(c =>
             Number(c.idVeterinario) === idPersonal ||
@@ -336,7 +323,7 @@ export default function Dashboard() {
       setLoading(false);
     }
     fetchAll();
-  }, [rolLogueado, idPersonal]);
+  }, []);
 
   const hayVentasHoy = ventas.length > 0;
   const hayCitasHoy  = citas.length  > 0;
@@ -465,13 +452,12 @@ export default function Dashboard() {
     );
   }
 
-  // ── Vista General (Dinamizada con Permisos) ──
+  // ── Vista ADMIN / ASISTENTE / VENDEDOR ──
   return (
     <div style={{ padding: "16px 20px", background: THEME.bg, minHeight: "calc(100vh - 60px)" }}>
       <style>{GLOBAL_CSS}</style>
 
-      {/* Alerta de cobros pendientes visible solo si el usuario tiene acceso al módulo de Ventas */}
-      {cobrosPendientes.length > 0 && canSeeVentas && (
+      {cobrosPendientes.length > 0 && ![2, 3].includes(rolLogueado) && (
         <div
           onClick={() => navigate("/admin/turnos?filterPago=POR+COBRAR")}
           style={{
@@ -500,11 +486,10 @@ export default function Dashboard() {
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
         gap: 16,
-        height: cobrosPendientes.length > 0 && canSeeVentas ? "calc(100vh - 190px)" : "calc(100vh - 110px)",
+        height: cobrosPendientes.length > 0 ? "calc(100vh - 190px)" : "calc(100vh - 110px)",
       }}>
 
-        {/* Panel de Citas */}
-        {canSeeCitas && (
+        {rolLogueado !== 4 && (
           <Panel
             title={hayCitasHoy ? "Citas de hoy" : "Citas recientes"}
             icon="📅" iconBg="#eff6ff" iconColor={THEME.blue}
@@ -526,8 +511,7 @@ export default function Dashboard() {
           </Panel>
         )}
 
-        {/* Panel de Ventas */}
-        {canSeeVentas && (
+        {![2, 3].includes(rolLogueado) && (
           <Panel
             title={hayVentasHoy ? "Ventas de hoy" : "Ventas recientes"}
             icon="💰" iconBg="#f0fdf4" iconColor={THEME.green}
@@ -549,8 +533,7 @@ export default function Dashboard() {
           </Panel>
         )}
 
-        {/* Paneles de Stock */}
-        {canSeeStock && (
+        {![2, 3].includes(rolLogueado) && (
           <>
             <Panel title="Stock por terminarse" icon="📉" iconBg={THEME.amberBg} iconColor={THEME.amber}
               count={stockBajo.length || undefined} countColor={THEME.amber}>
@@ -580,18 +563,20 @@ export default function Dashboard() {
           </>
         )}
 
-        {/* Panel secundario de Cobros para Asistentes o roles habilitados a ver Ventas */}
-        {canSeeVentas && cobrosPendientes.length > 0 && (
+        {rolLogueado === 3 && (
           <Panel title="Cobros pendientes" icon="💰" iconBg={THEME.amberBg} iconColor={THEME.amber}
             count={cobrosPendientes.length || undefined} countColor={THEME.amber}
             action={
               <button onClick={() => navigate("/admin/turnos?filterPago=POR+COBRAR")}
                 style={{ fontSize: 11, fontWeight: 700, color: THEME.amber, background: THEME.amberBg, border: `1px solid ${THEME.amberBdr}`, borderRadius: 7, padding: "4px 10px", cursor: "pointer" }}>
-                Ver Citas Pendientes de Cobro →
+                Ver Citas Pendiente de Cobro →
               </button>
             }
           >
-            {cobrosPendientes.slice(0, 6).map(c => <CitaRow key={c.idCita} cita={c} isRecent={true} />)}
+            {cobrosPendientes.length === 0
+              ? <Empty icon="✅" text="No hay cobros pendientes." />
+              : cobrosPendientes.slice(0, 6).map(c => <CitaRow key={c.idCita} cita={c} isRecent={true} />)
+            }
           </Panel>
         )}
 
