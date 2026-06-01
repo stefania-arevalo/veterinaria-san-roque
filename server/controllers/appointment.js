@@ -350,7 +350,7 @@ async function getAppointments(req, res, next) {
                     as: 'Mascota',
                     attributes: ['idMascota', 'nombre', 'idTamaño', 'idRaza'],
                     include: [
-                        { model: Client, as: 'Dueño', attributes: ['nombres', 'apellidos'] },
+                        { model: Client, as: 'Dueño', attributes: ['idCliente', 'nombres', 'apellidos'] },
                         { model: Breed,  as: 'Raza',  attributes: ['idRaza', 'nombre', 'idEspecie'] }
                     ]
                 },
@@ -406,7 +406,7 @@ async function getAppointment(req, res, next) {
                     model: Pet,
                     as: 'Mascota',
                     attributes: ['idMascota', 'nombre', 'idTamaño'],
-                    include: [{ model: Client, as: 'Dueño', attributes: ['nombres', 'apellidos'] }]
+                    include: [{ model: Client, as: 'Dueño', attributes: ['idCliente', 'nombres', 'apellidos'] }]
                 },
                 { model: AppointmentType,  as: 'TipoCita'  },
                 { model: AppointmentState, as: 'EstadoCita' },
@@ -447,7 +447,7 @@ async function getAppointmentsByStaff(req, res, next) {
                     as: 'Mascota',
                     attributes: ['nombre', 'sexo'],
                     include: [
-                        { model: Client, as: 'Dueño', attributes: ['nombres', 'apellidos', 'telefono'] },
+                        { model: Client, as: 'Dueño', attributes: ['idCliente', 'nombres', 'apellidos', 'telefono'] },
                         { model: Breed, attributes: ['nombre'], include: [{ model: Species, attributes: ['nombre'] }] }
                     ]
                 }

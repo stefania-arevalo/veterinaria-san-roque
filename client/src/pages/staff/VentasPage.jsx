@@ -1016,10 +1016,6 @@ export default function VentasPage() {
         ? resAppts.data
         : (resAppts.data?.data || []);
 
-      console.log("Primera cita completa:", JSON.stringify(todasLasCitas[0], null, 2));
-      console.log("Mascota.Dueño:", todasLasCitas[0]?.Mascota?.Dueño);
-      console.log("Cliente directo:", todasLasCitas[0]?.Cliente);
-
       // Mapa: idCliente → { cliente, servicios[], vacunas[], meds[] }
       const mapaClientes = {};
 
@@ -1042,7 +1038,7 @@ export default function VentasPage() {
         if (!ensureCliente(cliente)) return;
         if (!cita.detalles) return;
         cita.detalles.forEach((det) => {
-          if (det.idEstadoServicio !== 3) return;
+          if (Number(det.idEstadoServicio) !== 3) return;
           mapaClientes[cliente.idCliente].servicios.push({
             tipo: "servicio",
             idServicioAtendido: det.idDetalle,
