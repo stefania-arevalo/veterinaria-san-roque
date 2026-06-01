@@ -14,6 +14,7 @@ const getUserFromToken = () => {
   } catch { return null; }
 };
 
+// Helper para verificar los permisos del usuario logueado
 const hasPermission = (pageKey) => {
   try {
     const permissions = JSON.parse(localStorage.getItem("userPermissions") || "[]");
@@ -60,6 +61,7 @@ const GLOBAL_CSS = `
   .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
 `;
 
+// ── Agenda Visual ──
 function AgendaDashboard({ citas, fechaHoy }) {
   const CITA_ESTADOS = {
     1: { label: "Pendiente",  color: "#b45309", bg: "#fef3c7" },
@@ -137,6 +139,7 @@ function AgendaDashboard({ citas, fechaHoy }) {
   );
 }
 
+// ── Panel container ──
 function Panel({ title, icon, iconBg, iconColor, count, countColor, children, style, action }) {
   return (
     <div className="panel" style={{
@@ -187,7 +190,7 @@ function Empty({ icon, text }) {
   );
 }
 
-function CitaRow({ cita, isRecent, onClick, style }) {
+function CitaRow({ cita, isRecent }) {
   const estadoMap = {
     1: { label: "Pendiente",  bg: "#fef9c3", color: "#854d0e" },
     2: { label: "Confirmada", bg: THEME.greenBg, color: THEME.green },
@@ -197,19 +200,7 @@ function CitaRow({ cita, isRecent, onClick, style }) {
   };
   const est = estadoMap[cita.idEstadoCita] || { label: "—", bg: "#f1f5f9", color: THEME.muted };
   return (
-    <div 
-      className="row-item" 
-      onClick={onClick}
-      style={{ 
-        display: "flex", 
-        alignItems: "center", 
-        justifyContent: "space-between", 
-        padding: "9px 8px", 
-        borderBottom: `1px solid ${THEME.border}`,
-        cursor: onClick ? "pointer" : "default",
-        ...style 
-      }}
-    >
+    <div className="row-item" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 8px", borderBottom: `1px solid ${THEME.border}` }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 700, fontSize: 13, color: THEME.primary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           {cita.Mascota?.nombre || "—"}
@@ -258,6 +249,7 @@ function StockRow({ icon, iconColor, title, sub }) {
   );
 }
 
+// ── Componente Principal Dashboard ──
 export default function Dashboard() {
   const navigate = useNavigate();
   const today = new Date().toLocaleDateString("en-CA");
@@ -278,6 +270,7 @@ export default function Dashboard() {
   const rolLogueado   = user?.idRol      ? Number(user.idRol)      : null;
   const idPersonal    = user?.idPersonal ? Number(user.idPersonal) : null;
 
+  // Evaluación de permisos dinámicos
   const canSeeCitas   = hasPermission("citas");
   const canSeeVentas  = hasPermission("ventas");
   const canSeeStock   = hasPermission("compras");
@@ -294,9 +287,11 @@ export default function Dashboard() {
 
       const [citasHoyRes, ventasHoyRes, todasCitasRes, todasVentasRes, lotesRes] = resultados;
 
+      // ── Citas ──
       if (todasCitasRes.status === "fulfilled") {
         const todas = todasCitasRes.value.data || [];
 
+        // Cobros pendientes (solo si tiene acceso a ventas)
         const deudas = todas.filter(c => {
           const esFinalizada = Number(c.idEstadoCita) === 4;
           const lista = c.AppointmentDetails || c.detalles || [];
@@ -309,6 +304,7 @@ export default function Dashboard() {
 
       if (citasHoyRes.status === "fulfilled") {
         const todas = citasHoyRes.value.data || [];
+        // Filtro específico para médicos veterinarios (Rol 2)
         if (rolLogueado === 2 && idPersonal) {
           setCitas(todas.filter(c =>
             Number(c.idVeterinario) === idPersonal ||
@@ -319,16 +315,14 @@ export default function Dashboard() {
         }
       }
 
-      if (ventasHoyRes.status === "fulfilled") {
-        const ventasHoy = ventasHoyRes.value.data || [];
-        setVentas(ventasHoy.slice(0, 6));
-      }
-      
+      // ── Ventas ──
+      if (ventasHoyRes.status === "fulfilled") setVentas(ventasHoyRes.value.data.slice(0, 6));
       if (todasVentasRes.status === "fulfilled") {
         const todas = todasVentasRes.value.data || [];
         setVentasRec(todas.filter(v => v.fecha !== today).slice(0, 6));
       }
 
+      // ── Stock ──
       if (lotesRes.status === "fulfilled") {
         const lotes = lotesRes.value.data || [];
         const en30 = new Date(); en30.setDate(en30.getDate() + 30);
@@ -347,6 +341,7 @@ export default function Dashboard() {
   const hayVentasHoy = ventas.length > 0;
   const hayCitasHoy  = citas.length  > 0;
 
+  // ── Vista del VETERINARIO ──
   if (rolLogueado === 2) {
     return (
       <div style={{ padding: "16px 20px", background: THEME.bg, minHeight: "calc(100vh - 60px)" }}>
@@ -470,14 +465,15 @@ export default function Dashboard() {
     );
   }
 
+  // ── Vista General (Dinamizada con Permisos) ──
   return (
     <div style={{ padding: "16px 20px", background: THEME.bg, minHeight: "calc(100vh - 60px)" }}>
       <style>{GLOBAL_CSS}</style>
 
-      {/* CORRECCIÓN DE LA ALERTA: Ahora redirige directo a Ventas */}
+      {/* Alerta de cobros pendientes visible solo si el usuario tiene acceso al módulo de Ventas */}
       {cobrosPendientes.length > 0 && canSeeVentas && (
         <div
-          onClick={() => navigate("/admin/ventas")}
+          onClick={() => navigate("/admin/turnos?filterPago=POR+COBRAR")}
           style={{
             background: "#fffbeb", border: "1px solid #fcd34d", borderLeft: "5px solid #f59e0b",
             borderRadius: 12, padding: "16px 20px", marginBottom: 20, cursor: "pointer",
@@ -495,7 +491,7 @@ export default function Dashboard() {
             </div>
           </div>
           <div style={{ background: "#f59e0b", color: "white", padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700 }}>
-            IR A COBRAR →
+            COBRAR AHORA →
           </div>
         </div>
       )}
@@ -507,6 +503,7 @@ export default function Dashboard() {
         height: cobrosPendientes.length > 0 && canSeeVentas ? "calc(100vh - 190px)" : "calc(100vh - 110px)",
       }}>
 
+        {/* Panel de Citas */}
         {canSeeCitas && (
           <Panel
             title={hayCitasHoy ? "Citas de hoy" : "Citas recientes"}
@@ -529,6 +526,7 @@ export default function Dashboard() {
           </Panel>
         )}
 
+        {/* Panel de Ventas */}
         {canSeeVentas && (
           <Panel
             title={hayVentasHoy ? "Ventas de hoy" : "Ventas recientes"}
@@ -551,6 +549,7 @@ export default function Dashboard() {
           </Panel>
         )}
 
+        {/* Paneles de Stock */}
         {canSeeStock && (
           <>
             <Panel title="Stock por terminarse" icon="📉" iconBg={THEME.amberBg} iconColor={THEME.amber}
@@ -581,26 +580,18 @@ export default function Dashboard() {
           </>
         )}
 
-        {/* CORRECCIÓN EN EL PANEL DE ABAJO: Cada ítem de cita te lleva a Ventas pasándole el Dueño en el estado */}
+        {/* Panel secundario de Cobros para Asistentes o roles habilitados a ver Ventas */}
         {canSeeVentas && cobrosPendientes.length > 0 && (
           <Panel title="Cobros pendientes" icon="💰" iconBg={THEME.amberBg} iconColor={THEME.amber}
             count={cobrosPendientes.length || undefined} countColor={THEME.amber}
             action={
-              <button onClick={() => navigate("/admin/ventas")}
+              <button onClick={() => navigate("/admin/turnos?filterPago=POR+COBRAR")}
                 style={{ fontSize: 11, fontWeight: 700, color: THEME.amber, background: THEME.amberBg, border: `1px solid ${THEME.amberBdr}`, borderRadius: 7, padding: "4px 10px", cursor: "pointer" }}>
-                Ir a Ventas →
+                Ver Citas Pendientes de Cobro →
               </button>
             }
           >
-            {cobrosPendientes.slice(0, 6).map(c => (
-              <CitaRow 
-                key={c.idCita} 
-                cita={c} 
-                isRecent={true} 
-                onClick={() => navigate("/admin/ventas", { state: { autoSelectCliente: c.Mascota?.Dueño } })}
-                style={{ transition: "all 0.2s" }}
-              />
-            ))}
+            {cobrosPendientes.slice(0, 6).map(c => <CitaRow key={c.idCita} cita={c} isRecent={true} />)}
           </Panel>
         )}
 
@@ -609,6 +600,7 @@ export default function Dashboard() {
   );
 }
 
+// ── Sub-componente: historial reciente del vet ──
 function HistorialRecienteVet({ idPersonal, headers }) {
   const [historiales, setHistoriales] = useState([]);
   const [loading, setLoading] = useState(true);
