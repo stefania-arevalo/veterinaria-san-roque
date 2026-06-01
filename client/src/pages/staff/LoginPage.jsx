@@ -47,11 +47,11 @@ function Navbar({ onLoginClick, isMobile, containerRef }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const sections = [
-    { id: "inicio",    label: "Inicio",    emoji: "🏠" },
-    { id: "servicios", label: "Servicios", emoji: "🩺" },
-    { id: "portal",    label: "Portal",    emoji: "🌐" },
-    { id: "nosotros",  label: "Nosotros",  emoji: "🏥" },
-    { id: "contacto",  label: "Contacto",  emoji: "📞" },
+    { id: "inicio",    label: "Inicio",    emoji: "🏠",  emojiDesktop: "🏠" },
+    { id: "servicios", label: "Servicios", emoji: "🩺",  emojiDesktop: "🐾" },
+    { id: "portal",    label: "Portal",    emoji: "🌐",  emojiDesktop: "🌐" },
+    { id: "nosotros",  label: "Nosotros",  emoji: "🏥",  emojiDesktop: "🏥" },
+    { id: "contacto",  label: "Contacto",  emoji: "📞",  emojiDesktop: "📞" },
   ];
 
   useEffect(() => {
@@ -67,6 +67,31 @@ function Navbar({ onLoginClick, isMobile, containerRef }) {
     };
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
+  }, [containerRef]);
+
+  // Scroll suave con rueda: avanza/retrocede de a una sección sin el salto brusco del snap
+  useEffect(() => {
+    const el = containerRef?.current;
+    if (!el) return;
+    let isScrolling = false;
+    const onWheel = (e) => {
+      e.preventDefault();
+      if (isScrolling) return;
+      isScrolling = true;
+      const sectionEls = sections.map(s => document.getElementById(s.id)).filter(Boolean);
+      const current = sectionEls.reduce((closest, sec) => {
+        return Math.abs(sec.offsetTop - el.scrollTop) < Math.abs(closest.offsetTop - el.scrollTop)
+          ? sec : closest;
+      }, sectionEls[0]);
+      const currentIndex = sectionEls.indexOf(current);
+      const nextIndex = e.deltaY > 0
+        ? Math.min(currentIndex + 1, sectionEls.length - 1)
+        : Math.max(currentIndex - 1, 0);
+      el.scrollTo({ top: sectionEls[nextIndex].offsetTop, behavior: "smooth" });
+      setTimeout(() => { isScrolling = false; }, 800);
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
   }, [containerRef]);
 
   const scrollTo = (id) => {
@@ -168,7 +193,7 @@ function Navbar({ onLoginClick, isMobile, containerRef }) {
               onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = G.gray50; }}
               onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
             >
-              <span style={{ fontSize: 18, lineHeight: 1 }}>{s.emoji}</span>
+              <span style={{ fontSize: 18, lineHeight: 1 }}>{s.emojiDesktop}</span>
               <span style={{
                 fontSize: 9, fontWeight: 700, letterSpacing: "0.05em",
                 color: isActive ? G.forest : G.gray400,
