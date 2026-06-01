@@ -44,8 +44,8 @@ const NAV_ITEMS = [
 ];
 
 const ADMIN_MENU = [
-  { label: "👥 Usuarios",      path: "/admin/empleados/usuarios" },
-  { label: "🔑 Permisos",      path: "/admin/empleados/permisos" },
+  { label: "👥 Usuarios",      path: "/admin/usuarios" },
+  { label: "🔑 Permisos",      path: "/admin/permisos" },
   { label: "📊 Reportes",      path: "/admin/reportes" },
   { label: "⚙️ Configuración", path: "/admin/configuracion" },
 ];

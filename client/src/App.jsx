@@ -165,7 +165,7 @@ function App() {
 
             {/* Empleados y Usuarios */}
             <Route 
-              path="empleados/permisos" 
+              path="permisos" 
               element={
                 <PermissionRoute pagina="permisos">
                   <PermissionsPage />
@@ -173,7 +173,7 @@ function App() {
               } 
             />
             <Route 
-              path="empleados/usuarios" 
+              path="usuarios" 
               element={
                 <PermissionRoute pagina="usuarios">
                   <UsuariosPage />
