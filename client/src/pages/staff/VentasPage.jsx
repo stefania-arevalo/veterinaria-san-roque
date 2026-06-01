@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import axios from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import EmailComprobanteModal from '../../components/shared/EmailComprobanteModal';
@@ -132,6 +133,92 @@ const Icon = {
     </svg>
   ),
 };
+
+export default function ComponenteVentas() {
+  const location = useLocation(); // Hook para obtener el estado enviado por la navegación
+  const { user } = useAuth();
+
+  // Estados de la vista de ventas (Simulados para mantener consistencia de compilación)
+  const [clientes, setClientes] = useState([]);
+  const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
+  const [busquedaCliente, setBusquedaCliente] = useState("");
+
+  // Supongamos que aquí cargas tus clientes desde la API al iniciar
+  useEffect(() => {
+    async function cargarClientes() {
+      try {
+        const res = await axios.get("/customers", { headers: headers() });
+        const listaClientes = res.data || [];
+        setClientes(listaClientes);
+
+        // LÓGICA DE AUTO-SELECCIÓN:
+        // Verificamos si venimos desde el Dashboard con un cliente asignado en el state
+        if (location.state?.autoSelectCliente) {
+          const clienteDashboard = location.state.autoSelectCliente;
+          
+          // Buscamos coincidencia exacta en la lista cargada (por ID preferentemente)
+          const encontrado = listaClientes.find(cl => cl.idCliente === clienteDashboard.idCliente);
+          
+          if (encontrado) {
+            setClienteSeleccionado(encontrado);
+            setBusquedaCliente(`${encontrado.nombres} ${encontrado.apellidos}`);
+          } else {
+            // Si por alguna razón no está en la lista general todavía, usamos el objeto directo del estado
+            setClienteSeleccionado(clienteDashboard);
+            setBusquedaCliente(`${clienteDashboard.nombres} ${clienteDashboard.apellidos}`);
+          }
+        }
+      } catch (err) {
+        console.error("Error cargando clientes en ventas:", err);
+      }
+    }
+    cargarClientes();
+  }, [location.state]);
+
+  return (
+    <div style={{ padding: 20, background: C.bg, minHeight: "100vh", color: C.text }}>
+      <div style={{ background: C.white, padding: 20, borderRadius: 12, border: `1px solid ${C.border}` }}>
+        <h2 style={{ marginTop: 0, color: C.green900, display: "flex", alignItems: "center", gap: 8 }}>
+          {Icon.grid} Módulo de Facturación y Ventas
+        </h2>
+        <hr style={{ borderColor: C.borderLight, margin: "15px 0" }} />
+        
+        <div style={{ marginBottom: 15 }}>
+          <label style={{ display: "block", fontWeight: 700, marginBottom: 6, fontSize: 13 }}>
+            Cliente Seleccionado:
+          </label>
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <div style={{ position: "relative", flex: 1 }}>
+              <input
+                type="text"
+                placeholder="Buscar cliente por nombre..."
+                value={busquedaCliente}
+                onChange={(e) => setBusquedaCliente(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  borderRadius: 8,
+                  border: `1.5px solid ${C.border}`,
+                  fontSize: 14
+                }}
+              />
+            </div>
+            {clienteSeleccionado && (
+              <span style={{ background: C.green100, color: C.green800, padding: "8px 12px", borderRadius: 8, fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+                {Icon.check} Activo
+              </span>
+            )}
+          </div>
+          {clienteSeleccionado && (
+            <div style={{ marginTop: 8, fontSize: 12, color: C.muted }}>
+              ID Cliente: #{clienteSeleccionado.idCliente} · Documento/Detalles listo para asociar items.
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── Overlay Modal ─────────────────────────────────────────────────
 function AlertModal({ icon, iconBg, title, message, onConfirm, onCancel, confirmText, confirmBg, cancelText }) {
