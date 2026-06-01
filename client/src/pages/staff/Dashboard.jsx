@@ -51,7 +51,7 @@ const GLOBAL_CSS = `
   .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
 `;
 
-// ── Agenda Visual (Vista de Veterinario) ──
+// ── Agenda Visual ──
 function AgendaDashboard({ citas, fechaHoy }) {
   const CITA_ESTADOS = {
     1: { label: "Pendiente",  color: "#b45309", bg: "#fef3c7" },
@@ -120,7 +120,7 @@ function AgendaDashboard({ citas, fechaHoy }) {
             </div>
 
             <span className="badge" style={{ background: est.bg, color: est.color, flexShrink: 0 }}>
-              {cita.idEstadoCita === 5 ? "Reprogr." : cancelada ? "Anulada" : est.label}
+              {cancelada ? "Anulada" : est.label}
             </span>
           </div>
         );
@@ -129,7 +129,7 @@ function AgendaDashboard({ citas, fechaHoy }) {
   );
 }
 
-// ── Panel contenedor ──
+// ── Panel container ──
 function Panel({ title, icon, iconBg, iconColor, count, countColor, children, style, action }) {
   return (
     <div className="panel" style={{
@@ -180,7 +180,6 @@ function Empty({ icon, text }) {
   );
 }
 
-// ── CitaRow corregido (Ya muestra el Reprogr.) ──
 function CitaRow({ cita, isRecent }) {
   const estadoMap = {
     1: { label: "Pendiente",  bg: "#fef9c3", color: "#854d0e" },
@@ -261,14 +260,9 @@ export default function Dashboard() {
   const rolLogueado   = user?.idRol      ? Number(user.idRol)      : null;
   const idPersonal    = user?.idPersonal ? Number(user.idPersonal) : null;
 
-  // Verificación de permisos individuales
-  const tienePermiso = (clavePagina) => {
-    if (rolLogueado === 1) return true; // Administrador ve todo nativamente
-    return user?.permisos?.includes(clavePagina) || false; 
-  };
-
   useEffect(() => {
     async function fetchAll() {
+      // Corregido: Desestructuramos el array de respuestas completas primero
       const resultados = await Promise.allSettled([
         axios.get(`/appointments?date=${today}`, { headers }),
         axios.get(`/sales?date=${today}`,        { headers }),
@@ -279,20 +273,25 @@ export default function Dashboard() {
 
       const [citasHoyRes, ventasHoyRes, todasCitasRes, todasVentasRes, lotesRes] = resultados;
 
-      // Citas
+      // ── Citas ──
       if (todasCitasRes.status === "fulfilled") {
         const todas = todasCitasRes.value.data || [];
+
+        // Cobros pendientes (para admin/asistente)
         const deudas = todas.filter(c => {
           const esFinalizada = Number(c.idEstadoCita) === 4;
           const lista = c.AppointmentDetails || c.detalles || [];
           return esFinalizada && lista.some(d => [1, 2, 3].includes(Number(d.idEstadoServicio)));
         });
         setCobrosPendientes(deudas);
+
+        // Recientes (fallback cuando no hay citas hoy)
         setCitasRec(todas.filter(c => c.fecha !== today).slice(0, 6));
       }
 
       if (citasHoyRes.status === "fulfilled") {
         const todas = citasHoyRes.value.data || [];
+        // Para el vet: filtramos por su idPersonal
         if (rolLogueado === 2 && idPersonal) {
           setCitas(todas.filter(c =>
             Number(c.idVeterinario) === idPersonal ||
@@ -303,14 +302,14 @@ export default function Dashboard() {
         }
       }
 
-      // Ventas
+      // ── Ventas ──
       if (ventasHoyRes.status === "fulfilled") setVentas(ventasHoyRes.value.data.slice(0, 6));
       if (todasVentasRes.status === "fulfilled") {
         const todas = todasVentasRes.value.data || [];
         setVentasRec(todas.filter(v => v.fecha !== today).slice(0, 6));
       }
 
-      // Stock
+      // ── Stock ──
       if (lotesRes.status === "fulfilled") {
         const lotes = lotesRes.value.data || [];
         const en30 = new Date(); en30.setDate(en30.getDate() + 30);
@@ -327,7 +326,7 @@ export default function Dashboard() {
   }, []);
 
   const hayVentasHoy = ventas.length > 0;
-  const hayCitasHoy  = citas.length   > 0;
+  const hayCitasHoy  = citas.length  > 0;
 
   // ── Vista del VETERINARIO ──
   if (rolLogueado === 2) {
@@ -355,55 +354,110 @@ export default function Dashboard() {
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, height: "calc(100vh - 160px)" }}>
           <Panel
-            title="Mi agenda de hoy" icon="📅" iconBg={THEME.blueBg} iconColor={THEME.blue}
-            count={hayCitasHoy ? citas.length : undefined} countColor={THEME.blue}
+            title="Mi agenda de hoy"
+            icon="📅"
+            iconBg={THEME.blueBg}
+            iconColor={THEME.blue}
+            count={hayCitasHoy ? citas.length : undefined}
+            countColor={THEME.blue}
+            action={
+              !hayCitasHoy && !loading
+                ? <span style={{ fontSize: 11, color: THEME.muted }}>Sin citas hoy</span>
+                : null
+            }
           >
-            {loading ? <Empty icon="⏳" text="Cargando..." /> : <AgendaDashboard citas={citas} fechaHoy={today} />}
+            {loading ? (
+              <Empty icon="⏳" text="Cargando..." />
+            ) : (
+              <AgendaDashboard citas={citas} fechaHoy={today} />
+            )}
           </Panel>
 
           <Panel
-            title="Historial reciente" icon="📋" iconBg={THEME.blueBg} iconColor={THEME.blue}
+            title="Historial reciente"
+            icon="📋"
+            iconBg={THEME.blueBg}
+            iconColor={THEME.blue}
             action={
-              <button onClick={() => navigate("/admin/mascotas/historial")}
-                style={{ fontSize: 11, fontWeight: 700, color: THEME.blue, background: THEME.blueBg, border: `1px solid ${THEME.blueBdr}`, borderRadius: 7, padding: "4px 10px", cursor: "pointer" }}>
+              <button
+                onClick={() => navigate("/admin/mascotas/historial")}
+                style={{
+                  fontSize: 11, fontWeight: 700, color: THEME.blue,
+                  background: THEME.blueBg, border: `1px solid ${THEME.blueBdr}`,
+                  borderRadius: 7, padding: "4px 10px", cursor: "pointer",
+                }}
+              >
                 Ver todo →
               </button>
             }
           >
-            {loading ? <Empty icon="⏳" text="Cargando..." /> : <HistorialRecienteVet idPersonal={idPersonal} headers={headers} />}
+            {loading ? (
+              <Empty icon="⏳" text="Cargando..." />
+            ) : (
+              <HistorialRecienteVet idPersonal={idPersonal} headers={headers} />
+            )}
           </Panel>
 
-          <Panel title="Stock bajo — vacunas y medicamentos" icon="💉" iconBg={THEME.amberBg} iconColor={THEME.amber} count={stockBajo.length || undefined} countColor={THEME.amber}>
-            {loading ? <Empty icon="⏳" text="Cargando..." /> : stockBajo.length === 0 ? <Empty icon="✅" text="Sin alertas de stock bajo." /> :
+          <Panel
+            title="Stock bajo — vacunas y medicamentos"
+            icon="💉"
+            iconBg={THEME.amberBg}
+            iconColor={THEME.amber}
+            count={stockBajo.length || undefined}
+            countColor={THEME.amber}
+          >
+            {loading ? (
+              <Empty icon="⏳" text="Cargando..." />
+            ) : stockBajo.length === 0 ? (
+              <Empty icon="✅" text="Sin alertas de stock bajo." />
+            ) : (
               stockBajo.map(l => (
-                <StockRow key={l.idLote} icon="📦" iconColor={THEME.amber}
+                <StockRow
+                  key={l.idLote}
+                  icon="📦"
+                  iconColor={THEME.amber}
                   title={l.Producto?.nombre ? `${l.Producto.nombre} — Lote #${l.idLote}` : `Lote #${l.idLote}`}
-                  sub={`${l.cantidadDisponible} unidades restantes`} />
+                  sub={`${l.cantidadDisponible} unidades restantes`}
+                />
               ))
-            }
+            )}
           </Panel>
 
-          <Panel title="Por vencerse (30 días)" icon="⏳" iconBg={THEME.redBg} iconColor={THEME.red} count={stockVenc.length || undefined} countColor={THEME.red}>
-            {loading ? <Empty icon="⏳" text="Cargando..." /> : stockVenc.length === 0 ? <Empty icon="✅" text="Sin vencimientos próximos." /> :
+          <Panel
+            title="Por vencerse (30 días)"
+            icon="⏳"
+            iconBg={THEME.redBg}
+            iconColor={THEME.red}
+            count={stockVenc.length || undefined}
+            countColor={THEME.red}
+          >
+            {loading ? (
+              <Empty icon="⏳" text="Cargando..." />
+            ) : stockVenc.length === 0 ? (
+              <Empty icon="✅" text="Sin vencimientos próximos." />
+            ) : (
               stockVenc.map(l => (
-                <StockRow key={l.idLote} icon="📆" iconColor={THEME.red}
+                <StockRow
+                  key={l.idLote}
+                  icon="📆"
+                  iconColor={THEME.red}
                   title={l.Producto?.nombre ? `${l.Producto.nombre} — Lote #${l.idLote}` : `Lote #${l.idLote}`}
-                  sub={`Vence: ${new Date(l.fechaVencimiento + "T00:00:00").toLocaleDateString("es-AR")}`} />
+                  sub={`Vence: ${new Date(l.fechaVencimiento + "T00:00:00").toLocaleDateString("es-AR")}`}
+                />
               ))
-            }
+            )}
           </Panel>
         </div>
       </div>
     );
   }
 
-  // ── Vista General (Asistente / Administrador) ──
+  // ── Vista ADMIN / ASISTENTE / VENDEDOR ──
   return (
     <div style={{ padding: "16px 20px", background: THEME.bg, minHeight: "calc(100vh - 60px)" }}>
       <style>{GLOBAL_CSS}</style>
 
-      {/* Alerta de cobros */}
-      {cobrosPendientes.length > 0 && tienePermiso("ventas") && (
+      {cobrosPendientes.length > 0 && ![2, 3].includes(rolLogueado) && (
         <div
           onClick={() => navigate("/admin/turnos?filterPago=POR+COBRAR")}
           style={{
@@ -428,16 +482,14 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Grilla limpia de Paneles Individuales */}
       <div style={{
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
         gap: 16,
-        height: cobrosPendientes.length > 0 && tienePermiso("ventas") ? "calc(100vh - 190px)" : "calc(100vh - 110px)",
+        height: cobrosPendientes.length > 0 ? "calc(100vh - 190px)" : "calc(100vh - 110px)",
       }}>
 
-        {/* Panel de Citas */}
-        {tienePermiso("citas") && (
+        {rolLogueado !== 4 && (
           <Panel
             title={hayCitasHoy ? "Citas de hoy" : "Citas recientes"}
             icon="📅" iconBg="#eff6ff" iconColor={THEME.blue}
@@ -459,8 +511,7 @@ export default function Dashboard() {
           </Panel>
         )}
 
-        {/* Panel de Ventas */}
-        {tienePermiso("ventas") && (
+        {![2, 3].includes(rolLogueado) && (
           <Panel
             title={hayVentasHoy ? "Ventas de hoy" : "Ventas recientes"}
             icon="💰" iconBg="#f0fdf4" iconColor={THEME.green}
@@ -482,40 +533,37 @@ export default function Dashboard() {
           </Panel>
         )}
 
-        {/* Panel Stock Bajo */}
-        {tienePermiso("productos") && (
-          <Panel title="Stock por terminarse" icon="📉" iconBg={THEME.amberBg} iconColor={THEME.amber}
-            count={stockBajo.length || undefined} countColor={THEME.amber}>
-            {loading ? <Empty icon="⏳" text="Cargando..." /> :
-              stockBajo.length === 0 ? <Empty icon="✅" text="Sin alertas de stock bajo." /> :
-              stockBajo.map(l => (
-                <StockRow key={l.idLote} icon="📦" iconColor={THEME.amber}
-                  title={l.Producto?.nombre ? `${l.Producto.nombre} — Lote #${l.idLote}` : `Lote #${l.idLote}`}
-                  sub={`${l.cantidadDisponible} unidades restantes`}
-                />
-              ))
-            }
-          </Panel>
+        {![2, 3].includes(rolLogueado) && (
+          <>
+            <Panel title="Stock por terminarse" icon="📉" iconBg={THEME.amberBg} iconColor={THEME.amber}
+              count={stockBajo.length || undefined} countColor={THEME.amber}>
+              {loading ? <Empty icon="⏳" text="Cargando..." /> :
+                stockBajo.length === 0 ? <Empty icon="✅" text="Sin alertas de stock bajo." /> :
+                stockBajo.map(l => (
+                  <StockRow key={l.idLote} icon="📦" iconColor={THEME.amber}
+                    title={l.Producto?.nombre ? `${l.Producto.nombre} — Lote #${l.idLote}` : `Lote #${l.idLote}`}
+                    sub={`${l.amountAvailable || l.cantidadDisponible} unidades restantes`}
+                  />
+                ))
+              }
+            </Panel>
+
+            <Panel title="Productos por vencerse" icon="⏳" iconBg={THEME.redBg} iconColor={THEME.red}
+              count={stockVenc.length || undefined} countColor={THEME.red}>
+              {loading ? <Empty icon="⏳" text="Cargando..." /> :
+                stockVenc.length === 0 ? <Empty icon="✅" text="Sin vencimientos próximos." /> :
+                stockVenc.map(l => (
+                  <StockRow key={l.idLote} icon="📆" iconColor={THEME.red}
+                    title={l.Producto?.nombre ? `${l.Producto.nombre} — Lote #${l.idLote}` : `Lote #${l.idLote}`}
+                    sub={`Vence: ${new Date(l.fechaVencimiento + "T00:00:00").toLocaleDateString("es-AR")}`}
+                  />
+                ))
+              }
+            </Panel>
+          </>
         )}
 
-        {/* Panel Productos por Vencer */}
-        {tienePermiso("productos") && (
-          <Panel title="Productos por vencerse" icon="⏳" iconBg={THEME.redBg} iconColor={THEME.red}
-            count={stockVenc.length || undefined} countColor={THEME.red}>
-            {loading ? <Empty icon="⏳" text="Cargando..." /> :
-              stockVenc.length === 0 ? <Empty icon="✅" text="Sin vencimientos próximos." /> :
-              stockVenc.map(l => (
-                <StockRow key={l.idLote} icon="📆" iconColor={THEME.red}
-                  title={l.Producto?.nombre ? `${l.Producto.nombre} — Lote #${l.idLote}` : `Lote #${l.idLote}`}
-                  sub={`Vence: ${new Date(l.fechaVencimiento + "T00:00:00").toLocaleDateString("es-AR")}`}
-                />
-              ))
-            }
-          </Panel>
-        )}
-
-        {/* Panel Cobros Pendientes (Alternativo) */}
-        {tienePermiso("ventas") && !hayVentasHoy && (
+        {rolLogueado === 3 && (
           <Panel title="Cobros pendientes" icon="💰" iconBg={THEME.amberBg} iconColor={THEME.amber}
             count={cobrosPendientes.length || undefined} countColor={THEME.amber}
             action={
@@ -537,7 +585,7 @@ export default function Dashboard() {
   );
 }
 
-// Sub-componente del Veterinario
+// ── Sub-componente: historial reciente del vet ──
 function HistorialRecienteVet({ idPersonal, headers }) {
   const [historiales, setHistoriales] = useState([]);
   const [loading, setLoading] = useState(true);
