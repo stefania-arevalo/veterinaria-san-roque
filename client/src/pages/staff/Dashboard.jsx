@@ -173,7 +173,7 @@ function Panel({ title, icon, iconBg, iconColor, count, countColor, children, st
 
 function Empty({ icon, text }) {
   return (
-    <div style={{ textAlign: "center", padding: "20px 0", color: THEME.muted }}>
+    <div style={{ textAling: "center", padding: "20px 0", color: THEME.muted }}>
       <div style={{ fontSize: 28, marginBottom: 6, opacity: 0.4 }}>{icon}</div>
       <p style={{ margin: 0, fontSize: 13 }}>{text}</p>
     </div>
@@ -259,9 +259,19 @@ export default function Dashboard() {
   const rolLogueado   = user?.idRol      ? Number(user.idRol)      : null;
   const idPersonal    = user?.idPersonal ? Number(user.idPersonal) : null;
 
+  // ── FUNCIÓN CLAVE: Verificación de permisos individuales ──
+  const tienePermiso = (clavePagina) => {
+    if (rolLogueado === 1) return true; // El Administrador siempre ve todo de forma nativa
+    
+    // Si guardas tus permisos como un array de strings en el token (ej: ["ventas", "citas"])
+    return user?.permisos?.includes(clavePagina) || false; 
+    
+    // Nota: Si en tu base de datos o token lo guardas como objeto estructurado, 
+    // podés adaptarlo aquí, por ejemplo: return user?.permisos?.[clavePagina] === true;
+  };
+
   useEffect(() => {
     async function fetchAll() {
-      // Corregido: Desestructuramos el array de respuestas completas primero
       const resultados = await Promise.allSettled([
         axios.get(`/appointments?date=${today}`, { headers }),
         axios.get(`/sales?date=${today}`,        { headers }),
@@ -276,21 +286,17 @@ export default function Dashboard() {
       if (todasCitasRes.status === "fulfilled") {
         const todas = todasCitasRes.value.data || [];
 
-        // Cobros pendientes (para admin/asistente)
         const deudas = todas.filter(c => {
           const esFinalizada = Number(c.idEstadoCita) === 4;
           const lista = c.AppointmentDetails || c.detalles || [];
           return esFinalizada && lista.some(d => [1, 2, 3].includes(Number(d.idEstadoServicio)));
         });
         setCobrosPendientes(deudas);
-
-        // Recientes (fallback cuando no hay citas hoy)
         setCitasRec(todas.filter(c => c.fecha !== today).slice(0, 6));
       }
 
       if (citasHoyRes.status === "fulfilled") {
         const todas = citasHoyRes.value.data || [];
-        // Para el vet: filtramos por su idPersonal
         if (rolLogueado === 2 && idPersonal) {
           setCitas(todas.filter(c =>
             Number(c.idVeterinario) === idPersonal ||
@@ -325,9 +331,9 @@ export default function Dashboard() {
   }, []);
 
   const hayVentasHoy = ventas.length > 0;
-  const hayCitasHoy  = citas.length  > 0;
+  const hayCitasHoy  = citas.length   > 0;
 
-  // ── Vista del VETERINARIO ──
+  // ── Vista del VETERINARIO (Mantiene su flujo clínico enfocado) ──
   if (rolLogueado === 2) {
     return (
       <div style={{ padding: "16px 20px", background: THEME.bg, minHeight: "calc(100vh - 60px)" }}>
@@ -451,12 +457,13 @@ export default function Dashboard() {
     );
   }
 
-  // ── Vista ADMIN / ASISTENTE / VENDEDOR ──
+  // ── Vista General (Dinamizada con Permisos Individuales) ──
   return (
     <div style={{ padding: "16px 20px", background: THEME.bg, minHeight: "calc(100vh - 60px)" }}>
       <style>{GLOBAL_CSS}</style>
 
-      {cobrosPendientes.length > 0 && ![2, 3].includes(rolLogueado) && (
+      {/* Alerta Global de Cobros: Solo aparece si el usuario tiene permiso explícito de "ventas" */}
+      {cobrosPendientes.length > 0 && tienePermiso("ventas") && (
         <div
           onClick={() => navigate("/admin/turnos?filterPago=POR+COBRAR")}
           style={{
@@ -485,10 +492,11 @@ export default function Dashboard() {
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
         gap: 16,
-        height: cobrosPendientes.length > 0 ? "calc(100vh - 190px)" : "calc(100vh - 110px)",
+        height: cobrosPendientes.length > 0 && tienePermiso("ventas") ? "calc(100vh - 190px)" : "calc(100vh - 110px)",
       }}>
 
-        {rolLogueado !== 4 && (
+        {/* Panel de Citas: Validado con la firma granular "citas" */}
+        {tienePermiso("citas") && (
           <Panel
             title={hayCitasHoy ? "Citas de hoy" : "Citas recientes"}
             icon="📅" iconBg="#eff6ff" iconColor={THEME.blue}
@@ -510,7 +518,8 @@ export default function Dashboard() {
           </Panel>
         )}
 
-        {![2, 3].includes(rolLogueado) && (
+        {/* Panel de Ventas: Validado con la firma granular "ventas" */}
+        {tienePermiso("ventas") && (
           <Panel
             title={hayVentasHoy ? "Ventas de hoy" : "Ventas recientes"}
             icon="💰" iconBg="#f0fdf4" iconColor={THEME.green}
@@ -532,7 +541,8 @@ export default function Dashboard() {
           </Panel>
         )}
 
-        {![2, 3].includes(rolLogueado) && (
+        {/* Bloque de Inventario/Stock: Validado con la firma "productos" */}
+        {tienePermiso("productos") && (
           <>
             <Panel title="Stock por terminarse" icon="📉" iconBg={THEME.amberBg} iconColor={THEME.amber}
               count={stockBajo.length || undefined} countColor={THEME.amber}>
@@ -562,7 +572,8 @@ export default function Dashboard() {
           </>
         )}
 
-        {rolLogueado === 3 && (
+        {/* Caja de Cobros Pendientes interna: visible para quien tiene permisos de venta y no hay actividad de venta fluida en el día */}
+        {tienePermiso("ventas") && !hayVentasHoy && (
           <Panel title="Cobros pendientes" icon="💰" iconBg={THEME.amberBg} iconColor={THEME.amber}
             count={cobrosPendientes.length || undefined} countColor={THEME.amber}
             action={
