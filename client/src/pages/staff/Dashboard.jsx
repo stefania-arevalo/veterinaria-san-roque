@@ -569,7 +569,7 @@ export default function Dashboard() {
             action={
               <button onClick={() => navigate("/admin/turnos?filterPago=POR+COBRAR")}
                 style={{ fontSize: 11, fontWeight: 700, color: THEME.amber, background: THEME.amberBg, border: `1px solid ${THEME.amberBdr}`, borderRadius: 7, padding: "4px 10px", cursor: "pointer" }}>
-                Ir a cobrar →
+                Ver Citas Pendiente de Cobro →
               </button>
             }
           >
