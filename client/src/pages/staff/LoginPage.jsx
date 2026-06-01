@@ -516,15 +516,20 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ fontFamily: "'Segoe UI', system-ui, sans-serif", minHeight: "100vh", background: P.white }}>
+    <div style={{ fontFamily: "'Segoe UI', system-ui, sans-serif", minHeight: "calc(100vh - 64px)", background: P.white }}>
       <Navbar onLoginClick={() => setShowForm(true)} isMobile={isMobile} />
 
       {/* ── HERO ─────────────────────────────────────────────────── */}
       <section id="inicio" style={{
-        minHeight: "100vh", paddingTop: 64,
-        display: "flex", alignItems: "center",
+        minHeight: isMobile ? "auto" : "calc(100vh - 64px)", // ✨ Resta el alto exacto del navbar
+        paddingTop: isMobile ? "100px" : "64px",             // ✨ Separa el navbar sin romper dimensiones
+        boxSizing: "border-box",                             // ✨ Asegura cálculo nativo estricto
+        display: "flex", 
+        alignItems: "center",
+        justifyContent: "center",
         background: `linear-gradient(155deg, ${P.foam} 0%, ${P.white} 55%, ${P.mint} 100%)`,
-        position: "relative", overflow: "hidden",
+        position: "relative", 
+        overflow: "hidden",
       }}>
         {/* Círculos decorativos de fondo */}
         <div style={{
@@ -646,22 +651,22 @@ export default function LoginPage() {
               marginBottom: 16, 
             }}>
               <span style={{ fontSize: 13 }}>🐾</span>
-              <span style={{ fontSize: 12.5, fontWeight: 700, color: P.pine, letterSpacing: "0.04em" }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: P.pine, letterSpacing: "0.04em" }}>
                 Clínica Veterinaria San Roque
               </span>
             </div>
 
-            {/* Imagen derecha (Contenedor del Logo) */}
+            {/* Imagen derecha ajustada proporcionalmente */}
             <div style={{
-              width: 380,
-              height: 380,
+              width: 340,   // ✨ Reducido levemente para ajustarse a resoluciones comunes de notebooks
+              height: 340,  // ✨ Manteniendo aspecto 1:1 perfecto
               display: "flex",
               borderRadius: 24, overflow: "hidden",
               background: `linear-gradient(135deg, ${P.mint}, rgba(234,243,222,0.5))`,
               alignItems: "center", justifyContent: "center",
               boxShadow: `0 24px 64px rgba(26,61,40,0.12), 0 4px 16px rgba(26,61,40,0.06)`,
               border: `1px solid ${P.borderLight}`,
-              padding: 30,
+              padding: 24,
             }}>
               <img
                 src="/logocolor.png"
