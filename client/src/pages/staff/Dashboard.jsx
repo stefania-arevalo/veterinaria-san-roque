@@ -504,7 +504,10 @@ export default function Dashboard() {
                 </>
               ) : <Empty icon="💳" text="No hay ventas registradas." />
             }
-          </Panel>,
+          </Panel>
+        )}
+
+        {[3, 4].includes(rolLogueado) && (
           <Panel title="Cobros pendientes" icon="💰" iconBg={THEME.amberBg} iconColor={THEME.amber}
             count={cobrosPendientes.length || undefined} countColor={THEME.amber}
             action={
@@ -520,7 +523,6 @@ export default function Dashboard() {
             }
           </Panel>
         )}
-
 
         {![2, 3].includes(rolLogueado) && (
           <>
