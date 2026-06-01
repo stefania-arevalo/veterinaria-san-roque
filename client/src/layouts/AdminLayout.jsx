@@ -40,7 +40,7 @@ const NAV_ITEMS = [
   { label: "Pacientes",          pagina: "pacientes",         path: "/admin/pacientes" },
   { label: "Historial Clínico", pagina: "historial_clinico", path: "/admin/mascotas/historial" },
   { label: "Compras",           pagina: "compras",           path: "/admin/compras" },
-  { label: "Inventario",        pagina: "productos",         path: "/admin/productos" },
+  { label: "Inventario",        pagina: "inventario",         path: "/admin/productos" },
 ];
 
 const ADMIN_MENU = [
@@ -363,7 +363,7 @@ export default function AdminLayout() {
 
   // 🔒 CONTROL DE SEGURIDAD EXCLUSIVO DE RUTAS ADMIN LADO FRONTEND
   useEffect(() => {
-    const pathsExclusivosAdmin = ["/admin/reportes", "/admin/configuracion", "/admin/empleados/usuarios","/admin/empleados/permisos"];
+    const pathsExclusivosAdmin = ["/admin/reportes", "/admin/configuracion", "/admin/usuarios","/admin/permisos"];
     const esRutaAdmin = pathsExclusivosAdmin.some(path => location.pathname.startsWith(path));
     
     // Si la ruta requiere admin y el idRol del usuario NO es 1 (Administrador), lo pateamos

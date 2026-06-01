@@ -24,10 +24,10 @@ const UserPermission = sequelize.define("UserPermission", {
           "clientes", 
           "citas", 
           "pacientes", 
-          "inventario", 
-          "tratamientos",
           "historial_clinico", 
-          "productos", 
+          "inventario", 
+          "usuarios",     
+          "permisos",     
           "configuracion", 
           "reportes"
         ]],

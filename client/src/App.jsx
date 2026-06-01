@@ -137,7 +137,7 @@ function App() {
             <Route
               path="productos"
               element={
-                <PermissionRoute pagina="productos">
+                <PermissionRoute pagina="inventario">
                   <StockPage />
                 </PermissionRoute>
               }

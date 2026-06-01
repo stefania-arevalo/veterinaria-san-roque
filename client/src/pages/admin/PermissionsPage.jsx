@@ -52,18 +52,11 @@ const PAGES = [
     rolesPermitidos: [2],       // SOLO veterinario
   },
   {
-    key: "productos",  
+    key: "inventario",  
     label: "Inventario",
     icon: "📦",
     desc: "Consultar stock, lotes y productos disponibles.",
     rolesPermitidos: [2, 3, 4],
-  },
-  {
-    key: "tratamientos",
-    label: "Tratamientos",
-    icon: "💊",
-    desc: "Ver tratamientos activos y medicamentos recetados.",
-    rolesPermitidos: [2, 3],
   },
 ];
 
