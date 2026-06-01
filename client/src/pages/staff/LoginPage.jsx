@@ -499,7 +499,7 @@ function Footer({ isMobile }) {
   );
 }
 
-// ── Página principal ──────────────────────────────────────────────
+// ── Página principal Corregida de una vez por todas ──────────────────
 export default function LoginPage() {
   const { login, user } = useAuth();
   const navigate = useNavigate();
@@ -516,14 +516,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ fontFamily: "'Segoe UI', system-ui, sans-serif", minHeight: "calc(100vh - 64px)", background: P.white }}>
+    // ✨ FIX: Modificado a minHeight: "100vh" exacto para que el layout no se corte al scrollear hacia abajo.
+    <div style={{ fontFamily: "'Segoe UI', system-ui, sans-serif", minHeight: "100vh", background: P.white }}>
       <Navbar onLoginClick={() => setShowForm(true)} isMobile={isMobile} />
 
-      {/* ── HERO ─────────────────────────────────────────────────── */}
+      {/* ── HERO OPTIMIZADO EXTREMO ── */}
       <section id="inicio" style={{
-        minHeight: isMobile ? "auto" : "calc(100vh - 64px)", // ✨ Resta el alto exacto del navbar
-        paddingTop: isMobile ? "100px" : "64px",             // ✨ Separa el navbar sin romper dimensiones
-        boxSizing: "border-box",                             // ✨ Asegura cálculo nativo estricto
+        // ✨ FIX: Forzamos una altura de viewport calculada fija en desktop para congelar el scroll residual.
+        height: isMobile ? "auto" : "calc(100vh - 64px)", 
+        paddingTop: isMobile ? "100px" : "0px", // Eliminamos el padding molesto en desktop gracias a flex alignment
+        boxSizing: "border-box",                             
         display: "flex", 
         alignItems: "center",
         justifyContent: "center",
@@ -547,18 +549,19 @@ export default function LoginPage() {
 
         <div style={{
           maxWidth: 1100, margin: "0 auto",
-          padding: isMobile ? "40px 20px" : "60px 48px",
+          padding: isMobile ? "40px 20px" : "0 48px", // Sin paddings verticales excesivos que empujen cajas
           display: "flex", alignItems: "center",
           flexDirection: isMobile ? "column" : "row",
-          gap: isMobile ? 40 : 80, width: "100%",
+          gap: isMobile ? 40 : 48, width: "100%",
         }}>
           
           {/* Texto izquierda */}
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
             <h1 style={{
-              fontSize: isMobile ? 26 : isTablet ? 38 : 50, fontWeight: 900, color: P.forest,
+              fontSize: isMobile ? 26 : isTablet ? 36 : 44, // ✨ Ajuste fino de escala tipográfica
+              fontWeight: 900, color: P.forest,
               textAlign: isMobile ? "center" : "left",
-              margin: "0 0 22px", lineHeight: 1.08, letterSpacing: "-1.5px",
+              margin: "0 0 14px", lineHeight: 1.1, letterSpacing: "-1.5px",
             }}>
               Cuidamos a<br />
               <span style={{ color: P.leaf }}>tu mascota</span><br />
@@ -566,41 +569,46 @@ export default function LoginPage() {
             </h1>
 
             <p style={{
-              fontSize: isMobile ? 14 : 16.5,
+              fontSize: isMobile ? 13.5 : 15, // ✨ Más compacto para retener espacio vertical
               textAlign: isMobile ? "center" : "left",
-              color: P.muted, lineHeight: 1.75,
-              margin: "0 0 40px", maxWidth: 520,
+              color: P.muted, lineHeight: 1.6,
+              margin: "0 0 24px", maxWidth: 480,
             }}>
               Consultas veterinarias, vacunación, tratamientos, grooming y portal de clientes. Todo centralizado para brindarte la mejor atención en Punta Alta.
             </p>
 
-            {/* Features */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 44 }}>
+            {/* ⚡ FEATURES EN GRID REDUCIDO (2 Columnas x 2 Filas en Desktop) ⚡ */}
+            <div style={{ 
+              display: "grid", 
+              gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", // ✨ El secreto: divide el alto a la mitad
+              gap: isMobile ? 12 : "16px 20px", 
+              marginBottom: 28 
+            }}>
               {[
-                { icon: "📝", l: "Atención clínica profesional",    d: "Consultas, diagnósticos y seguimiento médico." },
-                { icon: "💉", l: "Vacunación y tratamientos",       d: "Control sanitario y cuidado preventivo." },
-                { icon: "✂️", l: "Grooming y estética",             d: "Baño, corte y limpieza especializada." },
-                { icon: "💊", l: "Productos veterinarios",          d: "Medicamentos, alimentos y accesorios." },
+                { icon: "📝", l: "Atención clínica", d: "Consultas y diagnósticos médicos." },
+                { icon: "💉", l: "Vacunas y control",  d: "Control sanitario preventivo." },
+                { icon: "✂️", l: "Grooming y estética", d: "Corte y estética especializada." },
+                { icon: "💊", l: "Ventas y stock",    d: "Medicamentos y accesorios." },
               ].map((f, i) => (
                 <div 
                   key={i} 
                   style={{ 
                     display: "flex", 
-                    flexDirection: isMobile ? "column" : "row", 
+                    flexDirection: "row", 
                     alignItems: "center", 
-                    textAlign: isMobile ? "center" : "left",  
-                    gap: 14 
+                    textAlign: "left",  
+                    gap: 12 
                   }}
                 >
                   <div style={{
-                    width: 42, height: 42, borderRadius: 11, flexShrink: 0,
+                    width: 36, height: 36, borderRadius: 10, flexShrink: 0,
                     background: P.white, border: `1px solid ${P.border}`,
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 19, boxShadow: "0 2px 8px rgba(26,61,40,0.06)",
+                    fontSize: 16, boxShadow: "0 2px 6px rgba(26,61,40,0.05)",
                   }}>{f.icon}</div>
                   <div>
-                    <div style={{ fontSize: 13.5, fontWeight: 700, color: P.forest }}>{f.l}</div>
-                    <div style={{ fontSize: 12.5, color: P.muted }}>{f.d}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: P.forest, lineHeight: 1.2 }}>{f.l}</div>
+                    <div style={{ fontSize: 11.5, color: P.muted, marginTop: 1, lineHeight: 1.2 }}>{f.d}</div>
                   </div>
                 </div>
               ))}
@@ -612,59 +620,58 @@ export default function LoginPage() {
                 style={{
                   display: "inline-flex", 
                   alignItems: "center", 
-                  justifyContent: isMobile ? "center" : "flex-start", 
+                  justifyContent: "center", 
                   gap: 9,
-                  width: isMobile ? "100%" : "auto",
-                  padding: isMobile ? "14px 18px" : "14px 30px",
-                  fontSize: isMobile ? 14 : 15.5, 
-                  borderRadius: 12,
+                  alignSelf: isMobile ? "stretch" : "flex-start",
+                  padding: "11px 24px",
+                  fontSize: 14, 
+                  borderRadius: 11,
                   background: `linear-gradient(135deg, ${P.forest}, ${P.pine})`,
                   color: "white", 
                   border: "none",
                   fontWeight: 700, 
                   cursor: "pointer",
-                  boxShadow: `0 6px 24px rgba(26,61,40,0.3)`,
+                  boxShadow: `0 6px 20px rgba(26,61,40,0.25)`,
                   transition: "all 0.2s ease", 
                   letterSpacing: "0.01em",
                 }}
-                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 10px 32px rgba(26,61,40,0.4)`; }}
-                onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = `0 6px 24px rgba(26,61,40,0.3)`; }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 10px 32px rgba(26,61,40,0.35)`; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = `0 6px 24px rgba(26,61,40,0.25)`; }}
               >
                 👤 Ingresar al sistema →
               </button>
             )}
           </div>
 
-          {/* ─── CONTENEDOR DERECHO (Tag + Logo) ─── */}
+          {/* ─── CONTENEDOR DERECHO ─── */}
           <div style={{
             display: isMobile ? "none" : "flex",
             flexDirection: "column",
             alignItems: "center", 
             flexShrink: 0,
           }}>
-
             {/* Tag */}
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 8,
               background: P.mint, border: `1px solid ${P.borderLight}`,
-              borderRadius: 99, padding: "5px 16px", 
-              marginBottom: 16, 
+              borderRadius: 99, padding: "4px 14px", 
+              marginBottom: 14, 
             }}>
-              <span style={{ fontSize: 13 }}>🐾</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: P.pine, letterSpacing: "0.04em" }}>
+              <span style={{ fontSize: 12 }}>🐾</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: P.pine, letterSpacing: "0.04em" }}>
                 Clínica Veterinaria San Roque
               </span>
             </div>
 
-            {/* Imagen derecha ajustada proporcionalmente */}
+            {/* Imagen del Logo */}
             <div style={{
-              width: 340,   // ✨ Reducido levemente para ajustarse a resoluciones comunes de notebooks
-              height: 340,  // ✨ Manteniendo aspecto 1:1 perfecto
+              width: 310,   // Rediseñado proporcionalmente
+              height: 310,  
               display: "flex",
               borderRadius: 24, overflow: "hidden",
               background: `linear-gradient(135deg, ${P.mint}, rgba(234,243,222,0.5))`,
               alignItems: "center", justifyContent: "center",
-              boxShadow: `0 24px 64px rgba(26,61,40,0.12), 0 4px 16px rgba(26,61,40,0.06)`,
+              boxShadow: `0 24px 48px rgba(26,61,40,0.1), 0 4px 12px rgba(26,61,40,0.04)`,
               border: `1px solid ${P.borderLight}`,
               padding: 24,
             }}>
