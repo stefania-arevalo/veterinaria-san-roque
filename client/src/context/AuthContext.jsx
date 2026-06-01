@@ -4,19 +4,22 @@ import { jwtDecode } from "jwt-decode";
 
 export const AuthContext = createContext();
 
-// ── Acceso automático por rol, sin necesitar permiso en BD ──────
-// Debe coincidir exactamente con PermissionRoute.jsx
+// ── Matriz Única de Accesos Automáticos por Rol ──────────────────
+// Roles: 1 = Admin, 2 = Veterinario, 3 = Asistente, 4 = Vendedor, 5 = Cliente
+// Debe contener ABSOLUTAMENTE TODAS las "paginas" que usás en App.jsx
 const ACCESO_POR_ROL = {
-  citas:             [2, 3],
-  clientes:          [2, 3, 4],
-  pacientes:         [2, 3],
-  historial_clinico: [2],
-  tratamientos:      [2, 3],
-  ventas:            [3, 4],
-  compras:           [3, 4],
-  productos:         [3, 4],
-  configuracion:     [],
-  usuarios:          [],
+  ventas:            [3, 4],    // Asistente y Vendedor
+  compras:           [3, 4],    // Asistente y Vendedor
+  clientes:          [2, 3, 4], // Todo el staff tiene acceso
+  citas:             [2, 3],    // Vet y Asistente (Ruta: turnos)
+  pacientes:         [2, 3, 4], // Todo el staff puede ver pacientes
+  historial_clinico: [2],       // ⚠️ Solo Veterinario puede entrar aquí
+  productos:         [2, 3, 4], // Todo el staff puede ver el Inventario
+  tratamientos:      [2, 3],    // Vet y Asistente
+  configuracion:     [],        // Exclusivo de Admin (idRol: 1)
+  usuarios:          [],        // Exclusivo de Admin (idRol: 1) (Permisos y Usuarios)
+  permisos:          [],
+  reportes:          [],        
 };
 
 export function AuthProvider({ children }) {
@@ -85,18 +88,16 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // ── canAccess: unifica acceso por rol + permiso en BD ─────────
-  // Mismo criterio que PermissionRoute para que el menú y las rutas
-  // sean siempre consistentes.
+  // ── canAccess unificado ─────────────────────────────────────────
   const canAccess = (pagina) => {
     if (!user) return false;
-    if (user.idRol === 1) return true;   // Admin ve todo
-    if (user.idRol === 5) return false;  // Cliente nunca accede al panel staff
+    if (user.idRol === 1) return true;   // Admin tiene superpoderes, ve todo
+    if (user.idRol === 5) return false;  // Cliente externo nunca entra al panel staff
 
-    // Acceso automático por rol
+    // 1. Acceso automático predefinido por el rol técnico
     if (ACCESO_POR_ROL[pagina]?.includes(Number(user.idRol))) return true;
 
-    // Permiso explícito otorgado por el admin desde PermissionsPage
+    // 2. Si no lo tiene automático, vemos si se le dio un permiso explícito en la BD
     return permisos[pagina] === true;
   };
 

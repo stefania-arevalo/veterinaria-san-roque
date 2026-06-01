@@ -167,7 +167,7 @@ function App() {
             <Route 
               path="empleados/permisos" 
               element={
-                <PermissionRoute pagina="usuarios">
+                <PermissionRoute pagina="permisos">
                   <PermissionsPage />
                 </PermissionRoute>
               } 
