@@ -25,11 +25,7 @@ const UserPermission = sequelize.define("UserPermission", {
           "citas", 
           "pacientes", 
           "historial_clinico", 
-          "inventario", 
-          "usuarios",     
-          "permisos",     
-          "configuracion", 
-          "reportes"
+          "inventario"
         ]],
         msg: "La página especificada no es válida."
       }

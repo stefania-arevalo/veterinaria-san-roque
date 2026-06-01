@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axios from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import EmailComprobanteModal from '../../components/shared/EmailComprobanteModal';
@@ -129,6 +129,17 @@ const Icon = {
     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
       <circle cx="11" cy="4" r="2" /><circle cx="18" cy="8" r="2" /><circle cx="4" cy="8" r="2" />
       <path d="M12 18c-3.5 0-6-2-6-5 0-1.5.5-3 1.5-4.5C8.5 7 10 6 12 6s3.5 1 4.5 2.5C17.5 10 18 11.5 18 13c0 3-2.5 5-6 5z" />
+    </svg>
+  ),
+  clock: (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+    </svg>
+  ),
+  refresh: (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" />
+      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
     </svg>
   ),
 };
@@ -328,6 +339,190 @@ function Stepper({ step }) {
   );
 }
 
+// ── NEW: ClientePendienteCard ─────────────────────────────────────
+// Card para mostrar un cliente con servicios pendientes de cobro
+function ClientePendienteCard({ clienteData, onSelect, loading }) {
+  const [hover, setHover] = useState(false);
+  const { cliente, totalPendiente, resumen } = clienteData;
+
+  // resumen: array de { tipo, count, label }
+  const badgeColors = {
+    servicio:       { bg: C.green100,  color: C.green800,  label: "Servicio" },
+    vacunaAplicada: { bg: C.amberBg,   color: "#7a4208",   label: "Vacuna" },
+    tratMed:        { bg: C.purpleBg,  color: C.purple,    label: "Tratamiento" },
+  };
+
+  return (
+    <div
+      onClick={() => !loading && onSelect(cliente)}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        background: hover ? C.surface : C.white,
+        border: `0.5px solid ${hover ? C.green700 : C.border}`,
+        borderRadius: 10,
+        padding: "14px 16px",
+        cursor: loading ? "not-allowed" : "pointer",
+        transition: "all 0.15s",
+        display: "flex",
+        flexDirection: "column",
+        gap: 10,
+        boxShadow: hover ? "0 4px 12px rgba(31,92,56,0.08)" : "none",
+        opacity: loading ? 0.7 : 1,
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      {/* Acento verde superior */}
+      <div style={{
+        position: "absolute", top: 0, left: 0, right: 0,
+        height: 3,
+        background: hover
+          ? `linear-gradient(90deg, ${C.green800}, ${C.greenMint})`
+          : "transparent",
+        transition: "background 0.2s",
+      }} />
+
+      {/* Nombre + total */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 9,
+            background: C.green100,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            color: C.green800, fontWeight: 700, fontSize: 14, flexShrink: 0,
+            border: `0.5px solid ${C.green200}`,
+          }}>
+            {cliente.nombres?.charAt(0)?.toUpperCase() || "?"}
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: C.text, lineHeight: 1.2 }}>
+              {cliente.nombres} {cliente.apellidos}
+            </div>
+            {cliente.dni && (
+              <div style={{ fontSize: 11, color: C.muted, marginTop: 1 }}>DNI: {cliente.dni}</div>
+            )}
+          </div>
+        </div>
+        <div style={{ textAlign: "right", flexShrink: 0 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: C.green800 }}>${fmt(totalPendiente)}</div>
+          <div style={{ fontSize: 10, color: C.muted, marginTop: 1 }}>pendiente</div>
+        </div>
+      </div>
+
+      {/* Badges de tipos pendientes */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+        {resumen.map((r) => {
+          const bc = badgeColors[r.tipo] || { bg: C.surface, color: C.muted };
+          return (
+            <span key={r.tipo} style={{
+              fontSize: 10, fontWeight: 500,
+              padding: "2px 7px", borderRadius: 4,
+              background: bc.bg, color: bc.color,
+              border: `0.5px solid ${bc.color}22`,
+            }}>
+              {r.count} {bc.label}{r.count > 1 ? "s" : ""}
+            </span>
+          );
+        })}
+      </div>
+
+      {/* CTA */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "flex-end",
+        fontSize: 12, fontWeight: 500,
+        color: hover ? C.green800 : C.muted,
+        transition: "color 0.15s",
+        gap: 4,
+      }}>
+        {loading ? "Cargando..." : "Cobrar →"}
+      </div>
+    </div>
+  );
+}
+
+// ── NEW: PendientesPreview ────────────────────────────────────────
+// Sección completa con el listado de clientes pendientes
+function PendientesPreview({ onSelectCliente, cargandoPreview, clientesPendientes, onRefresh }) {
+  if (cargandoPreview) {
+    return (
+      <div style={{
+        background: C.white, border: `0.5px solid ${C.border}`,
+        borderRadius: 10, padding: "24px 20px",
+        display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+        color: C.muted, fontSize: 13,
+      }}>
+        <div style={{
+          width: 16, height: 16, border: `2px solid ${C.green200}`,
+          borderTopColor: C.green800, borderRadius: "50%",
+          animation: "spin 0.8s linear infinite",
+        }} />
+        Buscando clientes con cobros pendientes...
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  if (clientesPendientes.length === 0) return null;
+
+  return (
+    <div style={{ marginBottom: 4 }}>
+      {/* Header de la sección */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        marginBottom: 12,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{
+            width: 6, height: 6, borderRadius: "50%",
+            background: C.amber, flexShrink: 0,
+            boxShadow: `0 0 0 3px ${C.amberBg}`,
+          }} />
+          <span style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            Cobros pendientes · {clientesPendientes.length} cliente{clientesPendientes.length > 1 ? "s" : ""}
+          </span>
+        </div>
+        <button
+          onClick={onRefresh}
+          style={{
+            display: "flex", alignItems: "center", gap: 5,
+            background: "none", border: "none",
+            color: C.muted, fontSize: 11, cursor: "pointer",
+            padding: "4px 6px", borderRadius: 6,
+          }}
+        >
+          {Icon.refresh} Actualizar
+        </button>
+      </div>
+
+      {/* Grid de cards */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
+        gap: 10,
+        marginBottom: 20,
+      }}>
+        {clientesPendientes.map((cp) => (
+          <ClientePendienteCard
+            key={cp.cliente.idCliente}
+            clienteData={cp}
+            onSelect={onSelectCliente}
+          />
+        ))}
+      </div>
+
+      {/* Separador */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: 12, marginBottom: 16,
+      }}>
+        <div style={{ flex: 1, height: 1, background: C.borderLight }} />
+        <span style={{ fontSize: 11, color: C.muted, whiteSpace: "nowrap" }}>o buscá por nombre / DNI</span>
+        <div style={{ flex: 1, height: 1, background: C.borderLight }} />
+      </div>
+    </div>
+  );
+}
+
 // ── Historial de Ventas ───────────────────────────────────────────
 function HistorialVentas({ onBack, user, canAnular }) {
   const [ventas, setVentas] = useState([]);
@@ -336,7 +531,6 @@ function HistorialVentas({ onBack, user, canAnular }) {
   const [confirmAnular, setConfirmAnular] = useState(null);
   const [modalExito, setModalExito] = useState("");
   const [modalError, setModalError] = useState("");
-
   const [ventaParaEmail, setVentaParaEmail] = useState(null);
 
   const fetchVentas = async () => {
@@ -397,7 +591,6 @@ function HistorialVentas({ onBack, user, canAnular }) {
         />
       )}
 
-      {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <button onClick={onBack} style={{
           display: "flex", alignItems: "center", gap: 8,
@@ -415,7 +608,6 @@ function HistorialVentas({ onBack, user, canAnular }) {
         </div>
       </div>
 
-      {/* Tabla */}
       <Card>
         <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
           <thead>
@@ -486,7 +678,6 @@ function HistorialVentas({ onBack, user, canAnular }) {
         />
       )}
 
-      {/* Modal detalle */}
       {ventaDetalle && (
         <div style={{
           position: "fixed", inset: 0, background: "rgba(10,30,20,0.55)",
@@ -499,7 +690,6 @@ function HistorialVentas({ onBack, user, canAnular }) {
             overflow: "hidden", border: `0.5px solid ${C.border}`,
             boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
           }}>
-            {/* Header */}
             <div style={{
               background: C.green900, color: "white",
               padding: "16px 20px", display: "flex",
@@ -519,7 +709,6 @@ function HistorialVentas({ onBack, user, canAnular }) {
               }}>{Icon.x}</button>
             </div>
 
-            {/* Info grid */}
             <div style={{ padding: "16px 20px", overflowY: "auto", flex: 1 }}>
               <div style={{
                 display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12,
@@ -575,7 +764,6 @@ function HistorialVentas({ onBack, user, canAnular }) {
               </div>
             </div>
 
-            {/* Totales */}
             <div style={{ padding: "14px 20px", background: C.surface, borderTop: `0.5px solid ${C.border}`, flexShrink: 0 }}>
               {[
                 ["IVA registrado (21%)", `$${fmt(ventaDetalle.iva)}`],
@@ -662,7 +850,6 @@ function ProductModal({ isOpen, onClose, onAddProduct, categories, productResult
         boxShadow: "0 24px 64px rgba(0,0,0,0.15)",
         display: "flex", flexDirection: "column", overflow: "hidden", zIndex: 1001,
       }}>
-        {/* Header */}
         <div style={{ background: C.green900, padding: "18px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ background: "rgba(255,255,255,0.12)", borderRadius: 8, width: 38, height: 38, display: "flex", alignItems: "center", justifyContent: "center", color: "white" }}>
@@ -680,7 +867,6 @@ function ProductModal({ isOpen, onClose, onAddProduct, categories, productResult
           }}>{Icon.x}</button>
         </div>
 
-        {/* Filtros */}
         <div style={{ padding: "14px 24px", background: C.white, borderBottom: `0.5px solid ${C.border}`, display: "flex", gap: 12, flexWrap: "wrap" }}>
           <div style={{ position: "relative", flex: "2 1 220px" }}>
             <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }}>{Icon.search}</span>
@@ -707,7 +893,6 @@ function ProductModal({ isOpen, onClose, onAddProduct, categories, productResult
           </select>
         </div>
 
-        {/* Grid */}
         <div style={{
           overflowY: "auto", padding: 20, flex: 1,
           display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
@@ -787,9 +972,13 @@ function ProductModal({ isOpen, onClose, onAddProduct, categories, productResult
 // ── VentasPage ────────────────────────────────────────────────────
 export default function VentasPage() {
   const { user } = useAuth();
-  const canAnular = [1, 4].includes(user?.idRol);  // Solo admin y vendedor pueden anular
+  const canAnular = [1, 4].includes(user?.idRol);
   const [step, setStep] = useState(1);
   const [showHistory, setShowHistory] = useState(false);
+
+  // ── NUEVO: estado para clientes pendientes ──
+  const [clientesPendientes, setClientesPendientes] = useState([]);
+  const [cargandoPreview, setCargandoPreview] = useState(true);
 
   const [clientSearch, setClientSearch] = useState("");
   const [clientResults, setClientResults] = useState([]);
@@ -814,6 +1003,186 @@ export default function VentasPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  // ── NUEVO: cargar clientes con pendientes ──────────────────────
+  // Busca todas las citas atendidas, vacunas aplicadas y medicamentos
+  // de tratamientos para armar el listado de clientes con saldo pendiente.
+  const cargarClientesPendientes = useCallback(async () => {
+    setCargandoPreview(true);
+    try {
+      // 1. Traer todas las citas
+      const resAppts = await axios.get("/appointments", { headers: headers() });
+      const todasLasCitas = Array.isArray(resAppts.data)
+        ? resAppts.data
+        : (resAppts.data?.data || []);
+
+      // Mapa: idCliente → { cliente, servicios[], vacunas[], meds[] }
+      const mapaClientes = {};
+
+      const ensureCliente = (cliente) => {
+        if (!cliente || !cliente.idCliente || cliente.idCliente === 1) return false;
+        if (!mapaClientes[cliente.idCliente]) {
+          mapaClientes[cliente.idCliente] = {
+            cliente,
+            servicios: [],
+            vacunas: [],
+            meds: [],
+          };
+        }
+        return true;
+      };
+
+      // 2. Servicios atendidos (idEstadoServicio === 3)
+      todasLasCitas.forEach((cita) => {
+        const cliente = cita.Mascota?.Dueño || cita.Cliente || null;
+        if (!ensureCliente(cliente)) return;
+        if (!cita.detalles) return;
+        cita.detalles.forEach((det) => {
+          if (det.idEstadoServicio !== 3) return;
+          mapaClientes[cliente.idCliente].servicios.push({
+            tipo: "servicio",
+            idServicioAtendido: det.idDetalle,
+            nombreServicio: det.PrecioServicio?.Service?.descripcion || "Servicio",
+            nombreMascota: cita.Mascota?.nombre || "Mascota",
+            precio: parseFloat(det.PrecioServicio?.precio || 0),
+          });
+        });
+      });
+
+      // 3. Vacunas aplicadas sin cobrar
+      // Recolectamos mascotas únicas que tengan al menos un servicio pendiente
+      const mascotasConPendientes = new Set();
+      todasLasCitas.forEach((cita) => {
+        const cliente = cita.Mascota?.Dueño || cita.Cliente || null;
+        if (!cliente || cliente.idCliente === 1) return;
+        const tienePendiente = cita.detalles?.some((d) => d.idEstadoServicio === 3);
+        if (tienePendiente && cita.Mascota?.idMascota) {
+          mascotasConPendientes.add(cita.Mascota.idMascota);
+        }
+      });
+
+      for (const idMascota of mascotasConPendientes) {
+        try {
+          const resVac = await axios.get(`/applied-vaccines/mascota/${idMascota}`, { headers: headers() });
+          // Encontramos el cliente de esta mascota
+          const citaDeLaMascota = todasLasCitas.find((c) => c.Mascota?.idMascota === idMascota);
+          const cliente = citaDeLaMascota?.Mascota?.Dueño || citaDeLaMascota?.Cliente || null;
+          if (!cliente || cliente.idCliente === 1) continue;
+          ensureCliente(cliente);
+          const nombreMascota = citaDeLaMascota?.Mascota?.nombre || "Mascota";
+
+          (resVac.data || []).forEach((v) => {
+            const idCita = v.Historial?.idCita;
+            const citaExacta = todasLasCitas.find((c) => c.idCita === idCita);
+            const detalleVacunacion = citaExacta?.detalles?.find(
+              (d) => d.idEstadoServicio === 3 && d.PrecioServicio?.Service?.descripcion?.toLowerCase().includes("vacun")
+            );
+            const precioVacuna = parseFloat(v.precioAplicado || 0);
+            const precioServicio = detalleVacunacion ? parseFloat(detalleVacunacion.PrecioServicio?.precio || 0) : 0;
+
+            mapaClientes[cliente.idCliente].vacunas.push({
+              tipo: "vacunaAplicada",
+              idVacunaAplicada: v.idVacunaAplicada,
+              idLote: v.idLote,
+              nombreServicio: v.Vacuna?.Producto?.nombre || "Vacuna",
+              nombreMascota,
+              precio: precioVacuna + precioServicio,
+              precioVacuna,
+              precioServicio,
+              idServicioVacunacion: detalleVacunacion?.idDetalle || null,
+              stockYaDescontado: true,
+            });
+          });
+        } catch (e) {
+          console.error(`Error vacunas mascota ${idMascota}:`, e);
+        }
+      }
+
+      // 4. Medicamentos de tratamientos
+      try {
+        const resHist = await axios.get("/clinical-histories", { headers: headers() });
+        const todosLosHistoriales = resHist.data || [];
+
+        // Mapa historial → cliente
+        const historialToInfo = {};
+        todosLosHistoriales.forEach((h) => {
+          const cita = todasLasCitas.find((c) => c.idCita === Number(h.idCita));
+          if (!cita) return;
+          const cliente = cita.Mascota?.Dueño || cita.Cliente || null;
+          if (!cliente || cliente.idCliente === 1) return;
+          historialToInfo[h.idHistorial] = {
+            cliente,
+            mascota: cita.Mascota?.nombre || "Mascota",
+          };
+        });
+
+        const historialIds = Object.keys(historialToInfo).map(Number);
+        if (historialIds.length > 0) {
+          const resTrats = await axios.get("/treatments", { headers: headers() });
+          const tratamientosRelevantes = (resTrats.data || []).filter(
+            (t) => historialIds.includes(Number(t.idHistorial)) && ![3, 6].includes(Number(t.idEstadoTratamiento))
+          );
+
+          for (const trat of tratamientosRelevantes) {
+            const info = historialToInfo[trat.idHistorial];
+            if (!info) continue;
+            ensureCliente(info.cliente);
+            try {
+              const resMeds = await axios.get(`/treatment-meds/${trat.idTratamiento}`, { headers: headers() });
+              (resMeds.data || []).forEach((med) => {
+                if (med.aplicadoEnClinica) return;
+                mapaClientes[info.cliente.idCliente].meds.push({
+                  tipo: "tratMed",
+                  idTratMed: med.idTratMed,
+                  idTratamiento: trat.idTratamiento,
+                  aplicadoEnClinica: med.aplicadoEnClinica,
+                  stockYaDescontado: med.aplicadoEnClinica === 1,
+                  nombreServicio: med.Producto?.nombre || `Medicamento #${med.idProd_Pres}`,
+                  nombreMascota: info.mascota,
+                  precio: parseFloat(med.precioAplicado || 0),
+                  cantidad: med.cantidad || 1,
+                  instrucciones: med.instrucciones,
+                });
+              });
+            } catch {}
+          }
+        }
+      } catch (e) {
+        console.error("Error tratamientos preview:", e);
+      }
+
+      // 5. Construir el array final de clientesPendientes
+      // Solo clientes que tengan al menos 1 ítem pendiente
+      const resultado = Object.values(mapaClientes)
+        .filter((cp) => cp.servicios.length + cp.vacunas.length + cp.meds.length > 0)
+        .map((cp) => {
+          const totalPendiente =
+            cp.servicios.reduce((s, x) => s + x.precio, 0) +
+            cp.vacunas.reduce((s, x) => s + x.precio, 0) +
+            cp.meds.reduce((s, x) => s + x.precio * x.cantidad, 0);
+
+          const resumen = [];
+          if (cp.servicios.length > 0) resumen.push({ tipo: "servicio", count: cp.servicios.length });
+          if (cp.vacunas.length > 0)   resumen.push({ tipo: "vacunaAplicada", count: cp.vacunas.length });
+          if (cp.meds.length > 0)      resumen.push({ tipo: "tratMed", count: cp.meds.length });
+
+          return { cliente: cp.cliente, totalPendiente, resumen };
+        })
+        .sort((a, b) => b.totalPendiente - a.totalPendiente); // Mayor deuda primero
+
+      setClientesPendientes(resultado);
+    } catch (e) {
+      console.error("Error cargando clientes pendientes:", e);
+      setClientesPendientes([]);
+    } finally {
+      setCargandoPreview(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    cargarClientesPendientes();
+  }, [cargarClientesPendientes]);
+  // ── FIN NUEVO ──────────────────────────────────────────────────
 
   useEffect(() => {
     const handleBeforeUnload = (e) => {
@@ -883,7 +1252,6 @@ export default function VentasPage() {
           (cita.Mascota?.Dueño?.nombres === client.nombres && cita.Mascota?.Dueño?.apellidos === client.apellidos)
       );
 
-      // ── Servicios atendidos ──
       const servicesFound = [];
       citasDelCliente.forEach((cita) => {
         if (!cita.detalles) return;
@@ -899,7 +1267,6 @@ export default function VentasPage() {
         });
       });
 
-      // ── Vacunas aplicadas sin cobrar ──
       const mascotasIds = [...new Set(citasDelCliente.map((c) => c.Mascota?.idMascota).filter(Boolean))];
       const vacunasAplicadas = [];
 
@@ -935,7 +1302,6 @@ export default function VentasPage() {
         }
       }
 
-      // ── Medicamentos del tratamiento ──
       const medicamentosTrat = [];
       try {
         const resHist = await axios.get("/clinical-histories", { headers: headers() });
@@ -973,7 +1339,7 @@ export default function VentasPage() {
                   idTratMed: med.idTratMed,
                   idTratamiento: trat.idTratamiento,
                   aplicadoEnClinica: med.aplicadoEnClinica,
-                  stockYaDescontado: med.aplicadoEnClinica === 1, 
+                  stockYaDescontado: med.aplicadoEnClinica === 1,
                   nombreServicio: med.Producto?.nombre || `Medicamento #${med.idProd_Pres}`,
                   nombreMascota,
                   precio: parseFloat(med.precioAplicado || 0),
@@ -1069,11 +1435,10 @@ export default function VentasPage() {
             idVacunaAplicada: null,
             idTratMed: Number(i.id),
             idLote: null,
-            stockYaDescontado: i.stockYaDescontado ? 1 : 0, // nuevo flag
+            stockYaDescontado: i.stockYaDescontado ? 1 : 0,
             cantidad: parseInt(i.cantidad),
             precioUnidad: parseFloat(i.precio).toFixed(2)
           }];
-
           return [{ idDetalleCitaServicio: null, idProducto: Number(i.id), idVacunaAplicada: null, idTratMed: null, idLote: i.idLote ?? null, cantidad: parseInt(i.cantidad), precioUnidad: parseFloat(i.precio).toFixed(2) }];
         }),
       }, { headers: headers() });
@@ -1081,6 +1446,8 @@ export default function VentasPage() {
       setSuccess("La venta fue registrada exitosamente.");
       setItems([]); setSelectedClient(null);
       setDescuento(0); setIdTipoPago(""); setIdTipoBoleta(""); setStep(1);
+      // Refrescar el listado de pendientes al completar una venta
+      cargarClientesPendientes();
     } catch (e) {
       console.error("Error venta:", JSON.stringify(e.response?.data, null, 2));
       const msg = e.response?.data?.msg || e.response?.data?.message || "Ocurrió un error al procesar la venta.";
@@ -1092,10 +1459,10 @@ export default function VentasPage() {
 
   if (showHistory) {
     return (
-      <HistorialVentas 
-        onBack={() => setShowHistory(false)} 
+      <HistorialVentas
+        onBack={() => setShowHistory(false)}
         user={user}
-        canAnular={user?.idRol === 1} 
+        canAnular={user?.idRol === 1}
       />
     );
   }
@@ -1123,7 +1490,6 @@ export default function VentasPage() {
   return (
     <div style={{ maxWidth: 1280, margin: "0 auto", padding: 20, background: C.bg, minHeight: "100vh" }}>
 
-      {/* Modales */}
       {success && (
         <AlertModal icon={Icon.success} iconBg={C.green100}
           title="¡Venta registrada!" message={success}
@@ -1166,6 +1532,16 @@ export default function VentasPage() {
             <Card>
               <SectionHeader icon={Icon.user} iconBg={C.green100} iconColor={C.green800} title="Seleccionar cliente" count="1/3" countBg={C.muted} />
               <div style={{ padding: 20 }}>
+
+                {/* ── NUEVO: Cards de clientes con pendientes ── */}
+                <PendientesPreview
+                  onSelectCliente={selectClient}
+                  cargandoPreview={cargandoPreview}
+                  clientesPendientes={clientesPendientes}
+                  onRefresh={cargarClientesPendientes}
+                />
+
+                {/* Buscador manual (siempre visible) */}
                 <div style={{ position: "relative", marginBottom: 12 }}>
                   <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }}>{Icon.search}</span>
                   <input
@@ -1208,7 +1584,6 @@ export default function VentasPage() {
           {/* PASO 2: Ítems */}
           {step === 2 && (
             <>
-              {/* Topbar */}
               <div style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 background: C.white, border: `0.5px solid ${C.border}`,
@@ -1234,14 +1609,12 @@ export default function VentasPage() {
                 </button>
               </div>
 
-              {/* Grid pendientes */}
               {attendedServices.length > 0 ? (
                 <div style={{
                   display: "grid",
                   gridTemplateColumns: serviciosPendientes.length > 0 && (vacunasPendientes.length > 0 || medicamentosPendientes.length > 0) ? "1fr 1fr" : "1fr",
                   gap: 14,
                 }}>
-                  {/* Columna servicios */}
                   {serviciosPendientes.length > 0 && (
                     <PendingSection
                       titulo="Servicios atendidos"
@@ -1251,8 +1624,6 @@ export default function VentasPage() {
                       onAdd={addService}
                     />
                   )}
-
-                  {/* Columna vacunas + medicamentos */}
                   {(vacunasPendientes.length > 0 || medicamentosPendientes.length > 0) && (
                     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                       {vacunasPendientes.length > 0 && (
@@ -1290,7 +1661,6 @@ export default function VentasPage() {
                 </div>
               )}
 
-              {/* Botón continuar */}
               <button
                 disabled={items.length === 0}
                 onClick={() => setStep(3)}
@@ -1357,7 +1727,6 @@ export default function VentasPage() {
         {/* ── Resumen lateral ── */}
         <div style={{ position: "sticky", top: 20, height: "fit-content" }}>
           <div style={{ background: C.white, border: `0.5px solid ${C.border}`, borderRadius: 10, overflow: "hidden" }}>
-            {/* Header resumen */}
             <div style={{ background: C.green900, padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span style={{ fontSize: 11, fontWeight: 500, letterSpacing: "0.5px", textTransform: "uppercase", color: "rgba(255,255,255,0.65)" }}>
                 Resumen de venta
@@ -1367,7 +1736,6 @@ export default function VentasPage() {
               </span>
             </div>
 
-            {/* Ítems */}
             <div style={{ maxHeight: 380, overflowY: "auto" }}>
               {items.length === 0 ? (
                 <div style={{ padding: "24px 16px", textAlign: "center", color: C.muted, fontSize: 13 }}>
@@ -1411,7 +1779,6 @@ export default function VentasPage() {
               })}
             </div>
 
-            {/* Totales */}
             <div style={{ padding: "12px 16px", background: C.surface, borderTop: `0.5px solid ${C.border}`, display: "flex", flexDirection: "column", gap: 7 }}>
               {[
                 ["Subtotal", `$${fmt(subtotal)}`],
@@ -1437,7 +1804,6 @@ export default function VentasPage() {
               </div>
             </div>
 
-            {/* Total final */}
             <div style={{ background: C.green900, padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.4px", color: "rgba(255,255,255,0.55)" }}>Total</span>
               <span style={{ fontSize: 22, fontWeight: 500, color: C.greenMint }}>${fmt(totalFinal)}</span>
