@@ -257,7 +257,6 @@ function HeroSection({ onLoginClick, isMobile }) {
           </div>
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: G.forest, lineHeight: 1 }}>San Roque</div>
-            <div style={{ fontSize: 11, color: G.muted, marginTop: 2 }}>Clínica Veterinaria · Punta Alta</div>
           </div>
         </div>
       )}
