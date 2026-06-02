@@ -111,7 +111,7 @@ function Navbar({ onLoginClick, isMobile, containerRef }) {
           background: G.white,
           borderBottom: `1px solid ${G.border}`,
         }}>
-          <img src="/logo.png" alt="San Roque" style={{ height: 30 }} />
+          <img src="/logocolor.png" alt="San Roque" style={{ height: 30 }} />
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <button onClick={onLoginClick} style={{
               padding: "7px 16px", borderRadius: 8,
