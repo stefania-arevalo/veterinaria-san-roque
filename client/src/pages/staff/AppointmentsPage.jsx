@@ -403,295 +403,6 @@ const AgendaVisual = ({ staff, appointments, fechaSeleccionada, onEditCita }) =>
   );
 };
 
-
-// ── SlotPickerModal — disponibilidad por persona ──────────────────
-// Muestra una grilla por fecha con todos los vets + staff.
-// Cada columna es una persona, cada fila es un slot de 30min.
-// Al hacer clic en un slot libre, pre-llena el AppointmentModal.
-function SlotPickerModal({ fecha: fechaInicial, vets, staff, appointments, onClose, onSelect }) {
-  const [fecha, setFecha] = useState(fechaInicial || new Date().toLocaleDateString("en-CA"));
-  const [horarios, setHorarios] = useState([]);
-  const [horariosPersonal, setHorariosPersonal] = useState({});
-  const [cargando, setCargando] = useState(false);
-
-  // Unión de vets + resto del staff sin duplicados
-  const todosElPersonal = [
-    ...vets,
-    ...staff.filter(s => !vets.find(v => v.idPersonal === s.idPersonal)),
-  ];
-
-  const toMins = (t) => {
-    if (!t) return 0;
-    const [h, m] = t.toString().substring(0, 5).split(":").map(Number);
-    return h * 60 + m;
-  };
-  const toHHMM = (m) =>
-    `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
-
-  const getDia = (fechaStr) => {
-    const [y, mo, d] = fechaStr.split("-");
-    return ["Domingo","Lunes","Martes","Miercoles","Jueves","Viernes","Sabado"][
-      new Date(+y, +mo - 1, +d).getDay()
-    ];
-  };
-
-  useEffect(() => {
-    if (!fecha) return;
-    setCargando(true);
-    const dia = getDia(fecha);
-
-    Promise.all([
-      // Horario general de la clínica
-      axios.get(`/schedules?diaSemana=${encodeURIComponent(dia)}`, { headers: headers() })
-        .then(r => r.data || [])
-        .catch(() => []),
-      // Horario individual de cada persona
-      ...todosElPersonal.map(p =>
-        axios.get(`/vetschedules?diaSemana=${encodeURIComponent(dia)}&idPersonal=${p.idPersonal}`, { headers: headers() })
-          .then(r => ({ idPersonal: p.idPersonal, hs: r.data || [] }))
-          .catch(() => ({ idPersonal: p.idPersonal, hs: [] }))
-      ),
-    ]).then(([horariosClinica, ...personaResults]) => {
-      setHorarios(horariosClinica);
-      const map = {};
-      personaResults.forEach(r => { map[r.idPersonal] = r.hs; });
-      setHorariosPersonal(map);
-    }).finally(() => setCargando(false));
-  }, [fecha]);
-
-  const rangoInicio = horarios.length > 0
-    ? Math.min(...horarios.map(h => toMins(h.horaInicio))) : toMins("09:00");
-  const rangoFin = horarios.length > 0
-    ? Math.max(...horarios.map(h => toMins(h.horaFin))) : toMins("21:00");
-
-  const slots = [];
-  for (let m = rangoInicio; m < rangoFin; m += 30) slots.push(m);
-
-  // ¿Está abierta la clínica en este slot?
-  const clinicaAbierta = (slotMins) =>
-    horarios.some(h => slotMins >= toMins(h.horaInicio) && slotMins < toMins(h.horaFin));
-
-  // ¿Trabaja esta persona en este slot?
-  const personaDisponible = (slotMins, idPersonal) => {
-    const hs = horariosPersonal[idPersonal];
-    if (!hs || hs.length === 0) return clinicaAbierta(slotMins);
-    return hs.some(h => slotMins >= toMins(h.horaInicio) && slotMins < toMins(h.horaFin));
-  };
-
-  // ¿Tiene algún servicio asignado en este slot? (bloqueo de agenda)
-  const slotOcupado = (slotMins, idPersonal) => {
-    return appointments
-      .filter(a => a.fecha === fecha && ![3].includes(a.idEstadoCita))
-      .some(a => {
-        const aStart = toMins(a.hora);
-        // Esta persona es vet anfitrión o tiene un servicio asignado
-        const involucrado =
-          Number(a.idVeterinario) === Number(idPersonal) ||
-          (a.detalles || []).some(d => Number(d.idPersonalRealiza) === Number(idPersonal));
-        if (!involucrado) return false;
-        // Duración del bloque que ocupa esta persona (solo sus servicios)
-        const duracion = (a.detalles || [])
-          .filter(d =>
-            Number(d.idPersonalRealiza) === Number(idPersonal) ||
-            (Number(a.idVeterinario) === Number(idPersonal) &&
-              !d.idPersonalRealiza)
-          )
-          .reduce((acc, d) => acc + (d.PrecioServicio?.duracionEstimada || 30), 0) || 30;
-        const aEnd = aStart + duracion;
-        return slotMins < aEnd && slotMins + 30 > aStart;
-      });
-  };
-
-  const getNombre = (p) =>
-    `${p.nombres || p.Staff?.nombres || "?"} ${p.apellidos || p.Staff?.apellidos || ""}`.trim().split(" ")[0];
-  const getApellido = (p) =>
-    (`${p.nombres || p.Staff?.nombres || "?"} ${p.apellidos || p.Staff?.apellidos || ""}`.trim().split(" ")[1] || "");
-  const getInicial = (p) => (p.nombres || p.Staff?.nombres || "?")[0].toUpperCase();
-  const getRolColor = (p) => {
-    const rol = p.User?.idRol ?? 99;
-    const map = { 2: { bg: "#dcfce7", color: "#166534" }, 3: { bg: "#dbeafe", color: "#1d4ed8" }, 4: { bg: "#fef3c7", color: "#b45309" }, 1: { bg: "#f3e8ff", color: "#6d28d9" } };
-    return map[rol] || { bg: "#f1f5f9", color: "#475569" };
-  };
-  const getRolLabel = (p) => {
-    const map = { 1: "Admin", 2: "Vet", 3: "Asist.", 4: "Vend." };
-    return map[p.User?.idRol] || "Staff";
-  };
-
-  // Solo mostramos vets en el selector de "Veterinario anfitrión" al elegir slot
-  // pero en la grilla mostramos a todos
-  const cerrado = horarios.length === 0 && !cargando;
-  const diasSemana = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
-  const diaNombre = (() => {
-    const [y, mo, d] = fecha.split("-");
-    return diasSemana[new Date(+y, +mo - 1, +d).getDay()];
-  })();
-
-  return (
-    <>
-      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,20,40,0.6)", backdropFilter: "blur(6px)", zIndex: 1500 }} />
-      <div style={{
-        position: "fixed", top: "50%", left: "50%",
-        transform: "translate(-50%,-50%)",
-        width: "min(96vw, 1100px)", maxHeight: "92vh",
-        background: "white", borderRadius: 20,
-        boxShadow: "0 32px 80px rgba(0,0,0,0.25)",
-        display: "flex", flexDirection: "column",
-        overflow: "hidden", zIndex: 1501,
-      }}>
-
-        {/* Header */}
-        <div style={{ background: "#1a3d28", padding: "18px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
-          <div>
-            <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: "white" }}>📅 Elegir horario para nueva cita</h3>
-            <p style={{ margin: "4px 0 0", fontSize: 12, color: "rgba(255,255,255,0.55)" }}>
-              Hacé clic en un slot libre para pre-cargar la cita
-            </p>
-          </div>
-          <button onClick={onClose} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "white", width: 34, height: 34, borderRadius: 8, cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
-        </div>
-
-        {/* Selector de fecha */}
-        <div style={{ padding: "12px 24px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", alignItems: "center", gap: 16, flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <label style={{ fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Fecha</label>
-            <input type="date" value={fecha} onChange={e => setFecha(e.target.value)}
-              style={{ padding: "8px 12px", borderRadius: 9, border: "1.5px solid #e2e8f0", fontSize: 14, outline: "none" }} />
-          </div>
-          <div style={{
-            padding: "6px 14px", borderRadius: 8,
-            background: "#eaf3de", color: "#1a3d28",
-            fontSize: 13, fontWeight: 700,
-          }}>
-            {diaNombre} · {horarios.length > 0
-              ? horarios.map(h => `${h.horaInicio?.substring(0,5)}–${h.horaFin?.substring(0,5)}`).join(" / ")
-              : "Sin horario cargado"}
-          </div>
-          <div style={{ display: "flex", gap: 12, marginLeft: "auto", fontSize: 12, color: "#64748b" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <div style={{ width: 10, height: 10, borderRadius: 3, background: "#f0fdf4", border: "1.5px solid #86efac" }} /> Libre
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <div style={{ width: 10, height: 10, borderRadius: 3, background: "#fef2f2", border: "1.5px solid #fca5a5" }} /> Ocupado
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <div style={{ width: 10, height: 10, borderRadius: 3, background: "#f1f5f9" }} /> Fuera de horario
-            </div>
-          </div>
-        </div>
-
-        {/* Grilla */}
-        <div style={{ flex: 1, overflowY: "auto", overflowX: "auto" }}>
-          {cargando ? (
-            <div style={{ textAlign: "center", padding: 48, color: "#94a3b8", fontSize: 13 }}>Cargando disponibilidad...</div>
-          ) : cerrado ? (
-            <div style={{ textAlign: "center", padding: 56, color: "#94a3b8" }}>
-              <div style={{ fontSize: 36, marginBottom: 10 }}>🔒</div>
-              <div style={{ fontSize: 14, fontWeight: 700 }}>Clínica cerrada este día</div>
-              <div style={{ fontSize: 13, marginTop: 4 }}>No hay horario de atención configurado.</div>
-            </div>
-          ) : (
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-              <thead>
-                <tr style={{ background: "#f8fafc", position: "sticky", top: 0, zIndex: 5 }}>
-                  <th style={{ padding: "10px 12px", borderBottom: "1.5px solid #e2e8f0", borderRight: "1px solid #e2e8f0", width: 60, color: "#94a3b8", fontWeight: 600, fontSize: 11, textAlign: "center" }}>Hora</th>
-                  {todosElPersonal.map((p, i) => {
-                    const rc = getRolColor(p);
-                    return (
-                      <th key={p.idPersonal} style={{ padding: "10px 8px", borderBottom: "1.5px solid #e2e8f0", borderRight: i < todosElPersonal.length - 1 ? "1px solid #e2e8f0" : "none", textAlign: "center", minWidth: 110 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: "50%", background: rc.bg, color: rc.color, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, margin: "0 auto 4px" }}>
-                          {getInicial(p)}
-                        </div>
-                        <div style={{ fontWeight: 700, fontSize: 11, color: "#166534" }}>{getNombre(p)}</div>
-                        <div style={{ fontSize: 10, color: "#94a3b8" }}>{getApellido(p)}</div>
-                        <span style={{ display: "inline-block", marginTop: 3, fontSize: 9, fontWeight: 700, padding: "1px 6px", borderRadius: 4, background: rc.bg, color: rc.color }}>
-                          {getRolLabel(p)}
-                        </span>
-                      </th>
-                    );
-                  })}
-                </tr>
-              </thead>
-              <tbody>
-                {slots.map(slotMins => {
-                  const abierto = clinicaAbierta(slotMins);
-                  return (
-                    <tr key={slotMins} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                      <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", background: abierto ? "white" : "#f8fafc", color: abierto ? "#64748b" : "#cbd5e1", fontWeight: 600, fontSize: 11, textAlign: "right", verticalAlign: "middle" }}>
-                        {toHHMM(slotMins)}
-                      </td>
-                      {todosElPersonal.map((p, i) => {
-                        if (!abierto) {
-                          return (
-                            <td key={p.idPersonal} style={{ background: "#f8fafc", borderRight: i < todosElPersonal.length - 1 ? "1px solid #f1f5f9" : "none", height: 40 }} />
-                          );
-                        }
-                        const trabaja = personaDisponible(slotMins, p.idPersonal);
-                        const ocupado = trabaja && slotOcupado(slotMins, p.idPersonal);
-                        const esVet = p.User?.idRol === 2;
-
-                        if (!trabaja) {
-                          return (
-                            <td key={p.idPersonal} style={{ background: "#f8fafc", borderRight: i < todosElPersonal.length - 1 ? "1px solid #f1f5f9" : "none", height: 40, textAlign: "center", color: "#d1ddd4", fontSize: 10 }}>
-                              —
-                            </td>
-                          );
-                        }
-
-                        return (
-                          <td key={p.idPersonal}
-                            onClick={() => {
-                              if (ocupado) return;
-                              // Para vets: los selecciona como anfitrión
-                              // Para no-vets: elegimos el primer vet disponible como anfitrión
-                              // y pre-cargamos el slot
-                              const vetParaAnfitrion = esVet
-                                ? p.idPersonal
-                                : (vets.find(v => !slotOcupado(slotMins, v.idPersonal) && personaDisponible(slotMins, v.idPersonal))?.idPersonal || vets[0]?.idPersonal);
-                              onSelect(fecha, toHHMM(slotMins), vetParaAnfitrion);
-                            }}
-                            style={{
-                              background: ocupado ? "#fef2f2" : "#f0fdf4",
-                              border: ocupado ? "none" : "none",
-                              borderRight: i < todosElPersonal.length - 1 ? "1px solid #f1f5f9" : "none",
-                              height: 40,
-                              cursor: ocupado ? "not-allowed" : "pointer",
-                              transition: "background 0.12s",
-                              verticalAlign: "middle",
-                              textAlign: "center",
-                            }}
-                            onMouseEnter={e => { if (!ocupado) e.currentTarget.style.background = "#dcfce7"; }}
-                            onMouseLeave={e => { if (!ocupado) e.currentTarget.style.background = "#f0fdf4"; }}
-                          >
-                            {ocupado ? (
-                              <span style={{ fontSize: 10, color: "#fca5a5", fontWeight: 600 }}>ocupado</span>
-                            ) : (
-                              <span style={{ fontSize: 11, color: "#16a34a", fontWeight: 700 }}>✓ libre</span>
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div style={{ padding: "12px 24px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <p style={{ margin: 0, fontSize: 12, color: "#94a3b8" }}>
-            Hacé clic en un slot verde para pre-cargar fecha, hora y veterinario en el formulario.
-          </p>
-          <button onClick={() => onSelect(fecha, "", "")} style={{ padding: "9px 18px", borderRadius: 9, border: "1.5px solid #e2e8f0", background: "white", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#64748b" }}>
-            Cargar sin slot →
-          </button>
-        </div>
-      </div>
-    </>
-  );
-}
-
 // ── Modal genérico de alerta / confirmación ───────────────────────
 function AlertModal({ emoji, emojiBg, title, message, onConfirm, onCancel, confirmText, confirmBg, cancelText }) {
   return (
@@ -1801,10 +1512,12 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
   const [pendingTipoCita, setPendingTipoCita] = useState(null);
   const [showMascotaError, setShowMascotaError] = useState(false);
   const [idsOriginales, setIdsOriginales] = useState([]);
-  const [availableSlots, setAvailableSlots] = useState([]);
   const [showNewPatient, setShowNewPatient] = useState(false);
   // Picker de disponibilidad: { idx, servicioNombre } o null
   const [staffPickerFor, setStaffPickerFor] = useState(null);
+  const [vetDisponibilidad, setVetDisponibilidad] = useState(null); // null | "ok" | "ocupado"
+  const [vetDisponibilidadMsg, setVetDisponibilidadMsg] = useState("");
+
 
   const [form, setForm] = useState(cita ? {
     fecha:         cita.fecha || today,
@@ -1819,19 +1532,29 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
   
   const petSizeId    = selectedPet?.idTamaño || null;
   const petSizeLabel = selectedPet?.AnimalSize?.descripcion || null;
-  
 
   useEffect(() => {
-    if (form.fecha && form.idVeterinario) {
-      setAvailableSlots([]); // Limpiar mientras carga
-      axios.get(`/appointments/availability`, { 
-        params: { date: form.fecha, staffId: form.idVeterinario },
-        headers: headers() 
-      })
-      .then(r => setAvailableSlots(r.data))
-      .catch(() => setError("No se pudo cargar la disponibilidad"));
+    if (!form.fecha || !form.hora || !form.idVeterinario) {
+      setVetDisponibilidad(null);
+      return;
     }
-  }, [form.fecha, form.idVeterinario]);
+    // Chequeamos si el vet ya tiene una cita en esa fecha/hora (excluyendo la cita actual en edición)
+    const citasDelVet = appointments.filter(a =>
+      a.fecha === form.fecha &&
+      a.hora?.slice(0, 5) === form.hora &&
+      Number(a.idVeterinario) === Number(form.idVeterinario) &&
+      a.idEstadoCita !== 3 && // no canceladas
+      (!isEdit || a.idCita !== cita?.idCita) // excluir la cita actual en edición
+    );
+    if (citasDelVet.length > 0) {
+      setVetDisponibilidad("ocupado");
+      const mascota = citasDelVet[0].Mascota?.nombre || "otro paciente";
+      setVetDisponibilidadMsg(`⚠️ El veterinario ya tiene una cita a las ${form.hora} con ${mascota}.`);
+    } else {
+      setVetDisponibilidad("ok");
+      setVetDisponibilidadMsg("");
+    }
+  }, [form.fecha, form.hora, form.idVeterinario]);
   
   useEffect(() => {
     axios.get("/service-prices", { headers: headers() })
@@ -2358,6 +2081,22 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
                   </option>
                 ))}
               </select>
+              {vetDisponibilidad === "ocupado" && (
+                <div style={{
+                  marginTop: 6, padding: "8px 12px",
+                  background: "#fff7ed", border: "1.5px solid #f97316",
+                  borderRadius: 8, fontSize: 12, color: "#c2410c", fontWeight: 600,
+                }}>
+                  {vetDisponibilidadMsg}
+                </div>
+              )}
+              {vetDisponibilidad === "ok" && form.hora && (
+                <div style={{
+                  marginTop: 6, fontSize: 11, color: "#16a34a", fontWeight: 600,
+                }}>
+                  ✓ Veterinario disponible a las {form.hora}
+                </div>
+              )}
             </div>
             <div>
               <label style={lbl}>Tipo de cita *</label>
@@ -3036,7 +2775,6 @@ export default function AppointmentPage() {
   const [filterPago, setFilterPago] = useState("all");
   const [vistaAgenda, setVistaAgenda] = useState(false);
   const [fechaAgenda, setFechaAgenda] = useState(new Date().toLocaleDateString("en-CA"));
-  const [showSlotPicker, setShowSlotPicker] = useState(false);
 
   const user  = getUserFromToken();
   const userRole     = user?.idRol      || 1;
@@ -3255,7 +2993,7 @@ export default function AppointmentPage() {
         </button>
 
         {canCreate && (
-          <button onClick={() => setShowSlotPicker(true)}
+          <button onClick={() => setModal({ type: "new", data: {} })}
             style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 18px", borderRadius: 12, background: "linear-gradient(135deg,#166534,#1f5c38)", color: "white", border: "none", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
             + Nueva Cita
           </button>
@@ -3580,23 +3318,6 @@ export default function AppointmentPage() {
             </table>
           </div>
         </div>
-      )}
-
-      
-
-      {/* ── SlotPicker ── */}
-      {showSlotPicker && (
-        <SlotPickerModal
-          fecha={filterDate || new Date().toLocaleDateString("en-CA")}
-          vets={vets}
-          staff={staff}
-          appointments={appointments}
-          onClose={() => setShowSlotPicker(false)}
-          onSelect={(fecha, hora, idVeterinario) => {
-            setShowSlotPicker(false);
-            setModal({ type: "new", data: { fecha, hora, idVeterinario: String(idVeterinario) } });
-          }}
-        />
       )}
 
       {/* ── Modales ── */}
