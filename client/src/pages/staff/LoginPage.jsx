@@ -111,7 +111,7 @@ function Navbar({ onLoginClick, isMobile, containerRef }) {
           background: G.white,
           borderBottom: `1px solid ${G.border}`,
         }}>
-          <img src="/logocolor.png" alt="San Roque" style={{ height: 30 }} />
+          <img src="/logo.png" alt="San Roque" style={{ height: 30 }} />
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <button onClick={onLoginClick} style={{
               padding: "7px 16px", borderRadius: 8,
@@ -246,29 +246,52 @@ function HeroSection({ onLoginClick, isMobile }) {
       position: "relative",
     }}>
 
-      {/* Marca de agua — solo mobile */}
+      {/* Marca de agua fondo — solo mobile */}
       {isMobile && (
-        <img
-          src="/logocolor.png"
-          alt=""
-          aria-hidden="true"
-          style={{
+        <div style={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          pointerEvents: "none",
+          userSelect: "none",
+          zIndex: 0,
+          overflow: "hidden",
+        }}>
+          {/* Tinte verde de fondo */}
+          <div style={{
             position: "absolute",
-            bottom: "50%",
-            left: "50%",
-            transform: "translate(-50%, 50%)",
-            width: "90vw",
-            height: "90vw",
-            maxWidth: 380,
-            maxHeight: 380,
-            objectFit: "contain",
-            opacity: 0.12,
-            filter: "saturate(0.6) brightness(1.1)",
-            pointerEvents: "none",
-            userSelect: "none",
-            zIndex: 0,
-          }}
-        />
+            inset: 0,
+            background: `radial-gradient(ellipse at center, rgba(39,107,66,0.10) 0%, rgba(26,61,40,0.04) 70%, transparent 100%)`,
+          }} />
+          {/* Logo grande con tinte verde */}
+          <div style={{
+            position: "relative",
+            width: "95vw",
+            height: "95vw",
+            maxWidth: 420,
+            maxHeight: 420,
+          }}>
+            <img
+              src="/logocolor.png"
+              alt=""
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "contain",
+                opacity: 0.13,
+              }}
+            />
+            {/* Overlay verde encima del logo */}
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              background: "rgba(39,107,66,0.45)",
+              mixBlendMode: "multiply",
+            }} />
+          </div>
+        </div>
       )}
 
       {/* Texto */}
