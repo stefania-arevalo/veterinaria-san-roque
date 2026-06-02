@@ -238,72 +238,81 @@ function HeroSection({ onLoginClick, isMobile }) {
       display: "flex",
       flexDirection: isMobile ? "column" : "row",
       alignItems: "center",
-      justifyContent: isMobile ? "flex-start" : "center",
-      padding: isMobile ? "72px 24px 32px" : "0 64px 0 96px",
-      gap: isMobile ? 24 : 80,
-      background: isMobile ? G.forest : G.white,
-      overflowY: isMobile ? "auto" : "hidden",
+      justifyContent: "center",
+      padding: isMobile ? "72px 28px 28px" : "0 64px 0 96px",
+      gap: isMobile ? 0 : 72,
+      background: G.forest,
+      overflow: "hidden",
       position: "relative",
     }}>
 
-      {/* Logo fondo monocromático — solo mobile */}
-      {isMobile && (
-        <div style={{
-          position: "absolute",
-          inset: 0,
-          pointerEvents: "none",
-          userSelect: "none",
-          zIndex: 0,
-          overflow: "hidden",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}>
-          <img
-            src="/logocolor.png"
-            alt=""
-            aria-hidden="true"
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "contain",
-              opacity: 1,
-              filter: "grayscale(1) brightness(0) invert(0) sepia(1) saturate(3) hue-rotate(90deg) brightness(0.55)",
-            }}
-          />
-        </div>
-      )}
+      {/* ── Fondo: logo marca de agua (ambos) ── */}
+      <div style={{
+        position: "absolute",
+        inset: 0,
+        pointerEvents: "none",
+        userSelect: "none",
+        zIndex: 0,
+        overflow: "hidden",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: isMobile ? "center" : "flex-end",
+        paddingRight: isMobile ? 0 : 48,
+      }}>
+        <img
+          src="/logocolor.png"
+          alt=""
+          aria-hidden="true"
+          style={{
+            width: isMobile ? "85%" : "42%",
+            height: isMobile ? "85%" : "85%",
+            objectFit: "contain",
+            filter: "grayscale(1) brightness(0) invert(0) sepia(1) saturate(3) hue-rotate(90deg) brightness(0.45)",
+            opacity: 1,
+          }}
+        />
+      </div>
 
-      {/* Texto */}
-      <div style={{ flex: 1, maxWidth: 540, position: "relative", zIndex: 1 }}>
+      {/* ── Texto ── */}
+      <div style={{
+        flex: 1,
+        maxWidth: 520,
+        position: "relative",
+        zIndex: 1,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        paddingTop: isMobile ? 8 : 0,
+      }}>
         {/* Chip */}
         <div style={{
           display: "inline-flex", alignItems: "center", gap: 6,
-          background: isMobile ? "rgba(255,255,255,0.1)" : G.mint,
+          background: "rgba(255,255,255,0.1)",
           borderRadius: 99,
-          padding: "5px 14px", marginBottom: 28,
-          border: isMobile ? "1px solid rgba(255,255,255,0.15)" : `1px solid ${G.border}`,
+          padding: "5px 14px", marginBottom: 22,
+          border: "1px solid rgba(255,255,255,0.15)",
+          alignSelf: "flex-start",
         }}>
-          <span style={{ width: 6, height: 6, borderRadius: "50%", background: isMobile ? G.mint : G.leaf, flexShrink: 0 }} />
-          <span style={{ fontSize: 11, fontWeight: 700, color: isMobile ? G.mint : G.leaf, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+          <span style={{ width: 6, height: 6, borderRadius: "50%", background: G.mint, flexShrink: 0 }} />
+          <span style={{ fontSize: 11, fontWeight: 700, color: G.mint, letterSpacing: "0.06em", textTransform: "uppercase" }}>
             Clínica Veterinaria · Punta Alta
           </span>
         </div>
 
         <h1 style={{
-          fontSize: isMobile ? 34 : 52,
+          fontSize: isMobile ? 32 : 52,
           fontWeight: 900,
-          color: isMobile ? "white" : G.forest,
-          margin: "0 0 18px",
-          lineHeight: 1.1, letterSpacing: "-1.5px",
+          color: "white",
+          margin: "0 0 16px",
+          lineHeight: 1.08, letterSpacing: "-1.5px",
         }}>
           Cuidamos a tu mascota con dedicación
         </h1>
 
         <p style={{
-          fontSize: 15,
-          color: isMobile ? "rgba(255,255,255,0.7)" : G.muted,
-          lineHeight: 1.7, margin: "0 0 32px", maxWidth: 460,
+          fontSize: isMobile ? 14 : 15,
+          color: "rgba(255,255,255,0.65)",
+          lineHeight: 1.7, margin: "0 0 28px", maxWidth: 440,
         }}>
           Sistema integral de gestión para la clínica veterinaria San Roque. Portal de clientes, historiales clínicos y agenda en tiempo real.
         </p>
@@ -312,19 +321,19 @@ function HeroSection({ onLoginClick, isMobile }) {
         <div style={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
-          gap: 10, marginBottom: 32,
+          gap: 8, marginBottom: 28,
         }}>
           {features.map((f, i) => (
             <div key={i} style={{
-              display: "flex", alignItems: "center", gap: 10,
-              padding: "11px 13px", borderRadius: 10,
-              border: isMobile ? "1px solid rgba(255,255,255,0.12)" : `1px solid ${G.border}`,
-              background: isMobile ? "rgba(255,255,255,0.08)" : G.foam,
+              display: "flex", alignItems: "center", gap: 9,
+              padding: "10px 12px", borderRadius: 10,
+              border: "1px solid rgba(255,255,255,0.1)",
+              background: "rgba(255,255,255,0.07)",
             }}>
-              <span style={{ fontSize: 18, flexShrink: 0 }}>{f.icon}</span>
+              <span style={{ fontSize: 17, flexShrink: 0 }}>{f.icon}</span>
               <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: isMobile ? "rgba(255,255,255,0.9)" : G.forest }}>{f.label}</div>
-                <div style={{ fontSize: 11, color: isMobile ? "rgba(255,255,255,0.5)" : G.muted }}>{f.desc}</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.9)" }}>{f.label}</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>{f.desc}</div>
               </div>
             </div>
           ))}
@@ -332,33 +341,22 @@ function HeroSection({ onLoginClick, isMobile }) {
 
         <button onClick={onLoginClick} style={{
           padding: "13px 28px",
-          background: isMobile ? G.mint : G.forest,
-          color: isMobile ? G.forest : "white",
+          background: G.mint,
+          color: G.forest,
           border: "none", borderRadius: 10,
           fontSize: 14, fontWeight: 800, cursor: "pointer",
           display: "inline-flex", alignItems: "center", gap: 8,
           width: isMobile ? "100%" : "auto",
+          alignSelf: "flex-start",
           justifyContent: "center",
           transition: "opacity 0.15s",
-        }}>
+        }}
+        onMouseEnter={e => e.currentTarget.style.opacity = "0.88"}
+        onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+        >
           👤 Ingresar al sistema →
         </button>
       </div>
-
-      {/* Right: logo card limpio */}
-      {!isMobile && (
-        <div style={{
-          flexShrink: 0,
-          width: 300, height: 300,
-          borderRadius: 24,
-          border: `1px solid ${G.border}`,
-          background: G.foam,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <img src="/logocolor.png" alt="Logo San Roque"
-            style={{ width: 200, height: 200, objectFit: "contain" }} />
-        </div>
-      )}
     </div>
   );
 }
