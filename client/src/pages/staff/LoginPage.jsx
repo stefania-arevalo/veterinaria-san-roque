@@ -241,56 +241,36 @@ function HeroSection({ onLoginClick, isMobile }) {
       justifyContent: isMobile ? "flex-start" : "center",
       padding: isMobile ? "72px 24px 32px" : "0 64px 0 96px",
       gap: isMobile ? 24 : 80,
-      background: G.white,
+      background: isMobile ? G.forest : G.white,
       overflowY: isMobile ? "auto" : "hidden",
       position: "relative",
     }}>
 
-      {/* Marca de agua fondo — solo mobile */}
+      {/* Logo fondo monocromático — solo mobile */}
       {isMobile && (
         <div style={{
           position: "absolute",
           inset: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
           pointerEvents: "none",
           userSelect: "none",
           zIndex: 0,
           overflow: "hidden",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
         }}>
-          {/* Tinte verde de fondo */}
-          <div style={{
-            position: "absolute",
-            inset: 0,
-            background: `radial-gradient(ellipse at center, rgba(39,107,66,0.10) 0%, rgba(26,61,40,0.04) 70%, transparent 100%)`,
-          }} />
-          {/* Logo grande con tinte verde */}
-          <div style={{
-            position: "relative",
-            width: "95vw",
-            height: "95vw",
-            maxWidth: 420,
-            maxHeight: 420,
-          }}>
-            <img
-              src="/logocolor.png"
-              alt=""
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "contain",
-                opacity: 0.13,
-              }}
-            />
-            {/* Overlay verde encima del logo */}
-            <div style={{
-              position: "absolute",
-              inset: 0,
-              background: "rgba(39,107,66,0.45)",
-              mixBlendMode: "multiply",
-            }} />
-          </div>
+          <img
+            src="/logocolor.png"
+            alt=""
+            aria-hidden="true"
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
+              opacity: 1,
+              filter: "grayscale(1) brightness(0) invert(0) sepia(1) saturate(3) hue-rotate(90deg) brightness(0.55)",
+            }}
+          />
         </div>
       )}
 
@@ -299,19 +279,21 @@ function HeroSection({ onLoginClick, isMobile }) {
         {/* Chip */}
         <div style={{
           display: "inline-flex", alignItems: "center", gap: 6,
-          background: G.mint, borderRadius: 99,
+          background: isMobile ? "rgba(255,255,255,0.1)" : G.mint,
+          borderRadius: 99,
           padding: "5px 14px", marginBottom: 28,
-          border: `1px solid ${G.border}`,
+          border: isMobile ? "1px solid rgba(255,255,255,0.15)" : `1px solid ${G.border}`,
         }}>
-          <span style={{ width: 6, height: 6, borderRadius: "50%", background: G.leaf, flexShrink: 0 }} />
-          <span style={{ fontSize: 11, fontWeight: 700, color: G.leaf, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+          <span style={{ width: 6, height: 6, borderRadius: "50%", background: isMobile ? G.mint : G.leaf, flexShrink: 0 }} />
+          <span style={{ fontSize: 11, fontWeight: 700, color: isMobile ? G.mint : G.leaf, letterSpacing: "0.06em", textTransform: "uppercase" }}>
             Clínica Veterinaria · Punta Alta
           </span>
         </div>
 
         <h1 style={{
           fontSize: isMobile ? 34 : 52,
-          fontWeight: 900, color: G.forest,
+          fontWeight: 900,
+          color: isMobile ? "white" : G.forest,
           margin: "0 0 18px",
           lineHeight: 1.1, letterSpacing: "-1.5px",
         }}>
@@ -319,8 +301,9 @@ function HeroSection({ onLoginClick, isMobile }) {
         </h1>
 
         <p style={{
-          fontSize: 15, color: G.muted,
-          lineHeight: 1.7, margin: "0 0 36px", maxWidth: 460,
+          fontSize: 15,
+          color: isMobile ? "rgba(255,255,255,0.7)" : G.muted,
+          lineHeight: 1.7, margin: "0 0 32px", maxWidth: 460,
         }}>
           Sistema integral de gestión para la clínica veterinaria San Roque. Portal de clientes, historiales clínicos y agenda en tiempo real.
         </p>
@@ -329,19 +312,19 @@ function HeroSection({ onLoginClick, isMobile }) {
         <div style={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
-          gap: 10, marginBottom: 36,
+          gap: 10, marginBottom: 32,
         }}>
           {features.map((f, i) => (
             <div key={i} style={{
               display: "flex", alignItems: "center", gap: 10,
-              padding: "12px 14px", borderRadius: 10,
-              border: `1px solid ${G.border}`,
-              background: G.foam,
+              padding: "11px 13px", borderRadius: 10,
+              border: isMobile ? "1px solid rgba(255,255,255,0.12)" : `1px solid ${G.border}`,
+              background: isMobile ? "rgba(255,255,255,0.08)" : G.foam,
             }}>
-              <span style={{ fontSize: 20, flexShrink: 0 }}>{f.icon}</span>
+              <span style={{ fontSize: 18, flexShrink: 0 }}>{f.icon}</span>
               <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: G.forest }}>{f.label}</div>
-                <div style={{ fontSize: 11, color: G.muted }}>{f.desc}</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: isMobile ? "rgba(255,255,255,0.9)" : G.forest }}>{f.label}</div>
+                <div style={{ fontSize: 11, color: isMobile ? "rgba(255,255,255,0.5)" : G.muted }}>{f.desc}</div>
               </div>
             </div>
           ))}
@@ -349,17 +332,15 @@ function HeroSection({ onLoginClick, isMobile }) {
 
         <button onClick={onLoginClick} style={{
           padding: "13px 28px",
-          background: G.forest, color: "white",
+          background: isMobile ? G.mint : G.forest,
+          color: isMobile ? G.forest : "white",
           border: "none", borderRadius: 10,
-          fontSize: 14, fontWeight: 700, cursor: "pointer",
+          fontSize: 14, fontWeight: 800, cursor: "pointer",
           display: "inline-flex", alignItems: "center", gap: 8,
           width: isMobile ? "100%" : "auto",
           justifyContent: "center",
-          transition: "background 0.15s",
-        }}
-        onMouseEnter={e => e.currentTarget.style.background = G.pine}
-        onMouseLeave={e => e.currentTarget.style.background = G.forest}
-        >
+          transition: "opacity 0.15s",
+        }}>
           👤 Ingresar al sistema →
         </button>
       </div>
