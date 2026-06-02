@@ -238,45 +238,21 @@ function HeroSection({ onLoginClick, isMobile }) {
       display: "flex",
       flexDirection: isMobile ? "column" : "row",
       alignItems: "center",
-      justifyContent: "center",
-      padding: isMobile ? "72px 28px 28px" : "0 64px 0 96px",
-      gap: isMobile ? 0 : 72,
+      // Cambiamos a space-between en desktop para mandar el texto a la izquierda y el logo a la derecha
+      justifyContent: isMobile ? "center" : "space-between",
+      padding: isMobile ? "72px 28px 28px" : "0 96px 0 96px", // Balanceamos los paddings laterales
+      gap: isMobile ? 24 : 48,
       background: G.forest,
       overflow: "hidden",
       position: "relative",
+      width: "100%",
+      boxSizing: "border-box",
     }}>
 
-      {/* ── Fondo: logo marca de agua (ambos) ── */}
+      {/* ── CONTENEDOR IZQUIERDO: Texto ── */}
       <div style={{
-        position: "absolute",
-        inset: 0,
-        pointerEvents: "none",
-        userSelect: "none",
-        zIndex: 0,
-        overflow: "hidden",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: isMobile ? "center" : "flex-end",
-        paddingRight: isMobile ? 0 : 48,
-      }}>
-        <img
-          src="/logocolor.png"
-          alt=""
-          aria-hidden="true"
-          style={{
-            width: isMobile ? "85%" : "42%",
-            height: isMobile ? "85%" : "85%",
-            objectFit: "contain",
-            filter: "grayscale(1) brightness(0) invert(0) sepia(1) saturate(3) hue-rotate(90deg) brightness(0.45)",
-            opacity: 1,
-          }}
-        />
-      </div>
-
-      {/* ── Texto ── */}
-      <div style={{
-        flex: 1,
-        maxWidth: 520,
+        flex: isMobile ? "none" : "1",
+        maxWidth: 540, // Le damos un poquito más de margen para que respire el texto
         position: "relative",
         zIndex: 1,
         display: "flex",
@@ -357,6 +333,37 @@ function HeroSection({ onLoginClick, isMobile }) {
           👤 Ingresar al sistema →
         </button>
       </div>
+
+      {/* ── CONTENEDOR DERECHO: Logo e Imagen (Se adapta según Mobile o Desktop) ── */}
+      <div style={{
+        flex: isMobile ? "none" : "1",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: isMobile ? "center" : "flex-end",
+        width: isMobile ? "100%" : "auto",
+        position: isMobile ? "absolute" : "relative", // Sigue siendo fondo en mobile para no romper tu layout, pero tiene peso real en desktop
+        inset: isMobile ? 0 : "auto",
+        zIndex: isMobile ? 0 : 1,
+        pointerEvents: "none",
+        userSelect: "none",
+        opacity: isMobile ? 0.35 : 1, // Le bajamos la opacidad en mobile si está de fondo para que no pise el texto
+      }}>
+        <img
+          src="/logocolor.png"
+          alt="Veterinaria San Roque"
+          style={{
+            width: isMobile ? "80%" : "100%",
+            maxWidth: isMobile ? 300 : 420, // Controlamos el tamaño máximo para que no se desorbite
+            height: "auto",
+            objectFit: "contain",
+            // En desktop le quitamos los filtros agresivos para que luzca el logo original de la veterinaria
+            filter: isMobile 
+              ? "grayscale(1) brightness(0) invert(0) sepia(1) saturate(3) hue-rotate(90deg) brightness(0.45)" 
+              : "none", 
+          }}
+        />
+      </div>
+
     </div>
   );
 }
