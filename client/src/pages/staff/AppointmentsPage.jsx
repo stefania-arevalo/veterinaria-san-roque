@@ -72,7 +72,7 @@ function SlotPickerModal({ vets, appointments, onClose, onSelect }) {
       })
       .then(r => { if (r?.data) setHorarios(r.data); })
       .catch(() => setHorarios([]));
-  }, [fecha, idVet]);
+  }, [fecha, idVet, headers]);
 
   const toMins = t => { const [h,m] = t.substring(0,5).split(':').map(Number); return h*60+m; };
   const toHHMM = m => `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
@@ -2779,20 +2779,6 @@ export default function AppointmentPage() {
     ? (cita.detalles || [])
     : (cita.detalles || []).filter(d => !d.idCitaNueva && d.idEstadoServicio !== 3 && d.idEstadoServicio !== 5);
     
-    {slotPicker && (
-      <SlotPickerModal
-        vets={vets}
-        appointments={appointments}
-        onClose={() => setSlotPicker(false)}
-        onSelect={(fecha, hora, idVeterinario) => {
-          setSlotPicker(false);
-          setModal({
-            type: "new",
-            data: { fecha, hora, idVeterinario }  // pre-llena el form
-          });
-        }}
-      />
-    )}
     // 2. Abrimos el modal en modo "new" (porque es una cita nueva)
     setModal({
       type: "new",
@@ -3242,6 +3228,21 @@ export default function AppointmentPage() {
       {modal?.type === "attend" && (
         <AttendServiceModal cita={modal.data} staff={staff}
           onClose={() => setModal(null)} onSave={() => loadAppointments()} />
+      )}
+
+      {slotPicker && (
+        <SlotPickerModal
+          vets={vets}
+          appointments={appointments}
+          onClose={() => setSlotPicker(false)}
+          onSelect={(fecha, hora, idVeterinario) => {
+            setSlotPicker(false);
+            setModal({
+              type: "new",
+              data: { fecha, hora, idVeterinario }  // pre-llena el form
+            });
+          }}
+        />
       )}
     </div>
   );
