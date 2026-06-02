@@ -52,6 +52,135 @@ const ESTADO_TRANSITIONS = {
   5: [], 
 };
 
+function SlotPickerModal({ vets, appointments, onClose, onSelect }) {
+  const [fecha, setFecha] = useState(new Date().toLocaleDateString("en-CA"));
+  const [idVet, setIdVet] = useState("");
+  const [horarios, setHorarios] = useState([]);
+
+  // Carga los horarios del vet seleccionado para esa fecha
+  useEffect(() => {
+    if (!fecha || !idVet) return;
+    const partes = fecha.split('-');
+    const dias = ['Domingo','Lunes','Martes','Miercoles','Jueves','Viernes','Sabado'];
+    const dia = dias[new Date(+partes[0], +partes[1]-1, +partes[2]).getDay()];
+
+    // Intenta horario propio del vet, si falla usa el de la clínica
+    axios.get(`/vetschedules?diaSemana=${dia}&idPersonal=${idVet}`, { headers: headers() })
+      .then(r => {
+        if (r.data?.length > 0) setHorarios(r.data);
+        else return axios.get(`/schedules?diaSemana=${dia}`, { headers: headers() });
+      })
+      .then(r => { if (r?.data) setHorarios(r.data); })
+      .catch(() => setHorarios([]));
+  }, [fecha, idVet]);
+
+  const toMins = t => { const [h,m] = t.substring(0,5).split(':').map(Number); return h*60+m; };
+  const toHHMM = m => `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+
+  // Slots ocupados del vet en esa fecha (de las citas ya cargadas)
+  const slotsOcupados = appointments
+    .filter(a => a.fecha === fecha && String(a.idVeterinario) === String(idVet) && a.idEstadoCita !== 3)
+    .flatMap(a => {
+      const inicio = toMins(a.hora);
+      const durTotal = (a.detalles || []).reduce((acc, d) => acc + (d.PrecioServicio?.duracionEstimada || 30), 30);
+      const slots = [];
+      for (let m = inicio; m < inicio + durTotal; m += 30) slots.push(m);
+      return slots;
+    });
+
+  // Genera slots de 30min dentro del horario disponible
+  const rangoMin = horarios.length > 0 ? Math.min(...horarios.map(h => toMins(h.horaInicio))) : toMins('09:00');
+  const rangoMax = horarios.length > 0 ? Math.max(...horarios.map(h => toMins(h.horaFin)))    : toMins('21:00');
+  const slots = [];
+  for (let m = rangoMin; m < rangoMax; m += 30) slots.push(m);
+
+  return (
+    <div style={{ position:"fixed", inset:0, zIndex:150, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(10,20,40,0.6)", backdropFilter:"blur(5px)" }}>
+      <div style={{ background:"white", borderRadius:20, width:"min(95vw,520px)", maxHeight:"88vh", display:"flex", flexDirection:"column", overflow:"hidden", boxShadow:"0 25px 60px rgba(0,0,0,0.3)" }}>
+        
+        {/* Header */}
+        <div style={{ background:"#166534", color:"white", padding:"18px 24px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          <div>
+            <h3 style={{ margin:0, fontSize:17, fontWeight:700 }}>📅 Elegir horario</h3>
+            <p style={{ margin:"3px 0 0", fontSize:12, opacity:0.7 }}>Seleccioná un hueco libre para crear el turno</p>
+          </div>
+          <button onClick={onClose} style={{ background:"rgba(255,255,255,0.1)", border:"none", color:"white", width:34, height:34, borderRadius:"50%", cursor:"pointer", fontSize:16 }}>✕</button>
+        </div>
+
+        {/* Filtros */}
+        <div style={{ padding:"16px 20px", borderBottom:"1px solid #e2e8f0", display:"flex", gap:12 }}>
+          <div style={{ flex:1 }}>
+            <label style={{ fontSize:11, fontWeight:700, color:"#64748b", display:"block", marginBottom:5, textTransform:"uppercase" }}>Veterinario</label>
+            <select value={idVet} onChange={e => setIdVet(e.target.value)}
+              style={{ width:"100%", padding:"9px 12px", borderRadius:9, border:"1.5px solid #e2e8f0", fontSize:13, outline:"none" }}>
+              <option value="">Seleccionar...</option>
+              {vets.map(v => <option key={v.idPersonal} value={v.idPersonal}>{v.nombres} {v.apellidos}</option>)}
+            </select>
+          </div>
+          <div style={{ flex:1 }}>
+            <label style={{ fontSize:11, fontWeight:700, color:"#64748b", display:"block", marginBottom:5, textTransform:"uppercase" }}>Fecha</label>
+            <input type="date" value={fecha} onChange={e => setFecha(e.target.value)}
+              style={{ width:"100%", boxSizing:"border-box", padding:"9px 12px", borderRadius:9, border:"1.5px solid #e2e8f0", fontSize:13, outline:"none" }} />
+          </div>
+        </div>
+
+        {/* Grilla de slots */}
+        <div style={{ flex:1, overflowY:"auto", padding:"16px 20px" }}>
+          {!idVet ? (
+            <div style={{ textAlign:"center", padding:"40px 0", color:"#94a3b8" }}>
+              <div style={{ fontSize:32, marginBottom:8 }}>👆</div>
+              <p style={{ margin:0, fontSize:13 }}>Seleccioná un veterinario para ver su disponibilidad</p>
+            </div>
+          ) : horarios.length === 0 ? (
+            <div style={{ textAlign:"center", padding:"40px 0", color:"#94a3b8" }}>
+              <div style={{ fontSize:32, marginBottom:8 }}>🔒</div>
+              <p style={{ margin:0, fontSize:13 }}>Sin horario de atención este día</p>
+            </div>
+          ) : (
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:8 }}>
+              {slots.map(m => {
+                const ocupado = slotsOcupados.includes(m);
+                return (
+                  <button
+                    key={m}
+                    disabled={ocupado}
+                    onClick={() => onSelect(fecha, toHHMM(m), idVet)}
+                    style={{
+                      padding:"12px 6px", borderRadius:10, border:"none",
+                      background: ocupado ? "#f1f5f9" : "#f0fdf4",
+                      color: ocupado ? "#cbd5e1" : "#166534",
+                      fontWeight:700, fontSize:13, cursor: ocupado ? "not-allowed" : "pointer",
+                      border: ocupado ? "1.5px solid #e2e8f0" : "1.5px solid #86efac",
+                      transition:"all 0.15s",
+                    }}
+                    onMouseEnter={e => { if (!ocupado) e.currentTarget.style.background = "#dcfce7"; }}
+                    onMouseLeave={e => { if (!ocupado) e.currentTarget.style.background = "#f0fdf4"; }}
+                  >
+                    {toHHMM(m)}
+                    {ocupado && <div style={{ fontSize:9, marginTop:2, color:"#94a3b8" }}>ocupado</div>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Leyenda */}
+        <div style={{ padding:"12px 20px", borderTop:"1px solid #e2e8f0", background:"#f8fafc", display:"flex", gap:16, fontSize:12, color:"#64748b" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+            <div style={{ width:10, height:10, borderRadius:3, background:"#f0fdf4", border:"1.5px solid #86efac" }} />
+            Disponible
+          </div>
+          <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+            <div style={{ width:10, height:10, borderRadius:3, background:"#f1f5f9", border:"1.5px solid #e2e8f0" }} />
+            Ocupado
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── COMPONENTE AGENDA VISUAL ──────────────────────────────────────────
 const AgendaVisual = ({ staff, appointments, fechaSeleccionada, onEditCita }) => {
   const [horarios, setHorarios] = useState([]);
@@ -2532,6 +2661,7 @@ export default function AppointmentPage() {
   const [filterPago, setFilterPago] = useState("all");
   const [vistaAgenda, setVistaAgenda] = useState(false);
   const [fechaAgenda, setFechaAgenda] = useState(new Date().toLocaleDateString("en-CA"));
+  const [slotPicker, setSlotPicker] = useState(false);
 
   const user  = getUserFromToken();
   const userRole     = user?.idRol      || 1;
@@ -2649,6 +2779,20 @@ export default function AppointmentPage() {
     ? (cita.detalles || [])
     : (cita.detalles || []).filter(d => !d.idCitaNueva && d.idEstadoServicio !== 3 && d.idEstadoServicio !== 5);
     
+    {slotPicker && (
+      <SlotPickerModal
+        vets={vets}
+        appointments={appointments}
+        onClose={() => setSlotPicker(false)}
+        onSelect={(fecha, hora, idVeterinario) => {
+          setSlotPicker(false);
+          setModal({
+            type: "new",
+            data: { fecha, hora, idVeterinario }  // pre-llena el form
+          });
+        }}
+      />
+    )}
     // 2. Abrimos el modal en modo "new" (porque es una cita nueva)
     setModal({
       type: "new",
@@ -2750,7 +2894,7 @@ export default function AppointmentPage() {
         </button>
 
         {canCreate && (
-          <button onClick={() => setModal({ type: "new" })}
+          <button onClick={() => setSlotPicker(true)}
             style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 18px", borderRadius: 12, background: "linear-gradient(135deg,#166534,#1f5c38)", color: "white", border: "none", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
             + Nueva Cita
           </button>
