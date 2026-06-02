@@ -243,26 +243,33 @@ function HeroSection({ onLoginClick, isMobile }) {
       gap: isMobile ? 24 : 80,
       background: G.white,
       overflowY: isMobile ? "auto" : "hidden",
+      position: "relative",
     }}>
 
-      {/* Logo centrado — solo mobile */}
+      {/* Marca de agua — solo mobile */}
       {isMobile && (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, paddingTop: 8 }}>
-          <div style={{
-            width: 80, height: 80, borderRadius: 20,
-            background: G.foam, border: `1px solid ${G.border}`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <img src="/logocolor.png" alt="Logo San Roque" style={{ width: 60, height: 60, objectFit: "contain" }} />
-          </div>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: G.forest, lineHeight: 1 }}>San Roque</div>
-          </div>
-        </div>
+        <img
+          src="/logocolor.png"
+          alt=""
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            bottom: -20,
+            right: -30,
+            width: 260,
+            height: 260,
+            objectFit: "contain",
+            opacity: 0.06,
+            filter: "grayscale(30%)",
+            pointerEvents: "none",
+            userSelect: "none",
+            zIndex: 0,
+          }}
+        />
       )}
 
       {/* Texto */}
-      <div style={{ flex: 1, maxWidth: 540 }}>
+      <div style={{ flex: 1, maxWidth: 540, position: "relative", zIndex: 1 }}>
         {/* Chip */}
         <div style={{
           display: "inline-flex", alignItems: "center", gap: 6,
