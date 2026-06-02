@@ -239,13 +239,29 @@ function HeroSection({ onLoginClick, isMobile }) {
       flexDirection: isMobile ? "column" : "row",
       alignItems: "center",
       justifyContent: isMobile ? "flex-start" : "center",
-      padding: isMobile
-        ? "72px 24px 32px"
-        : "0 64px 0 96px",
-      gap: isMobile ? 32 : 80,
+      padding: isMobile ? "72px 24px 32px" : "0 64px 0 96px",
+      gap: isMobile ? 24 : 80,
       background: G.white,
       overflowY: isMobile ? "auto" : "hidden",
     }}>
+
+      {/* Logo centrado — solo mobile */}
+      {isMobile && (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, paddingTop: 8 }}>
+          <div style={{
+            width: 80, height: 80, borderRadius: 20,
+            background: G.foam, border: `1px solid ${G.border}`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <img src="/logocolor.png" alt="Logo San Roque" style={{ width: 60, height: 60, objectFit: "contain" }} />
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: G.forest, lineHeight: 1 }}>San Roque</div>
+            <div style={{ fontSize: 11, color: G.muted, marginTop: 2 }}>Clínica Veterinaria · Punta Alta</div>
+          </div>
+        </div>
+      )}
+
       {/* Texto */}
       <div style={{ flex: 1, maxWidth: 540 }}>
         {/* Chip */}
