@@ -453,59 +453,85 @@ function PortalSection({ isMobile }) {
       flex: 1, 
       display: "flex", 
       flexDirection: "column",
-      padding: isMobile ? "72px 20px 32px" : "0 64px 0 96px", // Aumentamos levemente el padding inferior en mobile para dar aire
-      justifyContent: isMobile ? "flex-start" : "center", // En mobile arranca arriba para aprovechar el scroll
+      // Ajustamos paddings en mobile para que no aprieten el contenido verticalmente
+      padding: isMobile ? "64px 20px 16px" : "0 64px 0 96px",
+      justifyContent: "center",
       background: G.white,
-      overflowY: isMobile ? "auto" : "hidden", // 👈 SOLUCIÓN CLAVE: Permite scroll en mobile si las cards exceden el alto
-      WebkitOverflowScrolling: "touch", // Suaviza el scroll inercial nativo en iOS/iPhones
+      overflow: "hidden", // Volvemos a bloquear el scroll para que actúe el snap
     }}>
       {/* Header */}
-      <div style={{ marginBottom: isMobile ? 20 : 40, flexShrink: 0 }}>
+      <div style={{ marginBottom: isMobile ? 14 : 40 }}>
         <div style={{
           display: "inline-flex", alignItems: "center",
           background: G.mint, border: `1px solid ${G.border}`,
-          borderRadius: 99, padding: "4px 14px", marginBottom: 10,
+          borderRadius: 99, padding: isMobile ? "3px 10px" : "4px 14px", marginBottom: 8,
         }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: G.leaf, textTransform: "uppercase", letterSpacing: "0.06em" }}>Portal de clientes</span>
+          <span style={{ fontSize: 10, fontWeight: 700, color: G.leaf, textTransform: "uppercase", letterSpacing: "0.06em" }}>Portal de clientes</span>
         </div>
-        <h2 style={{ fontSize: isMobile ? 26 : 36, fontWeight: 900, color: G.forest, margin: "0 0 6px", letterSpacing: "-1px" }}>
+        <h2 style={{ fontSize: isMobile ? 22 : 36, fontWeight: 900, color: G.forest, margin: "0 0 4px", letterSpacing: "-1px" }}>
           ¿Cómo funciona?
         </h2>
-        <p style={{ fontSize: 14, color: G.muted, margin: 0 }}>
-          Disponible para todos los clientes registrados en la clínica.
+        <p style={{ fontSize: isMobile ? 13 : 14, color: G.muted, margin: 0 }}>
+          Disponible para todos los clientes registrados.
         </p>
       </div>
 
-      {/* Grid de pasos */}
+      {/* Grid / Lista de pasos */}
       <div style={{
         display: "grid",
+        // En mobile usamos una sola columna pero reducimos drásticamente los espacios (gap)
         gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
-        gap: isMobile ? 12 : 18,
+        gap: isMobile ? 8 : 18,
         maxWidth: 860,
-        paddingBottom: isMobile ? 20 : 0, // Espacio extra al final para que la última card no choque el borde de la pantalla
+        width: "100%",
+        boxSizing: "border-box",
       }}>
         {steps.map((s, i) => (
           <div key={i} style={{
-            padding: isMobile ? "18px" : "28px",
-            borderRadius: 14,
+            // Reducimos el padding en mobile a 12px para que las tarjetas sean delgadas
+            padding: isMobile ? "12px 14px" : "28px",
+            borderRadius: 12,
             border: `1px solid ${G.border}`,
             background: G.foam,
+            display: "flex",
+            // En desktop las tarjetas van en vertical, pero en mobile alineamos todo en una sola línea horizontal (tipo fila)
+            flexDirection: isMobile ? "row" : "column",
+            alignItems: "center",
+            gap: isMobile ? 12 : 0,
           }}>
+            {/* Número identificador */}
             <div style={{
-              width: 36, height: 36, borderRadius: 9,
+              width: isMobile ? 28 : 36, 
+              height: isMobile ? 28 : 36, 
+              borderRadius: isMobile ? 7 : 9,
               background: G.forest, color: "white",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 12, fontWeight: 900, marginBottom: 14,
+              fontSize: isMobile ? 11 : 12, fontWeight: 900, 
+              marginBottom: isMobile ? 0 : 14,
+              flexShrink: 0,
+            }}>{s.n}</div>
+            
+            {/* Contenedor de Icono + Texto interno */}
+            <div style={{ 
+              display: "flex", 
+              alignItems: "center", 
+              gap: 8,
+              flex: 1 
             }}>
-              {s.n}
+              <div style={{ fontSize: isMobile ? 18 : 22, flexShrink: 0, marginBottom: isMobile ? 0 : 10 }}>{s.icon}</div>
+              <div style={{ 
+                fontSize: isMobile ? 12 : 13, 
+                fontWeight: 800, 
+                color: G.forest,
+                marginBottom: isMobile ? 0 : 6,
+                lineHeight: 1.2
+              }}>
+                {s.title}
+              </div>
             </div>
-            <div style={{ fontSize: 22, marginBottom: 10 }}>{s.icon}</div>
-            <div style={{ fontSize: 13, fontWeight: 800, color: G.forest, marginBottom: 6 }}>{s.title}</div>
-            {/* Opcional: Si en iPhone se sigue sintiendo muy justo, 
-              podés forzar a renderizar la descripción corta usando isMobile 
-              o dejarlo libre ya que ahora cuenta con scroll funcional.
-            */}
-            <div style={{ fontSize: 12, color: G.muted, lineHeight: 1.65 }}>{s.desc}</div>
+
+            {/* Descripción larga: Oculta por completo en mobile para ahorrar espacio vertical */}
+            {!isMobile && <div style={{ fontSize: 12, color: G.muted, lineHeight: 1.65 }}>{s.desc}</div>}
           </div>
         ))}
       </div>
