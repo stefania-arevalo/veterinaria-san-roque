@@ -776,8 +776,8 @@ function LoginModal({ onLogin, onClose, isMobile }) {
             </label>
             <div style={{ position: "relative" }}>
               <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 15, opacity: 0.4 }}>🔒</span>
-              <input type={showPass ? "text" : "password"} name="contraseña"
-                value={form.contraseña} onChange={hc}
+              <input type={showPass ? "text" : "password"} name="password"
+                value={form.password} onChange={hc}
                 placeholder="Tu contraseña" autoComplete="current-password"
                 style={{ ...inp, paddingRight: 42 }}
                 onFocus={e => { e.target.style.borderColor = G.leaf; e.target.style.boxShadow = `0 0 0 3px rgba(39,107,66,0.1)`; }}

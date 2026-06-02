@@ -4,11 +4,11 @@ const Staff = require("../models/staff");
 const jwt = require("../utils/jwt");
 
 async function register(req, res, next) {
-    const { usuario, contraseña, idRol } = req.body;
+    const { usuario, password, idRol } = req.body;
 
     try {
         const salt = bcrypt.genSaltSync(10);
-        const hashPassword = bcrypt.hashSync(contraseña, salt);
+        const hashPassword = bcrypt.hashSync(password, salt);
 
         const userStorage = await User.create({
             usuario: usuario.toLowerCase(),
@@ -24,12 +24,12 @@ async function register(req, res, next) {
 }
 
 async function login(req, res, next) {
-  const { usuario, contraseña } = req.body;
+  const { usuario, password } = req.body;
   try {
     const userStore = await User.findOne({ where: { usuario: usuario.toLowerCase() } });
     if (!userStore) return res.status(404).send({ msg: "Usuario no encontrado" });
 
-    const check = await bcrypt.compare(contraseña, userStore.contraseña);
+    const check = await bcrypt.compare(password, userStore.contraseña);
     if (!check) return res.status(400).send({ msg: "Contraseña incorrecta" });
     if (!userStore.estado) return res.status(401).send({ msg: "Usuario no autorizado o no activo" });
 

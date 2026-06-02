@@ -5,8 +5,8 @@ const validateRegister = [
     .notEmpty().withMessage("El usuario es obligatorio.")
     .isLength({ min: 3 }).withMessage("El usuario debe tener al menos 3 caracteres."),
 
-  body("contraseña")
-    .notEmpty().withMessage("La contraseña es obligatoria.")
+  body("password")
+    .notEmpty().withMessage("La password es obligatoria.")
     .isLength({ min: 6 }).withMessage("La contraseña debe tener al menos 6 caracteres."),
 
   body("idRol")
@@ -18,7 +18,7 @@ const validateLogin = [
   body("usuario")
     .notEmpty().withMessage("El usuario es obligatorio."),
 
-  body("contraseña")
+  body("password")
     .notEmpty().withMessage("La contraseña es obligatoria."),
 ];
 
