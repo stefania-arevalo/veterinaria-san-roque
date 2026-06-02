@@ -672,7 +672,7 @@ function ContactoSection({ isMobile }) {
 
 // ── Login Modal ───────────────────────────────────────────────────
 function LoginModal({ onLogin, onClose, isMobile }) {
-  const [form, setForm] = useState({ usuario: "", contraseña: "" });
+  const [form, setForm] = useState({ usuario: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
@@ -684,7 +684,7 @@ function LoginModal({ onLogin, onClose, isMobile }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.usuario || !form.contraseña) { setError("Completá todos los campos."); return; }
+    if (!form.usuario || !form.password) { setError("Completá todos los campos."); return; }
     setLoading(true);
     try { await onLogin(form); }
     catch (err) { setError(err.response?.data?.msg || "Usuario o contraseña incorrectos."); }
