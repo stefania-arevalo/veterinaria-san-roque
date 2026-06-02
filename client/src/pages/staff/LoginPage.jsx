@@ -450,12 +450,17 @@ function PortalSection({ isMobile }) {
   ];
   return (
     <div style={{
-      flex: 1, display: "flex", flexDirection: "column",
-      padding: isMobile ? "72px 20px 24px" : "0 64px 0 96px",
-      justifyContent: "center",
+      flex: 1, 
+      display: "flex", 
+      flexDirection: "column",
+      padding: isMobile ? "72px 20px 32px" : "0 64px 0 96px", // Aumentamos levemente el padding inferior en mobile para dar aire
+      justifyContent: isMobile ? "flex-start" : "center", // En mobile arranca arriba para aprovechar el scroll
       background: G.white,
+      overflowY: isMobile ? "auto" : "hidden", // 👈 SOLUCIÓN CLAVE: Permite scroll en mobile si las cards exceden el alto
+      WebkitOverflowScrolling: "touch", // Suaviza el scroll inercial nativo en iOS/iPhones
     }}>
-      <div style={{ marginBottom: isMobile ? 20 : 40 }}>
+      {/* Header */}
+      <div style={{ marginBottom: isMobile ? 20 : 40, flexShrink: 0 }}>
         <div style={{
           display: "inline-flex", alignItems: "center",
           background: G.mint, border: `1px solid ${G.border}`,
@@ -471,11 +476,13 @@ function PortalSection({ isMobile }) {
         </p>
       </div>
 
+      {/* Grid de pasos */}
       <div style={{
         display: "grid",
         gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
         gap: isMobile ? 12 : 18,
         maxWidth: 860,
+        paddingBottom: isMobile ? 20 : 0, // Espacio extra al final para que la última card no choque el borde de la pantalla
       }}>
         {steps.map((s, i) => (
           <div key={i} style={{
@@ -489,10 +496,16 @@ function PortalSection({ isMobile }) {
               background: G.forest, color: "white",
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 12, fontWeight: 900, marginBottom: 14,
-            }}>{s.n}</div>
+            }}>
+              {s.n}
+            </div>
             <div style={{ fontSize: 22, marginBottom: 10 }}>{s.icon}</div>
             <div style={{ fontSize: 13, fontWeight: 800, color: G.forest, marginBottom: 6 }}>{s.title}</div>
-            {!isMobile && <div style={{ fontSize: 12, color: G.muted, lineHeight: 1.65 }}>{s.desc}</div>}
+            {/* Opcional: Si en iPhone se sigue sintiendo muy justo, 
+              podés forzar a renderizar la descripción corta usando isMobile 
+              o dejarlo libre ya que ahora cuenta con scroll funcional.
+            */}
+            <div style={{ fontSize: 12, color: G.muted, lineHeight: 1.65 }}>{s.desc}</div>
           </div>
         ))}
       </div>
