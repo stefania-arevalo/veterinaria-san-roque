@@ -182,6 +182,7 @@ function PetModal({ pet, clients, breeds, species, sizes, onClose, onSave, mode 
         idCliente: Number(form.idCliente),
         idRaza:    Number(form.idRaza),
         idTamaño:  Number(form.idTamaño),
+        idEspecie: Number(form.idEspecie), 
       };
       if (isEdit) await axios.patch(`/pet/${pet.idMascota}`, payload, { headers: headers() });
       else        await axios.post("/pet", payload, { headers: headers() });
