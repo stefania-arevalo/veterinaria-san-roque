@@ -48,14 +48,14 @@ const ROLE_META = {
 const SEXO_MAP = { M: "Masculino", F: "Femenino", O: "Otro" };
 
 const NAV_ITEMS = [
-  { label: "Inicio",           emoji: "🏠", pagina: "admin",             path: "/admin" },
-  { label: "Ventas",           emoji: "💰", pagina: "ventas",            path: "/admin/ventas" },
-  { label: "Turnos",           emoji: "📅", pagina: "citas",             path: "/admin/turnos" },
-  { label: "Clientes",         emoji: "👥", pagina: "clientes",          path: "/admin/clientes" },
-  { label: "Pacientes",        emoji: "🐾", pagina: "pacientes",         path: "/admin/pacientes" },
-  { label: "Historial",        emoji: "📋", pagina: "historial_clinico", path: "/admin/mascotas/historial" },
-  { label: "Compras",          emoji: "🛒", pagina: "compras",           path: "/admin/compras" },
-  { label: "Inventario",       emoji: "📦", pagina: "inventario",        path: "/admin/productos" },
+  { label: "🏠 Inicio",         pagina: "admin",             path: "/admin" },
+  { label: "Ventas",            pagina: "ventas",            path: "/admin/ventas" },
+  { label: "Turnos",            pagina: "citas",             path: "/admin/turnos" },
+  { label: "Clientes",          pagina: "clientes",          path: "/admin/clientes" },
+  { label: "Pacientes",          pagina: "pacientes",         path: "/admin/pacientes" },
+  { label: "Historial Clínico", pagina: "historial_clinico", path: "/admin/mascotas/historial" },
+  { label: "Compras",           pagina: "compras",           path: "/admin/compras" },
+  { label: "Inventario",        pagina: "inventario",         path: "/admin/productos" },
 ];
 
 const ADMIN_MENU = [
