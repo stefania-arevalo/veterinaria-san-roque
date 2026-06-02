@@ -2138,9 +2138,11 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
               </h4>
               <button type="button" 
                 onClick={() => {
-                  if (!form.idMascota) { setShowMascotaError(true); } 
-                  if (!form.idTipoCita) { setShowMascotaError(true); } 
-                  else { setServiceModal(true); }
+                  if (!form.idMascota || !form.idTipoCita) {
+                    setShowMascotaError(true);
+                    return;
+                  }
+                  setServiceModal(true);
                 }}
                 style={{ padding: "8px 18px", background: "#166534", color: "white", border: "none", borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
                 + Buscar servicio
