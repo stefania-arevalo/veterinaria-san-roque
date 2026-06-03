@@ -15,7 +15,7 @@ async function getVaccines(req, res, next) {
         const vaccines = await Vaccine.findAll({
             include: [{
                 model: Product,
-                as: 'Producto',        // verificá el alias en tu modelo Vaccine
+                as: 'Producto', // Sincronizado con el alias del modelo
                 attributes: ['nombre']
             }]
         });
@@ -39,28 +39,47 @@ async function getVaccine(req, res, next) {
 async function updateVaccine(req, res, next) {
     try {
         const { id } = req.params;
-        const { dosis, enfermedadPreventiva, idEspecie } = req.body;
+        const { 
+            volumenDosis, 
+            enfermedadPreventiva, 
+            idEspecie, 
+            cantidadDosisEsquema, 
+            intervaloReaplicacionMeses 
+        } = req.body;
 
         const vaccine = await Vaccine.findByPk(id);
         if (!vaccine) return res.status(404).send({ msg: "La vacuna no existe." });
 
-        // Normalización para comparar
-        const cleanDosis = dosis ? dosis.trim() : vaccine.dosis;
+        // Normalización para comparar strings
+        const cleanVolumenDosis = volumenDosis ? volumenDosis.trim() : vaccine.volumenDosis;
         const cleanEnf = enfermedadPreventiva 
             ? enfermedadPreventiva.trim().charAt(0).toUpperCase() + enfermedadPreventiva.trim().slice(1).toLowerCase() 
             : vaccine.enfermedadPreventiva;
 
-        // Validación de "No cambios"
-        if (vaccine.dosis === cleanDosis && vaccine.enfermedadPreventiva === cleanEnf && vaccine.idEspecie === idEspecie) {
+        // Normalización para comparar enteros
+        const cleanCantidad = cantidadDosisEsquema !== undefined ? Number(cantidadDosisEsquema) : vaccine.cantidadDosisEsquema;
+        const cleanIntervalo = intervaloReaplicacionMeses !== undefined ? Number(intervaloReaplicacionMeses) : vaccine.intervaloReaplicacionMeses;
+
+        // Validación de "No cambios" (Incluye las nuevas propiedades)
+        if (
+            vaccine.volumenDosis === cleanVolumenDosis && 
+            vaccine.enfermedadPreventiva === cleanEnf && 
+            vaccine.idEspecie === idEspecie &&
+            vaccine.cantidadDosisEsquema === cleanCantidad &&
+            vaccine.intervaloReaplicacionMeses === cleanIntervalo
+        ) {
             return res.status(400).send({ 
                 msg: "No se realizaron cambios: la información es idéntica a la actual." 
             });
         }
 
+        // Actualización de todos los atributos en la base de datos
         await vaccine.update({ 
-            dosis: cleanDosis, 
+            volumenDosis: cleanVolumenDosis, 
             enfermedadPreventiva: cleanEnf, 
-            idEspecie: idEspecie
+            idEspecie: idEspecie,
+            cantidadDosisEsquema: cleanCantidad,
+            intervaloReaplicacionMeses: cleanIntervalo
         });
 
         return res.status(200).send({ msg: "Vacuna actualizada correctamente.", vaccine });

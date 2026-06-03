@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import axios from "../../api/axios";
+import { CarnetVacunal } from "../../components/shared/CarnetVacunal"; 
 
 const token = () => localStorage.getItem("accessToken");
 const hdrs = () => ({ Authorization: `Bearer ${token()}` });
@@ -806,8 +807,70 @@ function TreatmentMedicationForm({ initial, idTratamiento, prodPres, onSave, onC
   );
 }
 
-// ─── PatientHistory ───────────────────────────────────────────────────────────
+function HistorialForm({ initial, estadosMascota, onSave, onCancel }) {
+  const [form, setForm] = useState({
+    motivo:          initial?.motivo || "",
+    idEstadoMascota: initial?.idEstadoMascota != null ? String(initial.idEstadoMascota) : "",
+    peso:            initial?.peso || "",
+    temperatura:     initial?.temperatura || "",
+    sintomas:        initial?.sintomas || "",
+    diagnostico:     initial?.diagnostico || "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [err, setErr]       = useState("");
+  const inp = { padding: "8px 10px", borderRadius: 7, fontSize: 13, border: `1px solid ${C.border}`, outline: "none", background: "white", width: "100%", boxSizing: "border-box" };
 
+  const submit = async () => {
+    if (!form.motivo || !form.diagnostico || !form.idEstadoMascota) {
+      setErr("Motivo, diagnóstico y estado del paciente son obligatorios.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await onSave({
+        motivo:          form.motivo,
+        idEstadoMascota: Number(form.idEstadoMascota),
+        peso:            form.peso || null,
+        temperatura:     form.temperatura || null,
+        sintomas:        form.sintomas || null,
+        diagnostico:     form.diagnostico,
+      });
+    } catch (e) {
+      setErr(e?.response?.data?.msg || "Error al guardar.");
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div style={{ background: "#f0fdf4", border: `1px solid ${C.green200}`, borderRadius: 10, padding: 16, marginBottom: 14 }}>
+      <p style={{ margin: "0 0 12px", fontWeight: 700, fontSize: 13, color: C.green800 }}>✏️ Editar ficha clínica</p>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        <div style={{ gridColumn: "1/-1" }}>
+          <input value={form.motivo} onChange={e => setForm(p => ({...p, motivo: e.target.value}))} placeholder="Motivo de consulta *" style={inp} />
+        </div>
+        <select value={form.idEstadoMascota} onChange={e => setForm(p => ({...p, idEstadoMascota: e.target.value}))} style={{ ...inp, cursor: "pointer" }}>
+          <option value="">— Estado del paciente *</option>
+          {estadosMascota.map(e => <option key={e.idEstadoMascota} value={e.idEstadoMascota}>{e.descripcion}</option>)}
+        </select>
+        <input type="number" step="0.1" value={form.peso} onChange={e => setForm(p => ({...p, peso: e.target.value}))} placeholder="Peso (kg)" style={inp} />
+        <input type="number" step="0.1" value={form.temperatura} onChange={e => setForm(p => ({...p, temperatura: e.target.value}))} placeholder="Temperatura (°C)" style={inp} />
+        <div style={{ gridColumn: "1/-1" }}>
+          <textarea value={form.sintomas} onChange={e => setForm(p => ({...p, sintomas: e.target.value}))} placeholder="Síntomas..." rows={2} style={{ ...inp, resize: "vertical" }} />
+        </div>
+        <div style={{ gridColumn: "1/-1" }}>
+          <textarea value={form.diagnostico} onChange={e => setForm(p => ({...p, diagnostico: e.target.value}))} placeholder="Diagnóstico *" rows={2} style={{ ...inp, resize: "vertical" }} />
+        </div>
+      </div>
+      {err && <p style={{ margin: "6px 0 0", fontSize: 11, color: C.red }}>{err}</p>}
+      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+        <button onClick={onCancel} style={{ flex: 1, padding: 9, borderRadius: 7, border: `1px solid ${C.border}`, background: "white", cursor: "pointer", fontWeight: 600, fontSize: 13 }}>Cancelar</button>
+        <button onClick={submit} disabled={saving} style={{ flex: 1, padding: 9, borderRadius: 7, border: "none", background: saving ? "#94a3b8" : C.green700, color: "white", cursor: saving ? "not-allowed" : "pointer", fontWeight: 600, fontSize: 13 }}>{saving ? "Guardando…" : "Guardar cambios"}</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── PatientHistory ───────────────────────────────────────────────────────────
 function PatientHistory({ mascota, onBack }) {
   const [historiales, setHistoriales]     = useState([]);
   const [loading, setLoading]             = useState(true);
@@ -834,6 +897,12 @@ function PatientHistory({ mascota, onBack }) {
   const [filterEstado, setFilterEstado] = useState("todos");
   const [tratHistoryPicker, setTratHistoryPicker] = useState("");
   const [vacHistoryPicker, setVacHistoryPicker]   = useState("");
+
+  const [showHistorialForm, setShowHistorialForm] = useState(null); 
+  const [editHistorial, setEditHistorial]         = useState(null); 
+
+  const [estadosMascota, setEstadosMascota] = useState([])
+
 
   // Carga detalle de un historial
   const fetchHistorialDetail = useCallback(async (idHistorial) => {
@@ -864,12 +933,13 @@ function PatientHistory({ mascota, onBack }) {
   const reloadPatientData = useCallback(async () => {
     setLoading(true);
     try {
-      const [resHist, resTipos, resEstados, resVacunes, resProdPres] = await Promise.all([
+      const [resHist, resTipos, resEstados, resVacunes, resProdPres, resPetStates] = await Promise.all([
         axios.get("/clinical-histories", { headers: hdrs() }),
         axios.get("/treatment-types",    { headers: hdrs() }),
         axios.get("/treatment-states",   { headers: hdrs() }),
         axios.get("/vaccines",           { headers: hdrs() }),
         axios.get("/prod-pres",          { headers: hdrs() }),
+        axios.get("/pet-states", { headers: hdrs() }),
       ]);
 
       const all   = resHist.data || [];
@@ -886,6 +956,7 @@ function PatientHistory({ mascota, onBack }) {
       setEstadosTrat(resEstados.data || []);
       setVaccines(resVacunes.data  || []);
       setProdPres(resProdPres.data || []);
+      setEstadosMascota(resPetStates.data || []);
 
       const entries = await Promise.all(
         suyos.map(async (h) => [h.idHistorial, await fetchHistorialDetail(h.idHistorial)])
@@ -918,6 +989,13 @@ function PatientHistory({ mascota, onBack }) {
     if (expandedId === id) { setExpandedId(null); return; }
     setExpandedId(id);
     await ensureDetail(id);
+  };
+
+  const handleSaveHistorial = async (data) => {
+    await axios.patch(`/clinical-history/${editHistorial.idHistorial}`, data, { headers: hdrs() });
+    await reloadPatientData();
+    setShowHistorialForm(null);
+    setEditHistorial(null);
   };
 
   // CRUD
@@ -1185,6 +1263,35 @@ function PatientHistory({ mascota, onBack }) {
                               <div style={{ padding: 24, textAlign: "center", color: C.muted, fontSize: 13 }}>Cargando detalles...</div>
                             ) : (
                               <div style={{ padding: "16px" }}>
+                                {(() => {
+                                  const fechaCita = new Date(`${h.Cita?.fecha || ""}T00:00:00`);
+                                  const horasDesde = (Date.now() - fechaCita.getTime()) / 36e5;
+                                  const puedeEditar = horasDesde <= 48; // true si pasaron 48hs o menos
+
+                                  return (
+                                    <>
+                                      {puedeEditar && (
+                                        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
+                                          <button
+                                            onClick={() => { setEditHistorial(h); setShowHistorialForm(h.idHistorial); }}
+                                            style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 7, border: `1px solid ${C.border}`, background: "white", color: C.muted, cursor: "pointer", fontWeight: 600, fontSize: 12 }}
+                                          >
+                                            {Ic.edit} Editar ficha
+                                          </button>
+                                        </div>
+                                      )}
+
+                                      {showHistorialForm === h.idHistorial && (
+                                        <HistorialForm
+                                          initial={editHistorial}
+                                          estadosMascota={estadosMascota}
+                                          onSave={handleSaveHistorial}
+                                          onCancel={() => { setShowHistorialForm(null); setEditHistorial(null); }}
+                                        />
+                                      )}
+                                    </>
+                                  );
+                                })()}
                                 {/* Motivo / síntomas */}
                                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
                                   {[["Motivo", h.motivo], ["Síntomas", h.sintomas]].map(([k, v]) => v && (
@@ -1379,6 +1486,13 @@ function PatientHistory({ mascota, onBack }) {
       {/* ══════════ VACUNAS (vista global) ══════════ */}
       {selectedTab === "vacunas" && (
         <div>
+          {/* ── CARNET VACUNAL ── */}
+          <CarnetVacunal
+            mascota={mascota}
+            vacunas={vaccines}
+            aplicadas={vacunasPlenas}
+          />
+
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14, padding: 12, background: C.surface, borderRadius: 10, border: `1px solid ${C.border}` }}>
             <select value={vacHistoryPicker} onChange={(e) => setVacHistoryPicker(e.target.value)} style={{ padding: 8, borderRadius: 6, border: `1px solid ${C.border}`, minWidth: 260 }}>
               <option value="">— Elegí una consulta para agregar —</option>
@@ -1415,6 +1529,8 @@ function PatientHistory({ mascota, onBack }) {
               {vacunasPlenas.map((v) => {
                 const h = histMap[Number(v.idHistorial)] || v._historial;
                 const isEditing = showVacForm === v.idHistorial && editVac?.idVacunaAplicada === v.idVacunaAplicada;
+                const venceLote = v.Lote?.fechaVencimiento ? new Date(v.Lote.fechaVencimiento) : null;
+                const loteVencido = venceLote && venceLote < new Date();
                 return (
                   <div key={v.idVacunaAplicada} style={{ background: C.white, border: `1px solid ${C.amberBorder}`, borderRadius: 12, padding: "14px 16px", boxShadow: "0 2px 12px rgba(186,117,23,0.05)" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
@@ -1425,6 +1541,16 @@ function PatientHistory({ mascota, onBack }) {
                           {h?.diagnostico  && <Tag bg={C.green100} color={C.green800} border={C.green200}>{h.diagnostico}</Tag>}
                           <Tag bg={v.cobrada ? C.tealBg : C.redBg} color={v.cobrada ? C.teal : C.red} border={v.cobrada ? C.tealBg : C.redBorder}>{v.cobrada ? "Cobrada" : "Pendiente"}</Tag>
                         </div>
+
+                        {venceLote && (
+                          <span style={{
+                            background: loteVencido ? C.redBg : C.green100,
+                            color: loteVencido ? C.red : C.green800,
+                            padding: "0 6px", borderRadius: 4, fontSize: 11, fontWeight: 600
+                          }}>
+                            {loteVencido ? `⚠️ Lote vencido ${fmtFecha(v.Lote.fechaVencimiento)}` : `Lote vence ${fmtFecha(v.Lote.fechaVencimiento)}`}
+                          </span>
+                        )}
 
                         {isEditing && (
                           <VaccineForm

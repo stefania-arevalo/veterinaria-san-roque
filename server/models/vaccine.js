@@ -12,11 +12,11 @@ const Vaccine = sequelize.define("Vaccine", {
             key: "idProducto"
         }
     },
-    dosis: {
+    volumenDosis: {
         type: DataTypes.STRING(50),
         allowNull: false,
         validate: {
-            notEmpty: { msg: "La dosis es obligatoria (ej: 0.5 ml o 1 ml)." }
+            notEmpty: { msg: "El volumen de la dosis es obligatoria (ej: 0.5 ml o 1 ml)." }
         }
     },
     enfermedadPreventiva: {
@@ -33,7 +33,19 @@ const Vaccine = sequelize.define("Vaccine", {
             model: "ESPECIES",
             key: "idEspecie"
         }
-    }
+    },
+    cantidadDosisEsquema: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        defaultValue: 1,
+        comment: "Cuántas aplicaciones requiere el esquema primario"
+    },
+    intervaloReaplicacionMeses: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        defaultValue: 12,
+        comment: "Cada cuántos meses se repite el refuerzo"
+    },
 }, {
     tableName: "VACUNAS",
     timestamps: false,
