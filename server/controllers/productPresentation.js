@@ -2,7 +2,7 @@ const ProductPresentation = require("../models/productPresentation");
 const Presentation = require("../models/presentation");
 const Product = require("../models/product");
 const Medication = require("../models/medication");
-const Batch = require ("../models/batch")
+const Batch = require("../models/batch");
 
 async function createProdPres(req, res, next) {
     try {
@@ -13,43 +13,42 @@ async function createProdPres(req, res, next) {
     }
 }
 
-// ─── FUNCIÓN CORREGIDA Y BLINDADA ─────────────────────────────────────────────
+// ─── FUNCIÓN TOTALMENTE CORREGIDA CON TUS COLUMNAS REALES ─────────────────────
 async function getAllProdPres(req, res, next) {
     try {
-        const list = await ProductPresentation.findAll({
-            where: { activo: true },
+      const list = await ProductPresentation.findAll({
+        where: { activo: true },
+        include: [
+          {
+            model: Product,
+            attributes: ["idProducto", "nombre"],
             include: [
-                {
-                    model: Product,
-                    attributes: ["idProducto", "nombre"],
-                    include: [
-                        { 
-                            model: Medication, 
-                            as: "Medicamento",
-                            required: false // Evita que si falla o no existe rompa el registro
-                        },
-                        {
-                            model: Batch,   
-                            as: "Lotes",
-                            attributes: ["stock", "fechaVencimiento"],
-                            where: { activo: true },
-                            required: false,  // LEFT JOIN — si no tiene lotes igual aparece
-                        }
-                    ]
-                },
-                { 
-                    model: Presentation, 
-                    as: "Presentacion", 
-                    attributes: ["idPresentacion", "tipo", "formato"] 
-                },
-            ],
-            order: [["idProdPres", "ASC"]],
-        });
-        return res.status(200).send(list);
+              { 
+                model: Medication, 
+                as: "Medicamento",
+                required: false
+              },
+              {
+                model: Batch,   
+                as: "Lotes",
+                // Usamos los atributos exactos de tu modelo Batch:
+                attributes: ["idLote", "codigoLote", "cantidadDisponible", "fechaVencimiento"],
+                required: false  // LEFT JOIN — si el producto no tiene lotes, aparece igual
+              }
+            ]
+          },
+          { 
+            model: Presentation, 
+            as: "Presentacion", 
+            attributes: ["idPresentacion", "tipo", "formato"] 
+          },
+        ],
+        order: [["idProdPres", "ASC"]],
+      });
+      return res.status(200).send(list);
     } catch (error) {
-        // Log detallado en la consola del servidor para capturar el error exacto si persiste
-        console.error("❌ Error interno en getAllProdPres de la API:", error);
-        next(error);
+      console.error("❌ Error interno en getAllProdPres de la API:", error);
+      next(error);
     }
 }
 
@@ -78,7 +77,6 @@ async function updateProdPres(req, res, next) {
 
         if (precio === undefined) return res.status(400).send({ msg: "El precio es requerido." });
 
-        // Validación de no cambios: comparamos el precio actual con el nuevo
         if (parseFloat(entry.precio) === parseFloat(precio)) {
             return res.status(400).send({ msg: "No se realizaron cambios: el precio es idéntico al actual." });
         }
@@ -109,7 +107,6 @@ async function getProdPresByProduct(req, res, next) {
         attributes: ["idProdPres", "idProducto", "idPresentacion", "precio"],
       });
   
-      // Mapeamos manteniendo el objeto Presentacion para el Frontend
       const data = rows.map(r => ({
         idProdPres: r.idProdPres,
         idProducto: r.idProducto,
@@ -126,7 +123,7 @@ async function getProdPresByProduct(req, res, next) {
       console.error("Error en getProdPresByProduct:", error);
       next(error);
     }
-  }
+}
 
 module.exports = {
     createProdPres,
