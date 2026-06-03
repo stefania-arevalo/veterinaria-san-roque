@@ -298,7 +298,8 @@ function VaccinePickerModal({ isOpen, vaccines, onSelect, onClose, idEspecie }) 
 
   const filtered = vaccines.filter((v) => {
     // Filtro por especie: null o 0 se considera universal (aplica a todas)
-    const coincideEspecie = !v.idEspecie || !idEspecie || Number(v.idEspecie) === Number(idEspecie);
+    const mEspecie = idEspecie ? Number(idEspecie) : null;
+    const coincideEspecie = !v.idEspecie || !mEspecie || Number(v.idEspecie) === mEspecie;
     if (!coincideEspecie) return false;
     
     const label = getVaccineLabel(v).toLowerCase();
