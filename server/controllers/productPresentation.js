@@ -2,6 +2,7 @@ const ProductPresentation = require("../models/productPresentation");
 const Presentation = require("../models/presentation");
 const Product = require("../models/product");
 const Medication = require("../models/medication");
+const Batch = require ("../models/batch")
 
 async function createProdPres(req, res, next) {
     try {
@@ -24,7 +25,7 @@ async function getAllProdPres(req, res, next) {
               { model: Medication, as: "Medicamento" },
               // Agregar esto para traer el stock del lote vigente:
               {
-                model: Batch,   // require("../models/batch") arriba
+                model: Batch,   
                 as: "Lotes",
                 attributes: ["stock", "fechaVencimiento"],
                 where: { activo: true },
