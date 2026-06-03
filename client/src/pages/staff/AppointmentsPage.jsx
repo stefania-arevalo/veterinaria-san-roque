@@ -538,7 +538,7 @@ function ServiceModal({ isOpen, onClose, onAddService, servicePrices, petSize, f
 
 
 // ── Modal de Selección de Vacunas (Estilo Tarjetas) ───────────────
-function VaccineModal({ isOpen, onClose, onSelectVaccine, vacunasDisponibles, especieMascota }) {
+function VaccineModal({ isOpen, onClose, onSelectVaccine, vacunasDisponibles, especieMascota, lotesDisponibles }) {
   const [searchTerm, setSearchTerm] = useState("");
 
   if (!isOpen) return null;
@@ -558,6 +558,15 @@ function VaccineModal({ isOpen, onClose, onSelectVaccine, vacunasDisponibles, es
     return coincideBusqueda && coincideEspecie;
   });
   
+  // Función para verificar si una vacuna tiene stock vigente
+  const tieneStockVigente = (idProducto) => {
+    const hoy = new Date();
+    return lotesDisponibles.some(lote =>
+      Number(lote.idProducto) === Number(idProducto) &&
+      lote.cantidadDisponible > 0 &&
+      new Date(lote.fechaVencimiento) > hoy
+    );
+  };
 
   const handleClose = () => {
     setSearchTerm("");
@@ -620,13 +629,32 @@ function VaccineModal({ isOpen, onClose, onSelectVaccine, vacunasDisponibles, es
                     </span>
                   </div>
                 </div>
-                
+                const hayStock = tieneStockVigente(v.idProducto);
+
+                <span style={{
+                  fontSize: "11px", padding: "2px 8px", borderRadius: "4px",
+                  width: "fit-content",
+                  background: hayStock ? "#dcfce7" : "#fee2e2",
+                  color: hayStock ? "#166534" : "#dc2626",
+                  marginTop: "4px", fontWeight: "bold", display: "block"
+                }}>
+                  {hayStock ? "✓ Stock disponible" : "✗ Sin stock / vencida"}
+                </span>
+
                 <button 
-                  onClick={() => { onSelectVaccine(v); handleClose(); }}
-                  style={{ width: "100%", padding: "10px", borderRadius: "10px", border: "none", background: "#ca8a04", color: "white", fontWeight: "700", fontSize: "14px", cursor: "pointer" }}
+                  onClick={() => { if (hayStock) { onSelectVaccine(v); handleClose(); } }}
+                  disabled={!hayStock}
+                  style={{ 
+                    width: "100%", padding: "10px", borderRadius: "10px", border: "none", 
+                    background: hayStock ? "#ca8a04" : "#e2e8f0", 
+                    color: hayStock ? "white" : "#94a3b8", 
+                    fontWeight: "700", fontSize: "14px", 
+                    cursor: hayStock ? "pointer" : "not-allowed" 
+                  }}
                 >
-                  Seleccionar Vacuna
+                  {hayStock ? "Seleccionar Vacuna" : "Sin stock disponible"}
                 </button>
+
               </div>
             );
           })}
@@ -1379,7 +1407,8 @@ function AttendServiceModal({ cita, staff, onClose, onSave }) {
           onClose={() => setShowVaccineModal(false)}
           vacunasDisponibles={vacunasDisponibles}  
           onSelectVaccine={handleSelectVaccine} 
-          especieMascota={cita?.Mascota?.Raza?.idEspecie ?? cita?.Mascota?.idEspecie} 
+          especieMascota={cita?.Mascota?.Raza?.idEspecie ?? cita?.Mascota?.idEspecie}
+          lotesDisponibles={lotesDisponibles} 
         />
  
         {alertMsg && (
