@@ -672,6 +672,7 @@ function AttendServiceModal({ cita, staff, onClose, onSave }) {
   const [estadosTratamiento, setEstadosTratamiento] = useState([]);
   const [productosDisponibles, setProductosDisponibles] = useState([]);
   const [mostrarTratamiento, setMostrarTratamiento] = useState(false);
+  const [erroresCampos, setErroresCampos] = useState({});
  
   const petSizeId = cita.Mascota?.idTamaño; 
   const especieMascota = Number(cita?.Mascota?.Raza?.idEspecie ?? cita?.Mascota?.idEspecie);
@@ -779,6 +780,7 @@ function AttendServiceModal({ cita, staff, onClose, onSave }) {
       }
     
       setSaving(idDetalle);
+      setErroresCampos({});
       try {
         let idHistorialGenerado = historialActual?.idHistorial || null;
     
@@ -899,6 +901,24 @@ function AttendServiceModal({ cita, staff, onClose, onSave }) {
       } catch (e) {
         console.error("Error en handleUpdateStatus:", e.response?.data || e);
         console.error("Detalle errores:", JSON.stringify(e.response?.data, null, 2));
+        if (e.response && e.response.status === 400) {
+          const backendErrors = e.response.data?.errors;
+          
+          if (Array.isArray(backendErrors)) {
+            // Mapeamos los errores usando la propiedad 'path' como clave (ej: erroresCampos.motivo)
+            const mapaErrores = {};
+            backendErrors.forEach(err => {
+              mapaErrores[err.path] = err.msg;
+            });
+            
+            setErroresCampos(mapaErrores);
+            setAlertMsg({ type: "error", text: "Por favor, corrige los errores en los campos de la ficha clínica." });
+            
+            // Opcional: Expandir la ficha automáticamente si estaba cerrada para que el veterinario vea los errores
+            setFichaExpandida(true);
+            return;
+          }
+        }
         setAlertMsg({ type: "error", text: e.response?.data?.msg || "Error al actualizar." });
       } finally {
         setSaving(null);
@@ -993,18 +1013,20 @@ function AttendServiceModal({ cita, staff, onClose, onSave }) {
           
           {/* 📋  FICHA CLÍNICA */}
           {tieneServicioMedico && Number(userLogueado?.idRol) === 2 && (
-            <div style={{ marginBottom: 24, borderRadius: 14, border: "1.5px solid #bae6fd", overflow: "hidden" }}>
+            <div style={{ marginBottom: 24, borderRadius: 14, border: erroresCampos.motivo || erroresCampos.diagnostico || erroresCampos.peso || erroresCampos.temperatura ? "1.5px solid #fca5a5" : "1.5px solid #bae6fd", overflow: "hidden" }}>
               
               {/* Header clickeable */}
               <div
                 onClick={() => setFichaExpandida(!fichaExpandida)}
-                style={{ padding: "12px 16px", background: "#f0f9ff", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                style={{ padding: "12px 16px", background: erroresCampos.motivo || erroresCampos.diagnostico ? "#fef2f2" : "#f0f9ff", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: "#0369a1", textTransform: "uppercase" }}>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: erroresCampos.motivo || erroresCampos.diagnostico ? "#dc2626" : "#0369a1", textTransform: "uppercase" }}>
                     📋 Ficha Clínica General
                   </span>
-                  {datosClinico.motivo && datosClinico.diagnostico && datosClinico.idEstadoMascota ? (
+                  {erroresCampos.motivo || erroresCampos.diagnostico ? (
+                    <span style={{ background: "#fee2e2", color: "#ef4444", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10 }}>⚠️ Con Errores</span>
+                  ) : datosClinico.motivo && datosClinico.diagnostico && datosClinico.idEstadoMascota ? (
                     <span style={{ background: "#dcfce7", color: "#16a34a", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10 }}>✓ Completa</span>
                   ) : (
                     <span style={{ background: "#fef3c7", color: "#b45309", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10 }}>Pendiente</span>
@@ -1018,23 +1040,99 @@ function AttendServiceModal({ cita, staff, onClose, onSave }) {
                 <div style={{ padding: 16, background: "#f0f9ff", display: "flex", flexDirection: "column", gap: 12 }}>
                   
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    <input type="text" placeholder="Motivo de la consulta *" value={datosClinico.motivo} onChange={e => updateClinical("motivo", e.target.value)} style={{ padding: 10, borderRadius: 8, border: `1px solid ${!datosClinico.motivo ? "#fca5a5" : "#bae6fd"}` }} />
-                    <select value={datosClinico.idEstadoMascota} onChange={e => updateClinical("idEstadoMascota", e.target.value)} style={{ padding: 10, borderRadius: 8, border: `1px solid ${!datosClinico.idEstadoMascota ? "#fca5a5" : "#bae6fd"}` }}>
-                      <option value="">Estado del paciente *</option>
-                      {estadosMascota.map(estado => (
-                        <option key={estado.idEstadoMascota} value={estado.idEstadoMascota}>{estado.descripcion}</option>
-                      ))}
-                    </select>
+                    <div>
+                      <input 
+                        type="text" 
+                        placeholder="Motivo de la consulta *" 
+                        value={datosClinico.motivo} 
+                        onChange={e => {
+                          updateClinical("motivo", e.target.value);
+                          if(erroresCampos.motivo) setErroresCampos(prev => ({...prev, motivo: null})); // Limpia error al escribir
+                        }} 
+                        style={{ width: "100%", boxSizing: "border-box", padding: 10, borderRadius: 8, border: `1px solid ${erroresCampos.motivo ? "#ef4444" : !datosClinico.motivo ? "#fca5a5" : "#bae6fd"}` }} 
+                      />
+                      {erroresCampos.motivo && (
+                        <span style={{ color: "#ef4444", fontSize: 11, display: "block", marginTop: 4, fontWeight: 600 }}>{erroresCampos.motivo}</span>
+                      )}
+                    </div>
+
+                    <div>
+                      <select 
+                        value={datosClinico.idEstadoMascota} 
+                        onChange={e => {
+                          updateClinical("idEstadoMascota", e.target.value);
+                          if(erroresCampos.idEstadoMascota) setErroresCampos(prev => ({...prev, idEstadoMascota: null}));
+                        }} 
+                        style={{ width: "100%", boxSizing: "border-box", padding: 10, borderRadius: 8, border: `1px solid ${erroresCampos.idEstadoMascota ? "#ef4444" : !datosClinico.idEstadoMascota ? "#fca5a5" : "#bae6fd"}` }}
+                      >
+                        <option value="">Estado del paciente *</option>
+                        {estadosMascota.map(estado => (
+                          <option key={estado.idEstadoMascota} value={estado.idEstadoMascota}>{estado.descripcion}</option>
+                        ))}
+                      </select>
+                      {erroresCampos.idEstadoMascota && (
+                        <span style={{ color: "#ef4444", fontSize: 11, display: "block", marginTop: 4, fontWeight: 600 }}>{erroresCampos.idEstadoMascota}</span>
+                      )}
+                    </div>
                   </div>
 
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    <input type="number" placeholder="Peso (kg)" value={datosClinico.peso} onChange={e => updateClinical("peso", e.target.value)} style={{ padding: 10, borderRadius: 8, border: "1px solid #bae6fd" }} />
-                    <input type="number" placeholder="Temp (°C)" value={datosClinico.temperatura} onChange={e => updateClinical("temperatura", e.target.value)} style={{ padding: 10, borderRadius: 8, border: "1px solid #bae6fd" }} />
+                    <div>
+                      <input 
+                        type="number" 
+                        placeholder="Peso (kg)" 
+                        value={datosClinico.peso} 
+                        onChange={e => {
+                          updateClinical("peso", e.target.value);
+                          if(erroresCampos.peso) setErroresCampos(prev => ({...prev, peso: null}));
+                        }} 
+                        style={{ width: "100%", boxSizing: "border-box", padding: 10, borderRadius: 8, border: `1px solid ${erroresCampos.peso ? "#ef4444" : "#bae6fd"}` }} 
+                      />
+                      {erroresCampos.peso && (
+                        <span style={{ color: "#ef4444", fontSize: 11, display: "block", marginTop: 4, fontWeight: 600 }}>{erroresCampos.peso}</span>
+                      )}
+                    </div>
+
+                    <div>
+                      <input 
+                        type="number" 
+                        placeholder="Temp (°C)" 
+                        value={datosClinico.temperatura} 
+                        onChange={e => {
+                          updateClinical("temperatura", e.target.value);
+                          if(erroresCampos.temperatura) setErroresCampos(prev => ({...prev, temperatura: null}));
+                        }} 
+                        style={{ width: "100%", boxSizing: "border-box", padding: 10, borderRadius: 8, border: `1px solid ${erroresCampos.temperatura ? "#ef4444" : "#bae6fd"}` }} 
+                      />
+                      {erroresCampos.temperatura && (
+                        <span style={{ color: "#ef4444", fontSize: 11, display: "block", marginTop: 4, fontWeight: 600 }}>{erroresCampos.temperatura}</span>
+                      )}
+                    </div>
                   </div>
 
-                  <textarea placeholder="Síntomas..." value={datosClinico.sintomas} onChange={e => updateClinical("sintomas", e.target.value)} style={{ padding: 10, borderRadius: 8, border: "1px solid #bae6fd", resize: "vertical" }} />
-                  <textarea placeholder="Diagnóstico principal *" value={datosClinico.diagnostico} onChange={e => updateClinical("diagnostico", e.target.value)} style={{ padding: 10, borderRadius: 8, border: `1px solid ${!datosClinico.diagnostico ? "#fca5a5" : "#bae6fd"}`, resize: "vertical" }} />
+                  <div>
+                    <textarea 
+                      placeholder="Síntomas..." 
+                      value={datosClinico.sintomas} 
+                      onChange={e => updateClinical("sintomas", e.target.value)} 
+                      style={{ width: "100%", boxSizing: "border-box", padding: 10, borderRadius: 8, border: "1px solid #bae6fd", resize: "vertical" }} 
+                    />
+                  </div>
 
+                  <div>
+                    <textarea 
+                      placeholder="Diagnóstico principal *" 
+                      value={datosClinico.diagnostico} 
+                      onChange={e => {
+                        updateClinical("diagnostico", e.target.value);
+                        if(erroresCampos.diagnostico) setErroresCampos(prev => ({...prev, diagnostico: null}));
+                      }} 
+                      style={{ width: "100%", boxSizing: "border-box", padding: 10, borderRadius: 8, border: `1px solid ${erroresCampos.diagnostico ? "#ef4444" : !datosClinico.diagnostico ? "#fca5a5" : "#bae6fd"}`, resize: "vertical" }} 
+                    />
+                    {erroresCampos.diagnostico && (
+                      <span style={{ color: "#ef4444", fontSize: 11, display: "block", marginTop: 4, fontWeight: 600 }}>{erroresCampos.diagnostico}</span>
+                    )}
+                  </div>
                   {/* SECCIÓN TRATAMIENTOS */}
                   <div style={{ marginTop: 12 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
