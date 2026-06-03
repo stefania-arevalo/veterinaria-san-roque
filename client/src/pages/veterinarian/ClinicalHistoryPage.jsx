@@ -221,7 +221,15 @@ function MedicationPickerModal({ isOpen, prodPres, onSelect, onClose }) {
               ? `${pp.Presentacion.tipo || ""} ${pp.Presentacion.formato || ""}`.trim()
               : pp?.presentacion || pp?.formato || "";
             const precio = parseFloat(pp?.precio || 0);
-            const stock  = pp?.stock ?? pp?.Product?.stock ?? null;
+            const stock = (() => {
+              const lotes = pp?.Product?.Lotes || [];
+              const hoy = new Date();
+              const vigentes = lotes.filter(l =>
+                l.stock > 0 && (!l.fechaVencimiento || new Date(l.fechaVencimiento) > hoy)
+              );
+              if (!vigentes.length) return 0;
+              return vigentes.reduce((sum, l) => sum + Number(l.stock), 0);
+            })();
             const sinStock = stock != null && stock <= 0;
             const q = getQty(id);
 
@@ -281,9 +289,7 @@ function MedicationPickerModal({ isOpen, prodPres, onSelect, onClose }) {
 }
 
 // ─── VaccinePickerModal ───────────────────────────────────────────────────────
-// Modal estilo inventario para elegir una vacuna — estética ámbar/verde
-
-function VaccinePickerModal({ isOpen, vaccines, onSelect, onClose }) {
+function VaccinePickerModal({ isOpen, vaccines, onSelect, onClose, idEspecie }) {
   const [search, setSearch] = useState("");
 
   useEffect(() => { if (isOpen) setSearch(""); }, [isOpen]);
@@ -291,6 +297,10 @@ function VaccinePickerModal({ isOpen, vaccines, onSelect, onClose }) {
   if (!isOpen) return null;
 
   const filtered = vaccines.filter((v) => {
+    // Filtro por especie: null o 0 se considera universal (aplica a todas)
+    const coincideEspecie = !v.idEspecie || !idEspecie || Number(v.idEspecie) === Number(idEspecie);
+    if (!coincideEspecie) return false;
+    
     const label = getVaccineLabel(v).toLowerCase();
     const enf   = (v?.enfermedadPreventiva || "").toLowerCase();
     const q     = search.toLowerCase();
@@ -308,7 +318,7 @@ function VaccinePickerModal({ isOpen, vaccines, onSelect, onClose }) {
         boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
         display: "flex", flexDirection: "column", overflow: "hidden", zIndex: 2001,
       }}>
-        {/* Header ámbar */}
+        {/* Header */}
         <div style={{ background: C.green900, padding: "18px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ background: "rgba(255,255,255,0.12)", borderRadius: 8, width: 38, height: 38, display: "flex", alignItems: "center", justifyContent: "center", color: "white" }}>
@@ -342,40 +352,57 @@ function VaccinePickerModal({ isOpen, vaccines, onSelect, onClose }) {
         </div>
 
         {/* Grid de vacunas */}
-        <div style={{ overflowY: "auto", padding: 20, flex: 1, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 14, alignContent: "start" }}>
+        <div style={{ overflowY: "auto", padding: 20, flex: 1, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 14, alignContent: "start" }}>
           {filtered.length === 0 ? (
             <div style={{ gridColumn: "1/-1", textAlign: "center", padding: 40, fontSize: 13, color: C.muted }}>Sin resultados</div>
           ) : filtered.map((v) => {
-            const vid   = v.idVacuna ?? v.idProducto;
+            const vid    = v.idVacuna ?? v.idProducto;
             const nombre = getVaccineLabel(v);
-            const enf   = v?.enfermedadPreventiva || "";
-            const dosis = v?.dosis || "";
+            const enf    = v?.enfermedadPreventiva || "";
+            // ── ACTUALIZADO: usando volumenDosis de tu BD ──
+            const volumen = v?.volumenDosis || ""; 
 
             return (
               <div key={vid} style={{
                 background: C.white, border: `0.5px solid ${C.amberBorder}`,
                 borderRadius: 10, padding: "14px 16px",
                 display: "flex", flexDirection: "column", justifyContent: "space-between",
-                minHeight: 130,
+                minHeight: 140,
               }}>
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 6 }}>
                     <span style={{ color: C.amber }}>{Ic.syringe}</span>
                     <div style={{ fontWeight: 600, fontSize: 14, color: C.text, lineHeight: 1.3 }}>{nombre}</div>
                   </div>
+                  
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 6 }}>
                     {enf && (
                       <span style={{ background: C.amberBg, color: C.amber, borderRadius: 5, padding: "2px 7px", fontSize: 11, border: `0.5px solid ${C.amberBorder}` }}>
                         Previene: {enf}
                       </span>
                     )}
-                    {dosis && (
-                      <span style={{ background: C.green100, color: C.green800, borderRadius: 5, padding: "2px 7px", fontSize: 11, border: `0.5px solid ${C.green200}` }}>
-                        {dosis}
+                    
+                    {/* Badge de Volumen Dosis */}
+                    {volumen && (
+                      <span style={{ background: C.green100, color: C.green800, borderRadius: 5, padding: "2px 7px", fontSize: 11, border: `0.5px solid ${C.green200}`, fontWeight: 500 }}>
+                        {volumen}
+                      </span>
+                    )}
+
+                    {/* ── 🎯 AGREGADO AQUÍ: Badge de Especie Canino / Felino ── */}
+                    {v.idEspecie && (
+                      <span style={{
+                        background: Number(v.idEspecie) === 1 ? "#dbeafe" : "#dcfce7",
+                        color: Number(v.idEspecie) === 1 ? "#1e40af" : "#166534",
+                        borderRadius: 5, padding: "2px 7px", fontSize: 11, fontWeight: 500,
+                        border: `0.5px solid ${Number(v.idEspecie) === 1 ? "#93c5fd" : C.green200}`
+                      }}>
+                        {Number(v.idEspecie) === 1 ? "🐱 Felino" : "🐶 Canino"}
                       </span>
                     )}
                   </div>
                 </div>
+                
                 <button
                   onClick={() => { onSelect(v); onClose(); }}
                   style={{
@@ -624,6 +651,7 @@ function VaccineForm({ initial, idHistorial, vaccines, onSave, onCancel }) {
         vaccines={vaccines}
         onSelect={handlePickVaccine}
         onClose={() => setPickerOpen(false)}
+        idEspecie={idEspecie}
       />
 
       <div style={{ background: C.amberBg, border: `1px solid ${C.amberBorder}`, borderRadius: 10, padding: 16, marginBottom: 12 }}>
@@ -1366,6 +1394,7 @@ function PatientHistory({ mascota, onBack }) {
                                       vaccines={vaccines}
                                       onSave={handleSaveVac}
                                       onCancel={() => { setShowVacForm(null); setEditVac(null); }}
+                                      idEspecie={mascota?.Raza?.idEspecie ?? mascota?.idEspecie}
                                     />
                                   )}
 
@@ -1514,6 +1543,7 @@ function PatientHistory({ mascota, onBack }) {
               vaccines={vaccines}
               onSave={handleSaveVac}
               onCancel={() => { setShowVacForm(null); setEditVac(null); }}
+              idEspecie={mascota?.Raza?.idEspecie ?? mascota?.idEspecie}
             />
           )}
 
@@ -1559,6 +1589,7 @@ function PatientHistory({ mascota, onBack }) {
                             vaccines={vaccines}
                             onSave={handleSaveVac}
                             onCancel={() => { setShowVacForm(null); setEditVac(null); }}
+                            idEspecie={mascota?.Raza?.idEspecie ?? mascota?.idEspecie}
                           />
                         )}
 

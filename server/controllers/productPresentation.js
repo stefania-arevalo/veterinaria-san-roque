@@ -17,14 +17,20 @@ async function getAllProdPres(req, res, next) {
       const list = await ProductPresentation.findAll({
         where: { activo: true },
         include: [
-          { 
+          {
             model: Product,
             attributes: ["idProducto", "nombre"],
-    
-            include: [{ 
-              model: Medication, 
-              as: "Medicamento" 
-            }]
+            include: [
+              { model: Medication, as: "Medicamento" },
+              // Agregar esto para traer el stock del lote vigente:
+              {
+                model: Batch,   // require("../models/batch") arriba
+                as: "Lotes",
+                attributes: ["stock", "fechaVencimiento"],
+                where: { activo: true },
+                required: false,  // LEFT JOIN — si no tiene lotes igual aparece
+              }
+            ]
           },
           { model: Presentation, as: "Presentacion", attributes: ["idPresentacion", "tipo", "formato"] },
         ],
