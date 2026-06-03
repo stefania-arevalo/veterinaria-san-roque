@@ -901,24 +901,26 @@ function AttendServiceModal({ cita, staff, onClose, onSave }) {
       } catch (e) {
         console.error("Error en handleUpdateStatus:", e.response?.data || e);
         console.error("Detalle errores:", JSON.stringify(e.response?.data, null, 2));
+        // ── 🎯 EL CAMBIO SE CORRIGE ACÁ ──
         if (e.response && e.response.status === 400) {
           const backendErrors = e.response.data?.errors;
           
           if (Array.isArray(backendErrors)) {
-            // Mapeamos los errores usando la propiedad 'path' como clave (ej: erroresCampos.motivo)
             const mapaErrores = {};
+            
+            // Mapeamos los errores que envía express-validator al formato clave:valor
             backendErrors.forEach(err => {
               mapaErrores[err.path] = err.msg;
             });
             
-            setErroresCampos(mapaErrores);
-            setAlertMsg({ type: "error", text: "Por favor, corrige los errores en los campos de la ficha clínica." });
+            setErroresCampos(mapaErrores); // 1. Esto activa automáticamente tus estilos en el JSX
+            setFichaExpandida(true);       // 2. Abre la ficha colapsable para que se vean las alertas
             
-            // Opcional: Expandir la ficha automáticamente si estaba cerrada para que el veterinario vea los errores
-            setFichaExpandida(true);
-            return;
+            return; // 🛑 3. Detiene la ejecución para evitar que se ejecute la alerta genérica de abajo
           }
         }
+
+        // Esto sólo se ejecutará ante fallas críticas ajenas al formulario (Ej: Error 500)
         setAlertMsg({ type: "error", text: e.response?.data?.msg || "Error al actualizar." });
       } finally {
         setSaving(null);
