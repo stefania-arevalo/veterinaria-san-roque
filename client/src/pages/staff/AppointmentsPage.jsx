@@ -920,6 +920,18 @@ function AttendServiceModal({ cita, staff, onClose, onSave }) {
           }
         }
 
+        // Por si acaso el backend alguna vez responde con array, dejamos este soporte:
+        if (Array.isArray(backendErrors)) {
+          const mapaErrores = {};
+          backendErrors.forEach(err => {
+            mapaErrores[err.path || err.param] = err.msg;
+          });
+          setErroresCampos(mapaErrores);
+          setFichaExpandida(true);
+          return;
+        }
+      }
+
         // Esto sólo se ejecutará ante fallas críticas ajenas al formulario (Ej: Error 500)
         setAlertMsg({ type: "error", text: e.response?.data?.msg || "Error al actualizar." });
       } finally {
