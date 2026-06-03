@@ -289,7 +289,7 @@ function MedicationPickerModal({ isOpen, prodPres, onSelect, onClose }) {
 }
 
 // ─── VaccinePickerModal ───────────────────────────────────────────────────────
-function VaccinePickerModal({ isOpen, vaccines, aplicadas = [], onSelect, onClose, idEspecie, mostrarTodasDefault = false  }) {
+function VaccinePickerModal({ isOpen, vaccines, aplicadas = [], onSelect, onClose, idEspecie }) {
   const [search, setSearch] = useState("");
   const [mostrarTodas, setMostrarTodas] = useState(mostrarTodasDefault);
 
