@@ -289,24 +289,13 @@ function MedicationPickerModal({ isOpen, prodPres, onSelect, onClose }) {
 }
 
 // ─── VaccinePickerModal ───────────────────────────────────────────────────────
-function VaccinePickerModal({ isOpen, vaccines, onSelect, onClose, idEspecie }) {
+function VaccinePickerModal({ isOpen, vaccines, aplicadas = [], onSelect, onClose, idEspecie, mostrarTodasDefault = false  }) {
   const [search, setSearch] = useState("");
+  const [mostrarTodas, setMostrarTodas] = useState(mostrarTodasDefault);
 
   useEffect(() => { if (isOpen) setSearch(""); }, [isOpen]);
 
   if (!isOpen) return null;
-
-  const filtered = vaccines.filter((v) => {
-    // Filtro por especie: null o 0 se considera universal (aplica a todas)
-    const mEspecie = idEspecie ? Number(idEspecie) : null;
-    const coincideEspecie = !v.idEspecie || !mEspecie || Number(v.idEspecie) === mEspecie;
-    if (!coincideEspecie) return false;
-
-    const label = getVaccineLabel(v).toLowerCase();
-    const enf   = (v?.enfermedadPreventiva || "").toLowerCase();
-    const q     = search.toLowerCase();
-    return !q || label.includes(q) || enf.includes(q);
-  });
 
   // Función que decide si una vacuna es "necesaria" para esta mascota
   function esNecesaria(v) {
@@ -336,6 +325,17 @@ function VaccinePickerModal({ isOpen, vaccines, onSelect, onClose, idEspecie }) 
     return diasHastaRefuerzo <= 30;
   }
 
+  const filtered = vaccines.filter((v) => {
+    const mEspecie = idEspecie ? Number(idEspecie) : null;
+    const coincideEspecie = !v.idEspecie || !mEspecie || Number(v.idEspecie) === mEspecie;
+    if (!coincideEspecie) return false;
+    const label = getVaccineLabel(v).toLowerCase();
+    const enf   = (v?.enfermedadPreventiva || "").toLowerCase();
+    const q     = search.toLowerCase();
+    const coincideBusqueda = !q || label.includes(q) || enf.includes(q);
+    return coincideBusqueda && (mostrarTodas || esNecesaria(v));
+  });
+
   return (
     <>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,30,20,0.55)", backdropFilter: "blur(6px)", zIndex: 2000 }} />
@@ -355,7 +355,15 @@ function VaccinePickerModal({ isOpen, vaccines, onSelect, onClose, idEspecie }) 
             </div>
             <div>
               <h2 style={{ margin: 0, fontSize: 17, fontWeight: 600, color: "white" }}>Seleccionar Vacuna</h2>
-              <p style={{ margin: 0, fontSize: 12, color: "rgba(255,255,255,0.6)", marginTop: 2 }}>{filtered.length} vacunas disponibles</p>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
+                <p style={{ margin: 0, fontSize: 12, color: "rgba(255,255,255,0.6)" }}>{filtered.length} vacunas disponibles</p>
+                <button
+                  onClick={() => setMostrarTodas(p => !p)}
+                  style={{ fontSize: 11, padding: "2px 10px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.3)", background: mostrarTodas ? "rgba(255,255,255,0.2)" : "transparent", color: "rgba(255,255,255,0.8)", cursor: "pointer", fontWeight: 600 }}
+                >
+                  {mostrarTodas ? "Solo pendientes" : "Ver todas"}
+                </button>
+              </div>
             </div>
           </div>
           <button onClick={onClose} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "white", width: 34, height: 34, borderRadius: 7, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -677,6 +685,7 @@ function VaccineForm({ initial, idHistorial, vaccines, onSave, onCancel, idEspec
       <VaccinePickerModal
         isOpen={pickerOpen}
         vaccines={vaccines}
+        aplicadas={aplicadas} 
         onSelect={handlePickVaccine}
         onClose={() => setPickerOpen(false)}
         idEspecie={idEspecie}
