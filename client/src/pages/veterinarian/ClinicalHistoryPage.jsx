@@ -301,7 +301,7 @@ function VaccinePickerModal({ isOpen, vaccines, onSelect, onClose, idEspecie }) 
     const mEspecie = idEspecie ? Number(idEspecie) : null;
     const coincideEspecie = !v.idEspecie || !mEspecie || Number(v.idEspecie) === mEspecie;
     if (!coincideEspecie) return false;
-    
+
     const label = getVaccineLabel(v).toLowerCase();
     const enf   = (v?.enfermedadPreventiva || "").toLowerCase();
     const q     = search.toLowerCase();
@@ -587,7 +587,7 @@ function TreatmentForm({ initial, idHistorial, tiposTrat, estadosTrat, onSave, o
 
 // ─── VaccineForm ──────────────────────────────────────────────────────────────
 
-function VaccineForm({ initial, idHistorial, vaccines, onSave, onCancel }) {
+function VaccineForm({ initial, idHistorial, vaccines, onSave, onCancel, idEspecie }) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [selectedVac, setSelectedVac] = useState(null);
   const [form, setForm] = useState({ idHistorial, idVacuna: "", dosis: "", fechaAplicacion: "", precioAplicado: "", cobrada: "0" });
