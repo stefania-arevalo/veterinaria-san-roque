@@ -900,27 +900,9 @@ function AttendServiceModal({ cita, staff, onClose, onSave }) {
 
       } catch (e) {
         console.error("Error en handleUpdateStatus:", e.response?.data || e);
-        console.error("Detalle errores:", JSON.stringify(e.response?.data, null, 2));
-        // ── 🎯 EL CAMBIO SE CORRIGE ACÁ ──
-        if (e.response && e.response.status === 400) {
-          const backendErrors = e.response.data?.errors;
-          
-          if (Array.isArray(backendErrors)) {
-            const mapaErrores = {};
-            
-            // Mapeamos los errores que envía express-validator al formato clave:valor
-            backendErrors.forEach(err => {
-              mapaErrores[err.path] = err.msg;
-            });
-            
-            setErroresCampos(mapaErrores); // 1. Esto activa automáticamente tus estilos en el JSX
-            setFichaExpandida(true);       // 2. Abre la ficha colapsable para que se vean las alertas
-            
-            return; // 🛑 3. Detiene la ejecución para evitar que se ejecute la alerta genérica de abajo
-          }
-        }
-
-        // Por si acaso el backend alguna vez responde con array, dejamos este soporte:
+        
+        const backendErrors = e.response?.data?.errors;
+      
         if (Array.isArray(backendErrors)) {
           const mapaErrores = {};
           backendErrors.forEach(err => {
@@ -928,12 +910,13 @@ function AttendServiceModal({ cita, staff, onClose, onSave }) {
           });
           setErroresCampos(mapaErrores);
           setFichaExpandida(true);
+          setSaving(null); // importante: liberar el saving acá también
           return;
         }
-      }
-
-        // Esto sólo se ejecutará ante fallas críticas ajenas al formulario (Ej: Error 500)
+      
+        // Solo para errores que NO son de validación de campos
         setAlertMsg({ type: "error", text: e.response?.data?.msg || "Error al actualizar." });
+      
       } finally {
         setSaving(null);
       }
