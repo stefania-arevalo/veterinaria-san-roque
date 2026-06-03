@@ -247,8 +247,8 @@ export function CarnetVacunal({ mascota, vacunas, aplicadas }) {
             ["Paciente",       mascota.nombre],
             ["Propietario",    mascota.Dueño ? `${mascota.Dueño.nombres} ${mascota.Dueño.apellidos}` : "—"],
             ["Especie / Raza", `${mascota.Raza?.Especie?.nombre || "—"} / ${mascota.Raza?.nombre || "—"}`],
-            ["Nacimiento",     mascota.fechaNacimiento ? fmtFecha(mascota.fechaNacimiento) : "—"],
-            ["Tamaño",         mascota.Tamanio?.nombre || "—"],
+            ["Nacimiento",     mascota.fechaNac ? fmtFecha(mascota.fechaNac) : "—"],
+            ["Tamaño",         mascota.Tamaño?.nombre || "—"],
           ].map(([k, v]) => (
             <div key={k}>
               <div style={{ fontSize: 10, fontWeight: 700, color: C.green800, textTransform: "uppercase", letterSpacing: "0.05em" }}>{k}</div>
