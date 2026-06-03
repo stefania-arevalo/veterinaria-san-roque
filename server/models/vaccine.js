@@ -51,7 +51,7 @@ const Vaccine = sequelize.define("Vaccine", {
     timestamps: false,
     hooks: {
         beforeValidate: (instance) => {
-            if (instance.dosis) instance.dosis = instance.dosis.trim();
+            if (instance.volumenDosis) instance.volumenDosis = instance.volumenDosis.trim();
             if (instance.enfermedadPreventiva) {
                 const clean = instance.enfermedadPreventiva.trim();
                 instance.enfermedadPreventiva = clean.charAt(0).toUpperCase() + clean.slice(1).toLowerCase();
