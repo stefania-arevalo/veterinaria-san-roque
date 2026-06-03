@@ -308,6 +308,34 @@ function VaccinePickerModal({ isOpen, vaccines, onSelect, onClose, idEspecie }) 
     return !q || label.includes(q) || enf.includes(q);
   });
 
+  // Función que decide si una vacuna es "necesaria" para esta mascota
+  function esNecesaria(v) {
+    const idVac = v.idProducto;
+    const cantEsquema = v.cantidadDosisEsquema || 1;
+    const intervalo = v.intervaloReaplicacionMeses || 12;
+
+    const misAplicaciones = aplicadas
+      .filter((a) => Number(a.Vacuna?.idProducto ?? a.idVacuna) === Number(idVac))
+      .sort((a, b) => new Date(a.fechaAplicacion) - new Date(b.fechaAplicacion));
+
+    const dosisAplicadas = misAplicaciones.length;
+
+    // Esquema primario incompleto → necesaria
+    if (dosisAplicadas < cantEsquema) return true;
+
+    // Esquema completo → revisar refuerzo
+    const ultima = misAplicaciones.at(-1);
+    if (!ultima) return true;
+
+    const fechaRefuerzo = new Date(`${ultima.fechaAplicacion}T00:00:00`);
+    fechaRefuerzo.setMonth(fechaRefuerzo.getMonth() + intervalo);
+
+    const diasHastaRefuerzo = (fechaRefuerzo - new Date()) / (1000 * 60 * 60 * 24);
+
+    // Vencida o próxima (dentro de 30 días) → mostrar
+    return diasHastaRefuerzo <= 30;
+  }
+
   return (
     <>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,30,20,0.55)", backdropFilter: "blur(6px)", zIndex: 2000 }} />
@@ -586,8 +614,7 @@ function TreatmentForm({ initial, idHistorial, tiposTrat, estadosTrat, onSave, o
 }
 
 // ─── VaccineForm ──────────────────────────────────────────────────────────────
-
-function VaccineForm({ initial, idHistorial, vaccines, onSave, onCancel, idEspecie }) {
+function VaccineForm({ initial, idHistorial, vaccines, onSave, onCancel, idEspecie, aplicadas = []  }) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [selectedVac, setSelectedVac] = useState(null);
   const [form, setForm] = useState({ idHistorial, idVacuna: "", dosis: "", fechaAplicacion: "", precioAplicado: "", cobrada: "0" });
@@ -1393,6 +1420,7 @@ function PatientHistory({ mascota, onBack }) {
                                       initial={editVac}
                                       idHistorial={h.idHistorial}
                                       vaccines={vaccines}
+                                      aplicadas={vacunasPlenas} 
                                       onSave={handleSaveVac}
                                       onCancel={() => { setShowVacForm(null); setEditVac(null); }}
                                       idEspecie={mascota?.Raza?.idEspecie ?? mascota?.idEspecie}
@@ -1545,6 +1573,7 @@ function PatientHistory({ mascota, onBack }) {
               onSave={handleSaveVac}
               onCancel={() => { setShowVacForm(null); setEditVac(null); }}
               idEspecie={mascota?.Raza?.idEspecie ?? mascota?.idEspecie}
+              aplicadas={vacunasPlenas} 
             />
           )}
 
