@@ -1,17 +1,8 @@
-// ─── CarnetVacunal ────────────────────────────────────────────────────────────
-// Props:
-//   mascota      — objeto de la mascota (con Raza.Especie, Dueño, etc.)
-//   vacunas      — catálogo GET /vaccines (con cantidadDosisEsquema, intervaloReaplicacionMeses)
-//   aplicadas    — todas las VACUNAS_APLICADAS de esta mascota (con v.Vacuna.idProducto)
-//
-// Uso dentro de PatientHistory, al inicio del tab "vacunas":
-//   <CarnetVacunal mascota={mascota} vacunas={vaccines} aplicadas={vacunasPlenas} />
-
 import { useRef, useState } from "react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
-// Colores (mismo objeto C del archivo padre — copiá solo los que uses o importalo)
+// Colores del sistema
 const C = {
   bg: "#f0f4f1", white: "#ffffff",
   green900: "#1a3d28", green800: "#1f5c38", green700: "#2d6a4f",
@@ -24,16 +15,33 @@ const C = {
   blue: "#185fa5", blueBg: "#e6f1fb", blueBorder: "#b5d4f4",
 };
 
-const fmtFecha = (iso) => {
-  if (!iso) return "—";
-  return new Date(`${iso}T00:00:00`).toLocaleDateString("es-AR", {
-    day: "2-digit", month: "2-digit", year: "numeric",
-  });
+// Formateador seguro de fechas para evitar "Invalid Date"
+const fmtFecha = (dateInput) => {
+  if (!dateInput) return "—";
+  try {
+    // Si ya viene como un ISO string completo o fecha de Sequelize
+    const dateStr = typeof dateInput === "string" && !dateInput.includes("T") 
+      ? `${dateInput}T00:00:00` 
+      : dateInput;
+      
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "—";
+
+    return d.toLocaleDateString("es-AR", {
+      day: "2-digit", month: "2-digit", year: "numeric",
+    });
+  } catch (error) {
+    console.error("Error al formatear fecha:", error);
+    return "—";
+  }
 };
 
-// Agrega meses a una fecha ISO string, devuelve Date
+// Agrega meses a una fecha de forma segura, devuelve Date
 function addMeses(isoStr, meses) {
-  const d = new Date(`${isoStr}T00:00:00`);
+  const dateStr = typeof isoStr === "string" && !isoStr.includes("T") 
+    ? `${isoStr}T00:00:00` 
+    : isoStr;
+  const d = new Date(dateStr);
   d.setMonth(d.getMonth() + meses);
   return d;
 }
@@ -56,12 +64,12 @@ function calcularEstado(filaCarnet) {
   const vencida  = proximoRefuerzo < hoy;
   const proxima  = !vencida && (proximoRefuerzo - hoy) / (1000 * 60 * 60 * 24) <= semanasAntes * 7;
 
-  if (vencida)  return { key: "vencida",    label: "Refuerzo vencido",  color: C.red,   bg: C.redBg   };
+  if (vencida)  return { key: "vencida",    label: "Refuerzo vencido",  color: C.red,    bg: C.redBg   };
   if (proxima)  return { key: "proxima",    label: "Refuerzo próximo",  color: C.amber, bg: C.amberBg };
   return              { key: "alDia",       label: "Al día",             color: C.teal,  bg: C.tealBg  };
 }
 
-export function CarnetVacunal({ mascota, vacunas, aplicadas }) {
+export function CarnetVacunal({ mascota, vacunas = [], aplicadas = [] }) {
   const carnetRef = useRef(null);
   const [exportando, setExportando] = useState(false);
 
@@ -81,7 +89,7 @@ export function CarnetVacunal({ mascota, vacunas, aplicadas }) {
     const misAplicaciones = aplicadas
       .filter((a) => Number(a.Vacuna?.idProducto ?? a.idVacuna) === Number(idVac))
       .sort((a, b) =>
-        new Date(`${a.fechaAplicacion}T00:00:00`) - new Date(`${b.fechaAplicacion}T00:00:00`)
+        new Date(a.fechaAplicacion) - new Date(b.fechaAplicacion)
       );
 
     const dosisAplicadas        = misAplicaciones.length;
@@ -95,12 +103,10 @@ export function CarnetVacunal({ mascota, vacunas, aplicadas }) {
       proximoRefuerzo = addMeses(ultimaAplicacion.fechaAplicacion, intervalo);
     }
 
-    // Próxima dosis del esquema primario: si está incompleto
-    // Mostramos la fecha de la última + intervalo corto (4 semanas) como estimado
-    // En clínicas reales esto es fijo por protocolo, acá lo dejamos libre
+    // Próxima dosis del esquema primario: si está incompleto (~1 mes entre dosis)
     let proximaDosisEsquema = null;
     if (dosisAplicadas > 0 && dosisAplicadas < cantidadDosisEsquema && ultimaAplicacion) {
-      proximaDosisEsquema = addMeses(ultimaAplicacion.fechaAplicacion, 1); // ~1 mes entre dosis
+      proximaDosisEsquema = addMeses(ultimaAplicacion.fechaAplicacion, 1);
     }
 
     return {
@@ -118,7 +124,7 @@ export function CarnetVacunal({ mascota, vacunas, aplicadas }) {
     };
   });
 
-  // Resumen
+  // Resumen de estados
   const total     = filas.length;
   const alDia     = filas.filter((f) => calcularEstado(f).key === "alDia").length;
   const problemas = filas.filter((f) => ["vencida", "proxima", "incompleta", "sinIniciar"].includes(calcularEstado(f).key)).length;
@@ -138,7 +144,6 @@ export function CarnetVacunal({ mascota, vacunas, aplicadas }) {
       const pdfW = pdf.internal.pageSize.getWidth();
       const pdfH = (canvas.height * pdfW) / canvas.width;
 
-      // Si es más largo que A4, agregamos páginas
       const pageH = pdf.internal.pageSize.getHeight();
       if (pdfH <= pageH) {
         pdf.addImage(imgData, "PNG", 0, 0, pdfW, pdfH);
@@ -151,7 +156,7 @@ export function CarnetVacunal({ mascota, vacunas, aplicadas }) {
         }
       }
 
-      pdf.save(`carnet_vacunal_${mascota.nombre}_${new Date().toISOString().slice(0, 10)}.pdf`);
+      pdf.save(`carnet_vacunal_${mascota?.nombre || "mascota"}_${new Date().toISOString().slice(0, 10)}.pdf`);
     } catch (e) {
       console.error("Error generando PDF:", e);
     } finally {
@@ -225,18 +230,18 @@ export function CarnetVacunal({ mascota, vacunas, aplicadas }) {
           </div>
           <div style={{ textAlign: "right" }}>
             <div style={{ fontSize: 24, marginBottom: 4 }}>
-              {mascota.Raza?.Especie?.nombre?.toLowerCase().includes("gato") ? "🐱"
-                : mascota.Raza?.Especie?.nombre?.toLowerCase().includes("ave") ? "🐦"
+              {mascota?.Raza?.Especie?.nombre?.toLowerCase().includes("gato") ? "🐱"
+                : mascota?.Raza?.Especie?.nombre?.toLowerCase().includes("ave") ? "🐦"
                 : "🐶"}
             </div>
-            <div style={{ fontWeight: 700, fontSize: 16 }}>{mascota.nombre}</div>
+            <div style={{ fontWeight: 700, fontSize: 16 }}>{mascota?.nombre}</div>
             <div style={{ fontSize: 12, opacity: 0.7 }}>
-              {mascota.Raza?.Especie?.nombre} · {mascota.Raza?.nombre || "Sin raza"}
+              {mascota?.Raza?.Especie?.nombre || "—"} · {mascota?.Raza?.nombre || "Sin raza"}
             </div>
           </div>
         </div>
 
-        {/* Datos del paciente */}
+        {/* Datos del paciente actualizados con Sequelize */}
         <div style={{
           padding: "14px 24px",
           background: C.green100,
@@ -244,11 +249,11 @@ export function CarnetVacunal({ mascota, vacunas, aplicadas }) {
           display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12,
         }}>
           {[
-            ["Paciente",       mascota.nombre],
-            ["Propietario",    mascota.Dueño ? `${mascota.Dueño.nombres} ${mascota.Dueño.apellidos}` : "—"],
-            ["Especie / Raza", `${mascota.Raza?.Especie?.nombre || "—"} / ${mascota.Raza?.nombre || "—"}`],
-            ["Nacimiento",     mascota.fechaNac ? fmtFecha(mascota.fechaNac) : "—"],
-            ["Tamaño",         mascota.Tamaño?.nombre || "—"],
+            ["Paciente",       mascota?.nombre],
+            ["Propietario",    mascota?.Dueño ? `${mascota.Dueño.nombres} ${mascota.Dueño.apellidos}` : "—"],
+            ["Especie / Raza", `${mascota?.Raza?.Especie?.nombre || "—"} / ${mascota?.Raza?.nombre || "—"}`],
+            ["Nacimiento",     fmtFecha(mascota?.fechaNac)],
+            ["Tamaño",         mascota?.AnimalSize?.descripcion || "—"],
           ].map(([k, v]) => (
             <div key={k}>
               <div style={{ fontSize: 10, fontWeight: 700, color: C.green800, textTransform: "uppercase", letterSpacing: "0.05em" }}>{k}</div>
@@ -265,7 +270,7 @@ export function CarnetVacunal({ mascota, vacunas, aplicadas }) {
           display: "flex", gap: 16, flexWrap: "wrap",
         }}>
           {[
-            { label: "Al día",              count: filas.filter(f => calcularEstado(f).key === "alDia").length,      color: C.teal,  bg: C.tealBg },
+            { label: "Al día",            count: filas.filter(f => calcularEstado(f).key === "alDia").length,     color: C.teal,  bg: C.tealBg },
             { label: "Refuerzo próximo",    count: filas.filter(f => calcularEstado(f).key === "proxima").length,    color: C.amber, bg: C.amberBg },
             { label: "Vencidas",            count: filas.filter(f => calcularEstado(f).key === "vencida").length,    color: C.red,   bg: C.redBg },
             { label: "Incompletas",         count: filas.filter(f => calcularEstado(f).key === "incompleta").length, color: C.blue,  bg: C.blueBg },
@@ -296,7 +301,7 @@ export function CarnetVacunal({ mascota, vacunas, aplicadas }) {
               }}>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
 
-                  {/* Indicador de estado (círculo) */}
+                  {/* Indicador de estado */}
                   <div style={{
                     width: 10, height: 10, borderRadius: "50%",
                     background: est.color, flexShrink: 0, marginTop: 5,
@@ -353,11 +358,11 @@ export function CarnetVacunal({ mascota, vacunas, aplicadas }) {
                     </div>
                     {fila.proximoRefuerzo ? (
                       <div style={{ fontSize: 13, fontWeight: 600, color: est.color }}>
-                        {fmtFecha(fila.proximoRefuerzo.toISOString().slice(0, 10))}
+                        {fmtFecha(fila.proximoRefuerzo)}
                       </div>
                     ) : fila.proximaDosisEsquema ? (
                       <div style={{ fontSize: 13, fontWeight: 600, color: C.blue }}>
-                        ~{fmtFecha(fila.proximaDosisEsquema.toISOString().slice(0, 10))}
+                        ~{fmtFecha(fila.proximaDosisEsquema)}
                       </div>
                     ) : (
                       <div style={{ fontSize: 13, color: C.muted }}>
@@ -379,7 +384,7 @@ export function CarnetVacunal({ mascota, vacunas, aplicadas }) {
                   </div>
                 </div>
 
-                {/* Mini historial de aplicaciones */}
+                {/* Historial detallado */}
                 {hayAplicaciones && (
                   <div style={{ marginTop: 10, marginLeft: 24, display: "flex", gap: 6, flexWrap: "wrap" }}>
                     {fila.misAplicaciones.map((a, i) => (
@@ -388,7 +393,7 @@ export function CarnetVacunal({ mascota, vacunas, aplicadas }) {
                         background: C.green100, color: C.green800,
                         border: `0.5px solid ${C.green200}`,
                       }}>
-                        #{i + 1} · {fmtFecha(a.fechaAplicacion)} · {a.dosis}
+                        #{i + 1} · {fmtFecha(a.fechaAplicacion)} · {a.dosis || "Dosis Única"}
                       </span>
                     ))}
                   </div>
