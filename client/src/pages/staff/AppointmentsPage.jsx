@@ -66,14 +66,14 @@ const AgendaVisual = ({ staff, appointments, fechaSeleccionada, onEditCita }) =>
 
     const partes   = fechaSeleccionada.split('-');
     const fecha    = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
-    const dias     = ['Domingo','Lunes','Martes','Miercoles','Jueves','Viernes','Sabado'];
+    const dias     = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sabado'];
     const diaSemana = dias[fecha.getDay()];
 
     // --- FALLBACK en caso de que el backend no tenga horarios ---
     const fallbackClinica = (dia) => {
       if (dia === 'Sabado')
         return [{ horaInicio: '10:00', horaFin: '12:00', turno: 'Mañana' }];
-      if (['Lunes','Martes','Miercoles','Jueves','Viernes'].includes(dia))
+      if (['Lunes','Martes','Miércoles','Jueves','Viernes'].includes(dia))
         return [
           { horaInicio: '09:00', horaFin: '12:30', turno: 'Mañana' },
           { horaInicio: '17:30', horaFin: '21:00', turno: 'Tarde'  },
