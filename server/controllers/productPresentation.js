@@ -13,35 +13,45 @@ async function createProdPres(req, res, next) {
     }
 }
 
+// ─── FUNCIÓN CORREGIDA Y BLINDADA ─────────────────────────────────────────────
 async function getAllProdPres(req, res, next) {
     try {
-      const list = await ProductPresentation.findAll({
-        where: { activo: true },
-        include: [
-          {
-            model: Product,
-            attributes: ["idProducto", "nombre"],
+        const list = await ProductPresentation.findAll({
+            where: { activo: true },
             include: [
-              { model: Medication, as: "Medicamento" },
-              // Agregar esto para traer el stock del lote vigente:
-              {
-                model: Batch,   
-                as: "Lotes",
-                attributes: ["stock", "fechaVencimiento"],
-                where: { activo: true },
-                required: false,  // LEFT JOIN — si no tiene lotes igual aparece
-              }
-            ]
-          },
-          { model: Presentation, as: "Presentacion", attributes: ["idPresentacion", "tipo", "formato"] },
-        ],
-        order: [["idProdPres", "ASC"]],
-      });
-      return res.status(200).send(list);
+                {
+                    model: Product,
+                    attributes: ["idProducto", "nombre"],
+                    include: [
+                        { 
+                            model: Medication, 
+                            as: "Medicamento",
+                            required: false // Evita que si falla o no existe rompa el registro
+                        },
+                        {
+                            model: Batch,   
+                            as: "Lotes",
+                            attributes: ["stock", "fechaVencimiento"],
+                            where: { activo: true },
+                            required: false,  // LEFT JOIN — si no tiene lotes igual aparece
+                        }
+                    ]
+                },
+                { 
+                    model: Presentation, 
+                    as: "Presentacion", 
+                    attributes: ["idPresentacion", "tipo", "formato"] 
+                },
+            ],
+            order: [["idProdPres", "ASC"]],
+        });
+        return res.status(200).send(list);
     } catch (error) {
-      next(error);
+        // Log detallado en la consola del servidor para capturar el error exacto si persiste
+        console.error("❌ Error interno en getAllProdPres de la API:", error);
+        next(error);
     }
-  }
+}
 
 async function getProdPres(req, res, next) {
     try {
@@ -105,7 +115,6 @@ async function getProdPresByProduct(req, res, next) {
         idProducto: r.idProducto,
         idPresentacion: r.idPresentacion,
         precio: parseFloat(r.precio || 0),
-        // Pasamos la relación limpia aquí para que React la lea sin problemas
         Presentacion: r.Presentacion ? {
           tipo: r.Presentacion.tipo,
           formato: r.Presentacion.formato
