@@ -41,7 +41,7 @@ const ProductPresentation = sequelize.define("ProductPresentation", {
     timestamps: false,
     indexes: [
         {
-            name: 'idx_prod_pres_unique', // <--- PARA ACORTAR EL NOMBRE
+            name: 'idx_prod_pres_unique', 
             unique: true,
             fields: ['idProducto', 'idPresentacion'],
             msg: "Esta presentación ya está asignada a este producto."
@@ -49,9 +49,11 @@ const ProductPresentation = sequelize.define("ProductPresentation", {
     ]
 });
 
+// ─── ASOCIACIONES DE MODELOS ─────────────────────────────────────────────────
 ProductPresentation.associate = (models) => {
-    // Conecta con el producto
+    // Conecta con el producto (Agregado alias explícito 'Product' si tu arquitectura lo requiere, o se mantiene por defecto)
     ProductPresentation.belongsTo(models.Product, { foreignKey: 'idProducto' });
+    
     // Conecta con la presentación (tipo, formato, etc.)
     ProductPresentation.belongsTo(models.Presentation, { foreignKey: 'idPresentacion', as: 'Presentacion'});
 };
