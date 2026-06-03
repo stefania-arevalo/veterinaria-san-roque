@@ -2,6 +2,7 @@ const AppliedVaccine = require("../models/appliedVaccine");
 const Batch = require("../models/batch");
 const Product = require("../models/product");
 const Vaccine = require("../models/vaccine"); 
+const ProductPresentation = require("../models/productPresentation");
 const { Op } = require("sequelize");
 const sequelize = require("../db");
 
