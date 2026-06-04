@@ -1067,7 +1067,7 @@ function PatientHistory({ mascota, onBack }) {
   // CRUD
   const handleSaveTrat = async (data, idEx) => {
     if (idEx) await axios.patch(`/treatment/${idEx}`, data, { headers: hdrs() });
-    else      await axios.post("/treatment",          data, { headers: hdrs() });
+    else      await axios.post("/treatments",          data, { headers: hdrs() });
     await reloadPatientData();
     setShowTratForm(null); setEditTrat(null);
   };
