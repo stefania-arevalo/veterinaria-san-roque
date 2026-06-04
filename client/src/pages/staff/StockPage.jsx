@@ -156,6 +156,49 @@ function LoteModal({ lote, onClose, onSave }) {
               </div>
             )}
 
+            {!isView && !isEdit && (
+              <div style={{ 
+                marginTop: 18, padding: "16px 18px", 
+                background: C.green100, borderRadius: 12, 
+                border: `1px solid ${C.green200}` 
+              }}>
+                <h4 style={{ margin: "0 0 12px", fontSize: 12, fontWeight: 700, color: C.green800, textTransform: "uppercase" }}>
+                  Presentación inicial (recomendado)
+                </h4>
+                <div style={{ display: "flex", gap: 10, alignItems: "flex-end" }}>
+                  <div style={{ flex: 2 }}>
+                    <label style={lbl}>Tipo de presentación</label>
+                    <select 
+                      value={presInicial.idPresentacion} 
+                      onChange={e => setPresInicial(p => ({ ...p, idPresentacion: e.target.value }))}
+                      style={{ ...inp, cursor: "pointer" }}
+                    >
+                      <option value="">Seleccionar (opcional)…</option>
+                      {presentaciones.map(p => (
+                        <option key={p.idPresentacion} value={p.idPresentacion}>{p.tipo} — {p.formato}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={lbl}>Precio de venta ($)</label>
+                    <div style={{ position: "relative" }}>
+                      <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: C.muted }}>$</span>
+                      <input 
+                        type="number" min="0" step="0.01"
+                        value={presInicial.precio}
+                        onChange={e => setPresInicial(p => ({ ...p, precio: e.target.value }))}
+                        style={{ ...inp, paddingLeft: 22 }}
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div style={{ fontSize: 11, color: C.muted, marginTop: 8 }}>
+                  Podés agregar más presentaciones después desde "Editar".
+                </div>
+              </div>
+            )}
+
             <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
               {!yaAnulado && (
                 <button
@@ -182,16 +225,16 @@ function LoteModal({ lote, onClose, onSave }) {
 
 // ── Acordeón de lotes + presentaciones ───────────────────────────
 function ProductoAcordeon({ idProducto, canEdit }) {
-  const [open,              setOpen]              = useState(false);
-  const [lotes,             setLotes]             = useState([]);
-  const [presentaciones,    setPresentaciones]    = useState([]);
-  const [loading,           setLoading]           = useState(false);
-  const [loaded,            setLoaded]            = useState(false);
-  const [editingLote,       setEditingLote]       = useState(null);   // lote objeto
-  const [editingPresId,     setEditingPresId]     = useState(null);   // idProdPres
-  const [editingPrecio,     setEditingPrecio]     = useState("");
-  const [savingPres,        setSavingPres]        = useState(false);
-  const [presError,         setPresError]         = useState("");
+  const [open,           setOpen]           = useState(false);
+  const [lotes,          setLotes]          = useState([]);
+  const [presentaciones, setPresentaciones] = useState([]);
+  const [loading,        setLoading]        = useState(false);
+  const [loaded,         setLoaded]         = useState(false);
+  const [editingLote,    setEditingLote]    = useState(null);
+  const [editingPresId,  setEditingPresId]  = useState(null);
+  const [editingPrecio,  setEditingPrecio]  = useState("");
+  const [savingPres,     setSavingPres]     = useState(false);
+  const [presError,      setPresError]      = useState("");
 
   const cargar = async (force = false) => {
     if (loaded && !force) { setOpen(o => !o); return; }
@@ -216,17 +259,10 @@ function ProductoAcordeon({ idProducto, canEdit }) {
     setEditingPrecio(String(p.precio));
     setPresError("");
   };
-
-  const cancelEditPres = () => {
-    setEditingPresId(null);
-    setEditingPrecio("");
-    setPresError("");
-  };
-
+  const cancelEditPres = () => { setEditingPresId(null); setEditingPrecio(""); setPresError(""); };
   const saveEditPres = async (idProdPres) => {
     if (editingPrecio === "" || isNaN(Number(editingPrecio)) || Number(editingPrecio) < 0) {
-      setPresError("Ingresá un precio válido.");
-      return;
+      setPresError("Ingresá un precio válido."); return;
     }
     setSavingPres(true); setPresError("");
     try {
@@ -240,8 +276,18 @@ function ProductoAcordeon({ idProducto, canEdit }) {
     } finally { setSavingPres(false); }
   };
 
+  // ── Cálculos de stock ──────────────────────────────────────────
+  const stockActivo   = lotes.filter(l => l.cantidadDisponible > 0 && new Date(l.fechaVencimiento) >= new Date());
+  const stockTotal    = lotes.reduce((s, l) => s + (l.cantidadDisponible || 0), 0);
+  const loteActivo    = stockActivo.sort((a, b) => new Date(a.fechaVencimiento) - new Date(b.fechaVencimiento))[0];
+  const hayVencidos   = lotes.some(l => new Date(l.fechaVencimiento) < new Date() && l.cantidadDisponible > 0);
+  const hayProxVencer = lotes.some(l => {
+    const d = new Date(l.fechaVencimiento) - new Date();
+    return d > 0 && d < 30 * 24 * 60 * 60 * 1000;
+  });
+
   return (
-    <div style={{ marginTop: 4 }}>
+    <div style={{ marginTop: 6 }}>
       {editingLote && (
         <LoteModal
           lote={editingLote}
@@ -250,117 +296,283 @@ function ProductoAcordeon({ idProducto, canEdit }) {
         />
       )}
 
+      {/* ── Trigger del acordeón ─────────────────────────────── */}
       <button
         onClick={() => cargar()}
-        style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", color: C.green700, fontSize: 12, fontWeight: 600, cursor: "pointer", padding: "3px 0" }}
+        style={{
+          display: "inline-flex", alignItems: "center", gap: 6,
+          background: "none", border: "none",
+          color: C.green700, fontSize: 11.5, fontWeight: 600,
+          cursor: "pointer", padding: "2px 0",
+          textDecoration: "none",
+        }}
       >
-        {loading ? "Cargando…" : open ? "▲ Ocultar detalle" : "▼ Ver lotes y precios"}
+        <span style={{ fontSize: 10, opacity: 0.7 }}>{open ? "▲" : "▼"}</span>
+        {loading ? "Cargando…" : open ? "Ocultar detalle" : "Ver stock y precios"}
+        {/* Alertas rápidas junto al trigger (solo cuando cerrado) */}
+        {!open && loaded && hayVencidos && (
+          <span style={{ fontSize: 9, fontWeight: 800, background: C.redBg, color: C.red, padding: "1px 5px", borderRadius: 3 }}>
+            ⚠ VENCIDO
+          </span>
+        )}
+        {!open && loaded && !hayVencidos && hayProxVencer && (
+          <span style={{ fontSize: 9, fontWeight: 800, background: C.amberBg, color: C.amber, padding: "1px 5px", borderRadius: 3 }}>
+            ⚠ PROX. VENCER
+          </span>
+        )}
       </button>
 
+      {/* ── Panel desplegado ─────────────────────────────────── */}
       {open && (
-        <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{
+          marginTop: 10,
+          border: `1px solid ${C.borderLight}`,
+          borderRadius: 10,
+          overflow: "hidden",
+          background: C.surface,
+        }}>
 
-          {/* ── Presentaciones ───────────────────────────────── */}
+          {/* ══ SECCIÓN: PRECIOS DE VENTA ══════════════════════ */}
           {presentaciones.length > 0 && (
-            <div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
-                Presentaciones y precios de venta
+            <div style={{ borderBottom: `1px solid ${C.borderLight}` }}>
+              {/* Cabecera sección */}
+              <div style={{
+                display: "flex", alignItems: "center", gap: 8,
+                padding: "8px 14px", background: C.white,
+                borderBottom: `1px solid ${C.borderLight}`,
+              }}>
+                <span style={{ fontSize: 11, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  💰 Precios de venta
+                </span>
               </div>
 
               {presError && (
-                <div style={{ marginBottom: 6, padding: "6px 10px", background: C.redBg, border: "1px solid #f7c1c1", borderRadius: 7, fontSize: 12, color: C.red }}>
+                <div style={{ margin: "6px 14px 0", padding: "6px 10px", background: C.redBg, border: "1px solid #f7c1c1", borderRadius: 6, fontSize: 11, color: C.red }}>
                   ⚠️ {presError}
                 </div>
               )}
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                {presentaciones.map(p => (
-                  <div key={p.idProdPres} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", background: C.surface, borderRadius: 7, border: `1px solid ${C.borderLight}`, fontSize: 12 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: C.text, flex: 1 }}>
-                      {p.Presentacion ? `${p.Presentacion.tipo} - ${p.Presentacion.formato}` : `#${p.idPresentacion}`}
-                    </span>
-
-                    {editingPresId === p.idProdPres ? (
-                      /* Edición inline de precio */
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <div style={{ position: "relative" }}>
-                          <span style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", fontSize: 12, color: C.muted }}>$</span>
-                          <input
-                            type="number" min="0" step="0.01"
-                            value={editingPrecio}
-                            onChange={e => { setEditingPrecio(e.target.value); setPresError(""); }}
-                            onKeyDown={e => { if (e.key === "Enter") saveEditPres(p.idProdPres); if (e.key === "Escape") cancelEditPres(); }}
-                            autoFocus
-                            style={{ ...inp, width: 100, padding: "5px 8px 5px 20px", fontSize: 12 }}
-                          />
-                        </div>
-                        <button onClick={() => saveEditPres(p.idProdPres)} disabled={savingPres}
-                          style={{ padding: "4px 9px", borderRadius: 6, border: "none", background: C.green800, color: "white", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
-                          {savingPres ? "…" : "✓"}
-                        </button>
-                        <button onClick={cancelEditPres}
-                          style={{ padding: "4px 9px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.white, color: C.muted, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
-                          ✕
-                        </button>
-                      </div>
-                    ) : (
-                      /* Vista normal */
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ color: C.green800, fontWeight: 700 }}>${fmt(p.precio)}</span>
-                        {canEdit && (
-                          <button onClick={() => startEditPres(p)}
-                            style={{ padding: "3px 8px", borderRadius: 5, border: `1px solid ${C.border}`, background: C.white, color: C.muted, fontSize: 10, fontWeight: 700, cursor: "pointer" }}>
-                            ✏️ Editar precio
-                          </button>
+              {/* Tabla de precios */}
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                <thead>
+                  <tr style={{ background: "#fafcfa" }}>
+                    <th style={{ padding: "6px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase" }}>Presentación</th>
+                    <th style={{ padding: "6px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase" }}>Formato</th>
+                    <th style={{ padding: "6px 14px", textAlign: "right", fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase" }}>Precio unitario</th>
+                    {canEdit && <th style={{ padding: "6px 14px", textAlign: "center", fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase" }}>Acción</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {presentaciones.map((p, i) => (
+                    <tr key={p.idProdPres} style={{
+                      borderTop: i > 0 ? `1px solid ${C.borderLight}` : "none",
+                      background: C.white,
+                    }}>
+                      <td style={{ padding: "9px 14px", fontWeight: 600, color: C.text }}>
+                        {p.Presentacion?.tipo || `Pres. #${p.idPresentacion}`}
+                      </td>
+                      <td style={{ padding: "9px 14px", color: C.muted }}>
+                        {p.Presentacion?.formato || "—"}
+                      </td>
+                      <td style={{ padding: "9px 14px", textAlign: "right" }}>
+                        {editingPresId === p.idProdPres ? (
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 5 }}>
+                            <div style={{ position: "relative" }}>
+                              <span style={{ position: "absolute", left: 7, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: C.muted }}>$</span>
+                              <input
+                                type="number" min="0" step="0.01"
+                                value={editingPrecio}
+                                onChange={e => { setEditingPrecio(e.target.value); setPresError(""); }}
+                                onKeyDown={e => { if (e.key === "Enter") saveEditPres(p.idProdPres); if (e.key === "Escape") cancelEditPres(); }}
+                                autoFocus
+                                style={{ ...inp, width: 100, padding: "5px 7px 5px 18px", fontSize: 12 }}
+                              />
+                            </div>
+                            <button onClick={() => saveEditPres(p.idProdPres)} disabled={savingPres}
+                              style={{ padding: "4px 8px", borderRadius: 5, border: "none", background: C.green800, color: "white", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                              {savingPres ? "…" : "✓"}
+                            </button>
+                            <button onClick={cancelEditPres}
+                              style={{ padding: "4px 8px", borderRadius: 5, border: `1px solid ${C.border}`, background: C.white, color: C.muted, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <span style={{ fontWeight: 700, color: C.green800, fontSize: 13 }}>
+                            ${fmt(p.precio)}
+                          </span>
                         )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                      </td>
+                      {canEdit && (
+                        <td style={{ padding: "9px 14px", textAlign: "center" }}>
+                          {editingPresId !== p.idProdPres && (
+                            <button onClick={() => startEditPres(p)}
+                              style={{ padding: "3px 9px", borderRadius: 5, border: `1px solid ${C.border}`, background: C.white, color: C.muted, fontSize: 10, fontWeight: 700, cursor: "pointer" }}>
+                              ✏️ Editar
+                            </button>
+                          )}
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
 
-          {/* ── Lotes ─────────────────────────────────────────── */}
+          {/* ══ SECCIÓN: LOTES EN STOCK ═════════════════════════ */}
           <div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
-              Lotes en stock
-            </div>
-            {lotes.length === 0 ? (
-              <span style={{ fontSize: 12, color: C.muted, fontStyle: "italic" }}>Sin lotes registrados.</span>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                {lotes.map(l => {
-                  const vencido    = new Date(l.fechaVencimiento) < new Date();
-                  const proxVencer = !vencido && (new Date(l.fechaVencimiento) - new Date()) < 30 * 24 * 60 * 60 * 1000;
-                  const anulado    = l.cantidadDisponible === 0 && !vencido;
-                  return (
-                    <div key={l.idLote} style={{
-                      display: "flex", alignItems: "center", gap: 10,
-                      padding: "6px 12px", borderRadius: 7, fontSize: 12,
-                      background: vencido ? C.redBg : proxVencer ? C.amberBg : C.surface,
-                      border: `1px solid ${vencido ? "#f7c1c1" : proxVencer ? C.amberBorder : C.borderLight}`,
-                    }}>
-                      {l.codigoLote && <span style={{ fontWeight: 600, color: C.text }}>#{l.codigoLote}</span>}
-                      <span style={{ color: C.muted }}>Vence: {fmtFecha(l.fechaVencimiento)}</span>
-                      <span style={{ fontWeight: 700, color: vencido ? C.red : C.green800, marginLeft: "auto" }}>
-                        {l.cantidadDisponible} un.
-                      </span>
-                      {vencido    && <span style={{ fontSize: 10, fontWeight: 700, color: C.red,   background: C.redBg,   padding: "1px 6px", borderRadius: 4 }}>VENCIDO</span>}
-                      {proxVencer && <span style={{ fontSize: 10, fontWeight: 700, color: C.amber, background: C.amberBg, padding: "1px 6px", borderRadius: 4 }}>PRÓXIMO A VENCER</span>}
-                      {anulado    && <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, background: C.surface, padding: "1px 6px", borderRadius: 4, border: `1px solid ${C.border}` }}>ANULADO</span>}
-                      {canEdit && (
-                        <button onClick={() => setEditingLote(l)}
-                          style={{ padding: "3px 8px", borderRadius: 5, border: `1px solid ${C.border}`, background: C.white, color: C.muted, fontSize: 10, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}>
-                          ✏️ Editar
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
+            {/* Cabecera sección con resumen */}
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "8px 14px", background: C.white,
+              borderBottom: `1px solid ${C.borderLight}`,
+            }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                📦 Lotes en stock
+              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {/* Indicador del lote activo (FEFO) */}
+                {loteActivo && (
+                  <span style={{ fontSize: 10, color: C.muted }}>
+                    Usando: <strong style={{ color: C.green800 }}>#{loteActivo.codigoLote || loteActivo.idLote}</strong>
+                    <span style={{ color: C.muted }}> · vence {fmtFecha(loteActivo.fechaVencimiento)}</span>
+                  </span>
+                )}
+                <span style={{
+                  fontSize: 10, fontWeight: 800,
+                  background: stockTotal > 0 ? C.green100 : C.redBg,
+                  color: stockTotal > 0 ? C.green800 : C.red,
+                  padding: "2px 8px", borderRadius: 5,
+                }}>
+                  Total: {stockTotal} un.
+                </span>
               </div>
+            </div>
+
+            {lotes.length === 0 ? (
+              <div style={{ padding: "14px 16px", fontSize: 12, color: C.muted, fontStyle: "italic", textAlign: "center" }}>
+                Sin lotes registrados. Registrá una compra para agregar stock.
+              </div>
+            ) : (
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                <thead>
+                  <tr style={{ background: "#fafcfa" }}>
+                    <th style={{ padding: "6px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase" }}>Código lote</th>
+                    <th style={{ padding: "6px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase" }}>Vencimiento</th>
+                    <th style={{ padding: "6px 14px", textAlign: "right", fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase" }}>Stock disp.</th>
+                    <th style={{ padding: "6px 14px", textAlign: "center", fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase" }}>Estado</th>
+                    {canEdit && <th style={{ padding: "6px 14px", textAlign: "center", fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase" }}>Acción</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...lotes]
+                    .sort((a, b) => new Date(a.fechaVencimiento) - new Date(b.fechaVencimiento))
+                    .map((l, i) => {
+                      const vencido    = new Date(l.fechaVencimiento) < new Date();
+                      const diasRestantes = Math.ceil((new Date(l.fechaVencimiento) - new Date()) / (1000 * 60 * 60 * 24));
+                      const proxVencer = !vencido && diasRestantes <= 30;
+                      const anulado    = l.cantidadDisponible === 0 && !vencido;
+                      const esActivo   = loteActivo?.idLote === l.idLote;
+
+                      // Color de fila
+                      const rowBg = vencido
+                        ? "#fff8f8"
+                        : proxVencer
+                        ? "#fffdf0"
+                        : esActivo
+                        ? "#f2faf4"
+                        : C.white;
+
+                      return (
+                        <tr key={l.idLote} style={{
+                          borderTop: i > 0 ? `1px solid ${C.borderLight}` : "none",
+                          background: rowBg,
+                        }}>
+                          {/* Código lote + indicador FEFO */}
+                          <td style={{ padding: "9px 14px" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              {esActivo && (
+                                <span title="Este es el lote que se descuenta en ventas (FEFO)" style={{
+                                  width: 7, height: 7, borderRadius: "50%",
+                                  background: C.green700, flexShrink: 0,
+                                  boxShadow: `0 0 0 2px ${C.green100}`,
+                                }} />
+                              )}
+                              <span style={{ fontWeight: 600, color: C.text, fontFamily: "monospace", fontSize: 12 }}>
+                                {l.codigoLote ? `#${l.codigoLote}` : `Lote ${l.idLote}`}
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* Fecha vencimiento */}
+                          <td style={{ padding: "9px 14px", color: vencido ? C.red : proxVencer ? C.amber : C.muted }}>
+                            {fmtFecha(l.fechaVencimiento)}
+                            {proxVencer && !vencido && (
+                              <div style={{ fontSize: 10, color: C.amber, fontWeight: 600, marginTop: 1 }}>
+                                Vence en {diasRestantes} día{diasRestantes !== 1 ? "s" : ""}
+                              </div>
+                            )}
+                          </td>
+
+                          {/* Stock */}
+                          <td style={{ padding: "9px 14px", textAlign: "right" }}>
+                            <span style={{
+                              fontWeight: 700, fontSize: 13,
+                              color: vencido || anulado ? C.muted : l.cantidadDisponible > 0 ? C.green800 : C.red,
+                            }}>
+                              {l.cantidadDisponible}
+                              <span style={{ fontSize: 10, fontWeight: 400, color: C.muted }}> un.</span>
+                            </span>
+                          </td>
+
+                          {/* Badge estado */}
+                          <td style={{ padding: "9px 14px", textAlign: "center" }}>
+                            {vencido && l.cantidadDisponible > 0 ? (
+                              <span style={{ fontSize: 9.5, fontWeight: 800, color: C.red, background: C.redBg, padding: "2px 7px", borderRadius: 4 }}>VENCIDO</span>
+                            ) : vencido && l.cantidadDisponible === 0 ? (
+                              <span style={{ fontSize: 9.5, fontWeight: 700, color: C.muted, background: "#f0f0f0", padding: "2px 7px", borderRadius: 4 }}>AGOTADO</span>
+                            ) : proxVencer ? (
+                              <span style={{ fontSize: 9.5, fontWeight: 800, color: C.amber, background: C.amberBg, padding: "2px 7px", borderRadius: 4 }}>PROX. VENCER</span>
+                            ) : anulado ? (
+                              <span style={{ fontSize: 9.5, fontWeight: 700, color: C.muted, background: "#f0f0f0", padding: "2px 7px", borderRadius: 4 }}>ANULADO</span>
+                            ) : esActivo ? (
+                              <span style={{ fontSize: 9.5, fontWeight: 800, color: C.green800, background: C.green100, padding: "2px 7px", borderRadius: 4 }}>● ACTIVO</span>
+                            ) : (
+                              <span style={{ fontSize: 9.5, fontWeight: 600, color: C.muted, background: "#f5f5f5", padding: "2px 7px", borderRadius: 4 }}>EN ESPERA</span>
+                            )}
+                          </td>
+
+                          {/* Acción */}
+                          {canEdit && (
+                            <td style={{ padding: "9px 14px", textAlign: "center" }}>
+                              <button onClick={() => setEditingLote(l)}
+                                style={{ padding: "3px 9px", borderRadius: 5, border: `1px solid ${C.border}`, background: C.white, color: C.muted, fontSize: 10, fontWeight: 700, cursor: "pointer" }}>
+                                ✏️ Editar
+                              </button>
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
             )}
           </div>
+
+          {/* ── Nota FEFO ──────────────────────────────────────── */}
+          {loteActivo && (
+            <div style={{
+              padding: "7px 14px",
+              background: "#f2faf4",
+              borderTop: `1px solid ${C.borderLight}`,
+              fontSize: 10.5, color: C.muted,
+              display: "flex", alignItems: "center", gap: 5,
+            }}>
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: C.green700, flexShrink: 0 }} />
+              Las ventas descontarán automáticamente del lote <strong style={{ color: C.green800 }}>#{loteActivo.codigoLote || loteActivo.idLote}</strong> (próximo a vencer · FEFO).
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -399,6 +611,8 @@ function ProductoModal({ producto, categorias, marcas, presentaciones, onClose, 
 
   const [saving, setSaving] = useState(false);
   const [error,  setError]  = useState("");
+
+  const [presInicial, setPresInicial] = useState({ idPresentacion: "", precio: "" });
 
   useEffect(() => {
     Promise.allSettled([
@@ -456,6 +670,14 @@ function ProductoModal({ producto, categorias, marcas, presentaciones, onClose, 
       } else {
         const res = await axios.post("/product", payload, { headers: headers() });
         idProd = res.data?.idProducto;
+      }
+
+      if (!isEdit && presInicial.idPresentacion && presInicial.precio !== "") {
+        await axios.post("/prod-pres", {
+          idProducto:     idProd,
+          idPresentacion: Number(presInicial.idPresentacion),
+          precio:         parseFloat(presInicial.precio),
+        }, { headers: headers() });
       }
 
       if (esMedicamento) {
