@@ -24,66 +24,58 @@ const getProducts = async (req, res) => {
     try {
         const { search, category, soloVenta } = req.query;
         const whereClause = { activo: true };
-        if (search) whereClause.nombre = { [Op.like]: `%${search}%` };
-        if (category && category !== "all") whereClause.idCategoria = category;
-        if (soloVenta === "true") whereClause.esUsoInterno = 0;
 
+        if (search) whereClause.nombre = { [Op.like]: `%${search}%` };
+        if (category && category !== 'all') whereClause.idCategoria = category;
+        if (soloVenta === 'true') whereClause.esUsoInterno = 0;
+
+        // 1. Buscamos usando los alias exactos que definimos en Product.js
         const products = await Product.findAll({
             where: whereClause,
             include: [
-                {
-                    model: Category,
-                    as: "Categoria",
-                    attributes: ["idCategoria", "descripcion"],
-                },
-                {
-                    model: Brand,
-                    as: "Marca",
-                    // ⚠️ Brand usa "nombre", no "descripcion"
-                    attributes: ["idMarca", "nombre"],
-                },
-                { model: Medication, as: "Medicamento", required: false },
-                { model: Vaccine,    as: "Vacuna",      required: false },
-                {
-                    model: ProductPresentation,
-                    as: "Presentaciones",
+                { model: Category, as: 'Categoria', attributes: ['descripcion'] },
+                { model: Brand, as: 'Marca' }, 
+                { model: Medication, as: 'Medicamento' }, 
+                { model: Vaccine, as: 'Vacuna' },
+                { 
+                    model: ProductPresentation, 
+                    as: 'Presentaciones', // Alias explícito
                     where: { activo: true },
-                    required: false,        // LEFT JOIN — productos sin presentaciones también aparecen
-                    attributes: ["idProdPres", "precio"],
-                    include: [{
-                        model: Presentation,
-                        as: "Presentacion",
-                        attributes: ["tipo", "formato", "cantidad"],
-                    }],
+                    attributes: ['idProdPres', 'precio'],
+                    include: [{ 
+                        model: Presentation, 
+                        as: 'Presentacion',
+                        attributes: ['tipo', 'formato', 'cantidad'] 
+                    }]
                 },
-                {
-                    model: Batch,
-                    as: "Lotes",
-                    attributes: ["idLote", "cantidadDisponible", "codigoLote", "fechaVencimiento"],
-                    // ⚠️ NO filtrar por fechaVencimiento aquí — necesitamos todos los lotes
-                    // para el cálculo de stock total (incluyendo vencidos con cantidad > 0)
-                    required: false,
-                },
-            ],
+                { 
+                    model: Batch, 
+                    as: 'Lotes', 
+                    attributes: ['idLote', 'cantidadDisponible', 'codigoLote', 'fechaVencimiento'],
+                    where: { fechaVencimiento: { [Op.gt]: new Date() } },
+                    required: false
+                }
+            ]
         });
-
-        // Mapeo normalizado: lee siempre los alias exactos del backend
+        
+        // 2. Mapeo Híbrido seguro
         const formattedProducts = products.map(p => {
-            const pJSON = p.toJSON();
-            const firstPres  = pJSON.Presentaciones?.[0];
-            const firstBatch = pJSON.Lotes?.[0];
+            const pJSON = p.toJSON(); 
 
+            // Extraemos leyendo los nombres exactos
+            const firstPres = pJSON.Presentaciones?.[0];
+            const presData = firstPres?.Presentation;
+            const firstBatch = pJSON.Lotes?.[0]; 
+        
             return {
-                ...pJSON,
-                // Normalizar campos de display para el frontend
-                // El frontend ya lee p.Categoria?.descripcion y p.Marca?.nombre
-                stock:     pJSON.Lotes?.reduce((acc, b) => acc + (b.cantidadDisponible || 0), 0) || 0,
-                precio:    firstPres ? parseFloat(firstPres.precio) : 0,
-                idProdPres: firstPres ? firstPres.idProdPres : null,
-                presentacion: firstPres?.Presentacion
-                    ? `${firstPres.Presentacion.tipo} ${firstPres.Presentacion.formato} x ${firstPres.Presentacion.cantidad}`
-                    : null,
-                idLote: firstBatch?.idLote ?? null,
+                ...pJSON, 
+                categoria: pJSON.Categoria?.descripcion || "General",
+                precio: firstPres ? parseFloat(firstPres.precio) : 0,
+                idProdPres: firstPres ? firstPres.idProdPres : null, 
+                // En vez de clavar "Unidad", devolvemos null si no hay presentación para que no estorbe visualmente
+                presentacion: presData ? `${presData.tipo} ${presData.formato} x ${presData.cantidad}` : null,
+                stock: pJSON.Lotes?.reduce((acc, b) => acc + b.cantidadDisponible, 0) || 0,
+                idLote: firstBatch?.idLote ?? null  
             };
         });
 
@@ -109,16 +101,23 @@ async function updateProduct(req, res, next) {
     try {
         const { id } = req.params;
         const product = await Product.findOne({ where: { idProducto: id, activo: true } });
+        
         if (!product) return res.status(404).send({ msg: "El producto no existe o está desactivado." });
 
-        // Detectar cambios — también incluir esUsoInterno y activo
+        // Validación de "No cambios"
+        // Comparamos lo que llega en el body contra lo que tenemos en la instancia
         let hasChanges = false;
-        const fields = ["nombre", "descripcion", "idCategoria", "idMarca", "esUsoInterno", "activo"];
+        const fields = ['nombre', 'descripcion', 'idCategoria', 'idMarca'];
+
         fields.forEach(field => {
             if (req.body[field] !== undefined) {
-                const newVal = typeof req.body[field] === "string" ? req.body[field].trim() : req.body[field];
-                // Usar == para comparar número vs string (ej: idCategoria)
-                if (newVal != product[field]) hasChanges = true;
+                // Normalizamos strings para comparar (evitar espacios)
+                const newVal = typeof req.body[field] === 'string' ? req.body[field].trim() : req.body[field];
+                const oldVal = product[field];
+                
+                if (newVal != oldVal) {
+                    hasChanges = true;
+                }
             }
         });
 
@@ -128,6 +127,7 @@ async function updateProduct(req, res, next) {
 
         await product.update(req.body);
         return res.status(200).send({ msg: "Producto actualizado correctamente.", product });
+
     } catch (error) {
         next(error);
     }
@@ -136,12 +136,13 @@ async function updateProduct(req, res, next) {
 async function deleteProduct(req, res, next) {
     try {
         const { id } = req.params;
+        // Soft delete
         const updated = await Product.update({ activo: false }, { where: { idProducto: id } });
+        
         if (updated[0] === 0) return res.status(404).send({ msg: "Producto no encontrado." });
+        
         return res.status(200).send({ msg: "Producto desactivado correctamente." });
-    } catch (error) {
-        next(error);
-    }
+    } catch (error) { next(error); }
 }
 
 module.exports = {
@@ -149,5 +150,5 @@ module.exports = {
     getProducts,
     getProduct,
     updateProduct,
-    deleteProduct,
+    deleteProduct
 };
