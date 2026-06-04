@@ -317,8 +317,16 @@ function HistorialCompras({ onBack, canAnular }) {
     return compras.filter((c) => {
       if (filtFechaDesde && c.fecha < filtFechaDesde) return false;
       if (filtFechaHasta && c.fecha > filtFechaHasta) return false;
-      if (filtProveedor && String(c.Proveedor?.idProveedor) !== filtProveedor) return false;
-      if (filtVisitador && String(c.Visitador?.idVisitador) !== filtVisitador) return false;
+      if (filtProveedor.trim()) {
+        const q = filtProveedor.toLowerCase();
+        const razon = (c.Proveedor?.razonSocial || "").toLowerCase();
+        if (!razon.includes(q)) return false;
+      }
+      if (filtVisitador.trim()) {
+        const q = filtVisitador.toLowerCase();
+        const nombre = `${c.Visitador?.nombre || ""} ${c.Visitador?.apellido || ""}`.toLowerCase();
+        if (!nombre.includes(q)) return false;
+      }
       return true;
     });
   }, [compras, filtFechaDesde, filtFechaHasta, filtProveedor, filtVisitador]);
@@ -409,23 +417,31 @@ function HistorialCompras({ onBack, canAnular }) {
         {/* Proveedor */}
         <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 180 }}>
           <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.04em" }}>Proveedor</span>
-          <select value={filtProveedor} onChange={e => setFiltProveedor(e.target.value)} style={filtInp}>
-            <option value="">Todos</option>
-            {proveedoresUnicos.map(p => (
-              <option key={p.id} value={p.id}>{p.label}</option>
-            ))}
-          </select>
+          <div style={{ position: "relative" }}>
+            <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", opacity: 0.4, fontSize: 14 }}>🔍</span>
+            <input
+              type="text"
+              placeholder="Buscar proveedor..."
+              value={filtProveedor}
+              onChange={e => setFiltProveedor(e.target.value)}
+              style={{ ...filtInp, paddingLeft: 30, cursor: "text" }}
+            />
+          </div>
         </div>
 
         {/* Visitador */}
         <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 180 }}>
           <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.04em" }}>Visitador</span>
-          <select value={filtVisitador} onChange={e => setFiltVisitador(e.target.value)} style={filtInp}>
-            <option value="">Todos</option>
-            {visitadoresUnicos.map(v => (
-              <option key={v.id} value={v.id}>{v.label}</option>
-            ))}
-          </select>
+          <div style={{ position: "relative" }}>
+            <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", opacity: 0.4, fontSize: 14 }}>🔍</span>
+            <input
+              type="text"
+              placeholder="Buscar visitador..."
+              value={filtVisitador}
+              onChange={e => setFiltVisitador(e.target.value)}
+              style={{ ...filtInp, paddingLeft: 30, cursor: "text" }}
+            />
+          </div>
         </div>
 
         {/* Contador + limpiar */}
