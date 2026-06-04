@@ -21,24 +21,7 @@ const validateCreatePurchase = [
 
   body("hora")
     .notEmpty().withMessage("La hora es obligatoria.")
-    .matches(/^([0-1]\d|2[0-3]):([0-5]\d)$/).withMessage("Formato HH:MM.")
-    .custom((value, { req }) => {
-        if (!req.body.fecha) return true; 
-
-        const fechaCompra = new Date(req.body.fecha);
-        const hoy = new Date();
-        
-        if (fechaCompra.toDateString() === hoy.toDateString()) {
-            const [hora, min] = value.split(':');
-            const horaCompra = new Date();
-            horaCompra.setHours(parseInt(hora), parseInt(min), 0, 0);
-            
-            if (horaCompra < hoy) {
-                throw new Error("No puedes crear una compra en un horario que ya pasó.");
-            }
-        }
-        return true;
-    }),
+    .matches(/^([0-1]\d|2[0-3]):([0-5]\d)$/).withMessage("Formato HH:MM."),
 
   body("iva")
     .notEmpty().withMessage("El IVA es obligatorio.")
