@@ -10,8 +10,8 @@ api.post("/applied-vaccine", [md_auth.asureAuth, md_auth.hasRole([1, 2]), valida
 api.patch("/applied-vaccine/:id", [md_auth.asureAuth, md_auth.hasRole([1, 2]), validateId, validateUpdate, validate], AppliedVaccineController.updateApplied);
 api.delete("/applied-vaccine/:id", [md_auth.asureAuth, md_auth.hasRole([1, 2]), validateId, validate], AppliedVaccineController.deleteApplied);
 
-api.get("/applied-vaccines", [md_auth.asureAuth, md_auth.hasRole([1, 2, 4])], AppliedVaccineController.getAllApplied);
-api.get("/applied-vaccine/:id", [md_auth.asureAuth, md_auth.hasRole([1, 2, 4]), validateId, validate], AppliedVaccineController.getAppliedById);
+api.get("/applied-vaccines", [md_auth.asureAuth, md_auth.hasRole([1, 2, 4, 5])], AppliedVaccineController.getAllApplied);
+api.get("/applied-vaccine/:id", [md_auth.asureAuth, md_auth.hasRole([1, 2, 4, 5]), validateId, validate], AppliedVaccineController.getAppliedById);
 api.get("/applied-vaccines/mascota/:idMascota", [md_auth.asureAuth], AppliedVaccineController.getUncollectedByPet);
 
 module.exports = api;
