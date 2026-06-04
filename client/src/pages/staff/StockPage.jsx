@@ -440,7 +440,7 @@ function ProductoModal({ producto, categorias, marcas, presentaciones, onClose, 
   const isNew  = mode === "new";
 
   // ── Stepper state (solo para "new") ──────────────────────────
-  const [step, setStep] = useState(1); // 1 = Datos, 2 = Presentación, 3 = Listo
+  const [step, setStep] = useState(1); // 1 = Datos, 2 = Presentación
 
   const [form, setForm] = useState({
     nombre:       producto?.nombre       || "",
@@ -470,8 +470,6 @@ function ProductoModal({ producto, categorias, marcas, presentaciones, onClose, 
 
   // presInicial solo para el stepper
   const [presInicial, setPresInicial] = useState({ idPresentacion: "", precio: "" });
-  // idProducto recién creado (step 2)
-  const [newProductId, setNewProductId] = useState(null);
 
   useEffect(() => {
     Promise.allSettled([
@@ -508,26 +506,35 @@ function ProductoModal({ producto, categorias, marcas, presentaciones, onClose, 
     setError("");
   };
 
-  // ── Paso 1: crear producto ─────────────────────────────────────
-  const handleStep1 = async (e) => {
+  // ── Paso 1: validar y avanzar (NO crea nada aún) ──────────────
+  const handleStep1 = (e) => {
     e.preventDefault();
     if (!form.nombre || !form.idCategoria || !form.idMarca) { setError("Nombre, categoría y marca son obligatorios."); return; }
     if (esMedicamento && !medForm.idTipoMedicacion) { setError("Si es medicamento, el tipo de medicación es obligatorio."); return; }
     if (esVacuna && (!vacForm.dosis || !vacForm.enfermedadPreventiva)) { setError("Si es vacuna, dosis y enfermedad preventiva son obligatorios."); return; }
+    setError("");
+    setStep(2);
+  };
 
+  // ── Paso 2: crear todo junto y cerrar ─────────────────────────
+  const handleStep2 = async (omitir = false) => {
+    // Si hay presentación, validar precio
+    if (!omitir && presInicial.idPresentacion && presInicial.precio === "") {
+      setError("Ingresá el precio de venta para la presentación."); return;
+    }
     setSaving(true); setError("");
     try {
-      const payload = {
+      // 1. Crear producto
+      const res = await axios.post("/product", {
         nombre:       form.nombre,
         descripcion:  form.descripcion || null,
         idCategoria:  Number(form.idCategoria),
         idMarca:      Number(form.idMarca),
         esUsoInterno: form.esUsoInterno,
-      };
-      const res = await axios.post("/product", payload, { headers: headers() });
+      }, { headers: headers() });
       const idProd = res.data?.idProducto;
-      setNewProductId(idProd);
 
+      // 2. Medicamento / vacuna
       if (esMedicamento) {
         await axios.post("/medication", { idProducto: idProd, idTipoMedicacion: Number(medForm.idTipoMedicacion), ventaLibre: medForm.ventaLibre }, { headers: headers() });
       }
@@ -535,29 +542,19 @@ function ProductoModal({ producto, categorias, marcas, presentaciones, onClose, 
         await axios.post("/vaccine", { idProducto: idProd, dosis: vacForm.dosis, enfermedadPreventiva: vacForm.enfermedadPreventiva, idEspecie: vacForm.idEspecie ? Number(vacForm.idEspecie) : null }, { headers: headers() });
       }
 
-      setStep(2);
+      // 3. Presentación (si no se omitió)
+      if (!omitir && presInicial.idPresentacion && presInicial.precio !== "") {
+        await axios.post("/prod-pres", {
+          idProducto:     idProd,
+          idPresentacion: Number(presInicial.idPresentacion),
+          precio:         parseFloat(presInicial.precio),
+        }, { headers: headers() });
+      }
+
+      // 4. Listo — cierra modal y recarga tabla
+      onSave();
     } catch (err) {
       setError(err.response?.data?.msg || err.response?.data?.errors?.[0]?.msg || "Error al guardar.");
-    } finally { setSaving(false); }
-  };
-
-  // ── Paso 2: agregar presentación ──────────────────────────────
-  const handleStep2 = async () => {
-    if (!presInicial.idPresentacion || presInicial.precio === "") {
-      // Permitir saltar
-      setStep(3);
-      return;
-    }
-    setSaving(true); setError("");
-    try {
-      await axios.post("/prod-pres", {
-        idProducto:     newProductId,
-        idPresentacion: Number(presInicial.idPresentacion),
-        precio:         parseFloat(presInicial.precio),
-      }, { headers: headers() });
-      setStep(3);
-    } catch (err) {
-      setError(err.response?.data?.msg || "Error al agregar presentación.");
     } finally { setSaving(false); }
   };
 
@@ -627,7 +624,6 @@ function ProductoModal({ producto, categorias, marcas, presentaciones, onClose, 
     const steps = [
       { n: 1, label: "Datos" },
       { n: 2, label: "Presentación" },
-      { n: 3, label: "¡Listo!" },
     ];
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0, padding: "16px 24px 0", background: C.green900 }}>
@@ -666,10 +662,10 @@ function ProductoModal({ producto, categorias, marcas, presentaciones, onClose, 
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <div style={{ padding: "14px 18px", background: C.green100, borderRadius: 12, border: `1px solid ${C.green200}` }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: C.green800, marginBottom: 4 }}>
-          ✅ Producto creado exitosamente
+          Paso 2 — Presentación (opcional)
         </div>
         <div style={{ fontSize: 12.5, color: C.muted }}>
-          Ahora podés agregar una presentación con su precio de venta. Es opcional — también podés hacerlo después desde "Editar".
+          Podés asociar una presentación con su precio ahora, o hacerlo después desde "Editar".
         </div>
       </div>
 
@@ -687,14 +683,14 @@ function ProductoModal({ producto, categorias, marcas, presentaciones, onClose, 
           <div style={{ position: "relative" }}>
             <span style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", fontSize: 14, color: C.muted, fontWeight: 600 }}>$</span>
             <input type="number" min="0" step="0.01" value={presInicial.precio}
-              onChange={e => setPresInicial(p => ({ ...p, precio: e.target.value }))}
+              onChange={e => { setPresInicial(p => ({ ...p, precio: e.target.value })); setError(""); }}
               style={{ ...inp, paddingLeft: 24 }} placeholder="0.00" autoFocus />
           </div>
         </Field>
       )}
 
       <div style={{ padding: "12px 16px", background: C.amberBg, borderRadius: 10, border: `1px solid ${C.amberBorder}`, fontSize: 12, color: C.amber }}>
-        <strong>💡 ¿Y el stock?</strong> Los lotes y cantidades se registran desde <strong>Compras</strong> al ingresar una factura o compra de mercadería.
+        <strong>💡 ¿Y el stock?</strong> Los lotes y cantidades se registran desde <strong>Compras</strong> al ingresar una factura.
       </div>
 
       {error && (
@@ -702,35 +698,17 @@ function ProductoModal({ producto, categorias, marcas, presentaciones, onClose, 
       )}
 
       <div style={{ display: "flex", gap: 10 }}>
-        <button type="button" onClick={() => setStep(3)}
-          style={{ flex: 1, padding: 12, borderRadius: 10, border: `1px solid ${C.border}`, background: C.white, color: C.muted, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
-          Omitir por ahora
+        <button type="button" onClick={() => setStep(1)} disabled={saving}
+          style={{ padding: "12px 16px", borderRadius: 10, border: `1px solid ${C.border}`, background: C.white, color: C.muted, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+          ← Atrás
         </button>
-        <button type="button" onClick={handleStep2} disabled={saving}
+        <button type="button" onClick={() => handleStep2(true)} disabled={saving}
+          style={{ flex: 1, padding: 12, borderRadius: 10, border: `1px solid ${C.border}`, background: C.white, color: C.muted, fontWeight: 600, fontSize: 13, cursor: saving ? "not-allowed" : "pointer" }}>
+          Omitir y crear
+        </button>
+        <button type="button" onClick={() => handleStep2(false)} disabled={saving || (!!presInicial.idPresentacion && presInicial.precio === "")}
           style={{ flex: 2, padding: 12, borderRadius: 10, border: "none", background: saving ? C.muted : C.green800, color: "white", fontWeight: 700, fontSize: 14, cursor: saving ? "not-allowed" : "pointer" }}>
-          {saving ? "Guardando…" : presInicial.idPresentacion ? "Agregar presentación →" : "Continuar →"}
-        </button>
-      </div>
-    </div>
-  );
-
-  // ── Render paso 3 (éxito) ─────────────────────────────────────
-  const renderStep3 = () => (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 20, padding: "8px 0 4px" }}>
-      <div style={{ width: 70, height: 70, borderRadius: "50%", background: C.green100, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36 }}>🎉</div>
-      <div style={{ textAlign: "center" }}>
-        <h3 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 700, color: C.green800 }}>¡Producto creado!</h3>
-        <p style={{ margin: 0, fontSize: 13, color: C.muted, lineHeight: 1.6 }}>
-          El producto quedó registrado en el inventario.
-          {presInicial.idPresentacion && " La presentación y precio también fueron guardados."}<br />
-          Para ingresar <strong>stock</strong>, registrá una compra desde el módulo <strong>Compras</strong>.
-        </p>
-      </div>
-
-      <div style={{ width: "100%", display: "flex", gap: 10, marginTop: 8 }}>
-        <button type="button" onClick={onSave}
-          style={{ flex: 1, padding: 13, borderRadius: 10, border: "none", background: `linear-gradient(135deg, ${C.green900}, ${C.green800})`, color: "white", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
-          Ir al inventario
+          {saving ? "Creando…" : presInicial.idPresentacion ? "Crear producto y presentación ✓" : "Crear producto ✓"}
         </button>
       </div>
     </div>
@@ -738,7 +716,7 @@ function ProductoModal({ producto, categorias, marcas, presentaciones, onClose, 
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(10,30,20,0.5)", backdropFilter: "blur(5px)" }}>
-      <div style={{ position: "absolute", inset: 0 }} onClick={step === 3 ? onSave : onClose} />
+      <div style={{ position: "absolute", inset: 0 }} onClick={onClose} />
       <div style={{ position: "relative", background: C.white, borderRadius: 18, width: "100%", maxWidth: isNew ? 520 : 660, maxHeight: "94vh", display: "flex", flexDirection: "column", margin: "0 16px", border: `1px solid ${C.border}`, boxShadow: "0 24px 60px rgba(0,0,0,0.2)", overflow: "hidden" }}>
 
         {/* ── Header ── */}
@@ -752,7 +730,7 @@ function ProductoModal({ producto, categorias, marcas, presentaciones, onClose, 
                 {isView ? "Ver producto" : isEdit ? "Editar producto" : "Nuevo producto"}
               </h3>
             </div>
-            <button onClick={step === 3 ? onSave : onClose} style={{ background: "rgba(255,255,255,0.12)", border: "none", color: "white", width: 32, height: 32, borderRadius: 8, cursor: "pointer", fontSize: 17, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+            <button onClick={onClose} style={{ background: "rgba(255,255,255,0.12)", border: "none", color: "white", width: 32, height: 32, borderRadius: 8, cursor: "pointer", fontSize: 17, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
           </div>
           {/* Stepper solo para "new" */}
           {isNew && <StepperBar />}
@@ -762,9 +740,6 @@ function ProductoModal({ producto, categorias, marcas, presentaciones, onClose, 
 
           {/* ─── STEP 2 ─── */}
           {isNew && step === 2 && renderStep2()}
-
-          {/* ─── STEP 3 ─── */}
-          {isNew && step === 3 && renderStep3()}
 
           {/* ─── STEP 1 o EDIT/VIEW ─── */}
           {(!isNew || step === 1) && (
