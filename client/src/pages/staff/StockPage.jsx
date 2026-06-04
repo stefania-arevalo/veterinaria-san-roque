@@ -127,18 +127,13 @@ function LoteModal({ lote, onClose, onSave }) {
       <div style={{ position: "fixed", inset: 0, zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(10,30,20,0.5)", backdropFilter: "blur(5px)" }}>
         <div style={{ position: "absolute", inset: 0 }} onClick={onClose} />
         <div style={{ position: "relative", background: C.white, borderRadius: 18, width: "100%", maxWidth: 460, margin: "0 16px", border: `1px solid ${C.border}`, boxShadow: "0 24px 60px rgba(0,0,0,0.2)", overflow: "hidden" }}>
-
-          {/* Header */}
           <div style={{ background: C.green900, color: "white", padding: "18px 24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>
-                Lote #{lote.idLote}
-              </div>
+              <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>Lote #{lote.idLote}</div>
               <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Editar lote</h3>
             </div>
             <button onClick={onClose} style={{ background: "rgba(255,255,255,0.12)", border: "none", color: "white", width: 32, height: 32, borderRadius: 8, cursor: "pointer", fontSize: 17, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
           </div>
-
           <div style={{ padding: "22px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
             <Field label="Código de lote">
               <input name="codigoLote" value={form.codigoLote} onChange={hc} style={inp} placeholder="Ej: L-2024-001" autoFocus />
@@ -149,69 +144,17 @@ function LoteModal({ lote, onClose, onSave }) {
             <Field label="Cantidad disponible" required>
               <input name="cantidadDisponible" type="number" min="0" step="1" value={form.cantidadDisponible} onChange={hc} style={inp} placeholder="0" />
             </Field>
-
             {error && (
-              <div style={{ padding: "10px 14px", background: C.redBg, border: "1px solid #f7c1c1", borderRadius: 9, fontSize: 13, color: C.red }}>
-                ⚠️ {error}
-              </div>
+              <div style={{ padding: "10px 14px", background: C.redBg, border: "1px solid #f7c1c1", borderRadius: 9, fontSize: 13, color: C.red }}>⚠️ {error}</div>
             )}
-
-            {!isView && !isEdit && (
-              <div style={{ 
-                marginTop: 18, padding: "16px 18px", 
-                background: C.green100, borderRadius: 12, 
-                border: `1px solid ${C.green200}` 
-              }}>
-                <h4 style={{ margin: "0 0 12px", fontSize: 12, fontWeight: 700, color: C.green800, textTransform: "uppercase" }}>
-                  Presentación inicial (recomendado)
-                </h4>
-                <div style={{ display: "flex", gap: 10, alignItems: "flex-end" }}>
-                  <div style={{ flex: 2 }}>
-                    <label style={lbl}>Tipo de presentación</label>
-                    <select 
-                      value={presInicial.idPresentacion} 
-                      onChange={e => setPresInicial(p => ({ ...p, idPresentacion: e.target.value }))}
-                      style={{ ...inp, cursor: "pointer" }}
-                    >
-                      <option value="">Seleccionar (opcional)…</option>
-                      {presentaciones.map(p => (
-                        <option key={p.idPresentacion} value={p.idPresentacion}>{p.tipo} — {p.formato}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={lbl}>Precio de venta ($)</label>
-                    <div style={{ position: "relative" }}>
-                      <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: C.muted }}>$</span>
-                      <input 
-                        type="number" min="0" step="0.01"
-                        value={presInicial.precio}
-                        onChange={e => setPresInicial(p => ({ ...p, precio: e.target.value }))}
-                        style={{ ...inp, paddingLeft: 22 }}
-                        placeholder="0.00"
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div style={{ fontSize: 11, color: C.muted, marginTop: 8 }}>
-                  Podés agregar más presentaciones después desde "Editar".
-                </div>
-              </div>
-            )}
-
             <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
               {!yaAnulado && (
-                <button
-                  onClick={() => setConfirmAnular(true)}
-                  disabled={saving}
-                  style={{ padding: "10px 14px", borderRadius: 9, border: `1.5px solid ${C.red}`, background: C.redBg, color: C.red, fontWeight: 700, fontSize: 13, cursor: "pointer", flexShrink: 0 }}
-                >
+                <button onClick={() => setConfirmAnular(true)} disabled={saving}
+                  style={{ padding: "10px 14px", borderRadius: 9, border: `1.5px solid ${C.red}`, background: C.redBg, color: C.red, fontWeight: 700, fontSize: 13, cursor: "pointer", flexShrink: 0 }}>
                   Anular lote
                 </button>
               )}
-              <button onClick={onClose} style={{ flex: 1, padding: 12, borderRadius: 10, border: `1px solid ${C.border}`, background: C.white, color: C.muted, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
-                Cancelar
-              </button>
+              <button onClick={onClose} style={{ flex: 1, padding: 12, borderRadius: 10, border: `1px solid ${C.border}`, background: C.white, color: C.muted, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Cancelar</button>
               <button onClick={handleSave} disabled={saving} style={{ flex: 2, padding: 12, borderRadius: 10, border: "none", background: saving ? C.muted : C.green800, color: "white", fontWeight: 700, fontSize: 14, cursor: saving ? "not-allowed" : "pointer" }}>
                 {saving ? "Guardando…" : "Guardar cambios"}
               </button>
@@ -223,42 +166,42 @@ function LoteModal({ lote, onClose, onSave }) {
   );
 }
 
-// ── Acordeón de lotes + presentaciones ───────────────────────────
-function ProductoAcordeon({ idProducto, canEdit }) {
-  const [open,           setOpen]           = useState(false);
+// ═══════════════════════════════════════════════════════════════════
+// PANEL EXPANDIDO — reemplaza al acordeón pequeño
+// Ahora se renderiza como una fila completa (<tr>) debajo del producto
+// ═══════════════════════════════════════════════════════════════════
+function ProductoExpandedPanel({ idProducto, canEdit, onClose }) {
   const [lotes,          setLotes]          = useState([]);
   const [presentaciones, setPresentaciones] = useState([]);
-  const [loading,        setLoading]        = useState(false);
-  const [loaded,         setLoaded]         = useState(false);
+  const [loading,        setLoading]        = useState(true);
   const [editingLote,    setEditingLote]    = useState(null);
   const [editingPresId,  setEditingPresId]  = useState(null);
   const [editingPrecio,  setEditingPrecio]  = useState("");
   const [savingPres,     setSavingPres]     = useState(false);
   const [presError,      setPresError]      = useState("");
 
-  const cargar = async (force = false) => {
-    if (loaded && !force) { setOpen(o => !o); return; }
-    setLoading(true);
-    try {
-      const [lotesRes, presRes] = await Promise.all([
-        axios.get(`/batches/product/${idProducto}`,  { headers: headers() }),
-        axios.get(`/prod-pres/product/${idProducto}`, { headers: headers() }),
-      ]);
+  useEffect(() => {
+    Promise.all([
+      axios.get(`/batches/product/${idProducto}`,  { headers: headers() }),
+      axios.get(`/prod-pres/product/${idProducto}`, { headers: headers() }),
+    ]).then(([lotesRes, presRes]) => {
       setLotes(lotesRes.data || []);
       setPresentaciones(presRes.data || []);
-      setLoaded(true);
-      setOpen(true);
-    } catch { /* silencioso */ }
-    finally { setLoading(false); }
+    }).catch(() => {}).finally(() => setLoading(false));
+  }, [idProducto]);
+
+  const recargar = () => {
+    setLoading(true);
+    Promise.all([
+      axios.get(`/batches/product/${idProducto}`,  { headers: headers() }),
+      axios.get(`/prod-pres/product/${idProducto}`, { headers: headers() }),
+    ]).then(([lotesRes, presRes]) => {
+      setLotes(lotesRes.data || []);
+      setPresentaciones(presRes.data || []);
+    }).catch(() => {}).finally(() => setLoading(false));
   };
 
-  const recargar = () => cargar(true);
-
-  const startEditPres = (p) => {
-    setEditingPresId(p.idProdPres);
-    setEditingPrecio(String(p.precio));
-    setPresError("");
-  };
+  const startEditPres = (p) => { setEditingPresId(p.idProdPres); setEditingPrecio(String(p.precio)); setPresError(""); };
   const cancelEditPres = () => { setEditingPresId(null); setEditingPrecio(""); setPresError(""); };
   const saveEditPres = async (idProdPres) => {
     if (editingPrecio === "" || isNaN(Number(editingPrecio)) || Number(editingPrecio) < 0) {
@@ -267,322 +210,237 @@ function ProductoAcordeon({ idProducto, canEdit }) {
     setSavingPres(true); setPresError("");
     try {
       await axios.patch(`/prod-pres/${idProdPres}`, { precio: parseFloat(editingPrecio) }, { headers: headers() });
-      setPresentaciones(prev =>
-        prev.map(p => p.idProdPres === idProdPres ? { ...p, precio: parseFloat(editingPrecio) } : p)
-      );
+      setPresentaciones(prev => prev.map(p => p.idProdPres === idProdPres ? { ...p, precio: parseFloat(editingPrecio) } : p));
       cancelEditPres();
-    } catch (err) {
-      setPresError(err.response?.data?.msg || "Error al actualizar el precio.");
-    } finally { setSavingPres(false); }
+    } catch (err) { setPresError(err.response?.data?.msg || "Error al actualizar el precio."); }
+    finally { setSavingPres(false); }
   };
 
-  // ── Cálculos de stock ──────────────────────────────────────────
   const stockActivo   = lotes.filter(l => l.cantidadDisponible > 0 && new Date(l.fechaVencimiento) >= new Date());
   const stockTotal    = lotes.reduce((s, l) => s + (l.cantidadDisponible || 0), 0);
   const loteActivo    = stockActivo.sort((a, b) => new Date(a.fechaVencimiento) - new Date(b.fechaVencimiento))[0];
-  const hayVencidos   = lotes.some(l => new Date(l.fechaVencimiento) < new Date() && l.cantidadDisponible > 0);
-  const hayProxVencer = lotes.some(l => {
-    const d = new Date(l.fechaVencimiento) - new Date();
-    return d > 0 && d < 30 * 24 * 60 * 60 * 1000;
-  });
 
   return (
-    <div style={{ marginTop: 6 }}>
-      {editingLote && (
-        <LoteModal
-          lote={editingLote}
-          onClose={() => setEditingLote(null)}
-          onSave={() => { setEditingLote(null); recargar(); }}
-        />
-      )}
-
-      {/* ── Trigger del acordeón ─────────────────────────────── */}
-      <button
-        onClick={() => cargar()}
-        style={{
-          display: "inline-flex", alignItems: "center", gap: 6,
-          background: "none", border: "none",
-          color: C.green700, fontSize: 11.5, fontWeight: 600,
-          cursor: "pointer", padding: "2px 0",
-          textDecoration: "none",
-        }}
-      >
-        <span style={{ fontSize: 10, opacity: 0.7 }}>{open ? "▲" : "▼"}</span>
-        {loading ? "Cargando…" : open ? "Ocultar detalle" : "Ver stock y precios"}
-        {/* Alertas rápidas junto al trigger (solo cuando cerrado) */}
-        {!open && loaded && hayVencidos && (
-          <span style={{ fontSize: 9, fontWeight: 800, background: C.redBg, color: C.red, padding: "1px 5px", borderRadius: 3 }}>
-            ⚠ VENCIDO
-          </span>
+    <tr>
+      <td colSpan={7} style={{ padding: 0, background: C.surface, borderBottom: `2px solid ${C.green200}` }}>
+        {editingLote && (
+          <LoteModal lote={editingLote} onClose={() => setEditingLote(null)} onSave={() => { setEditingLote(null); recargar(); }} />
         )}
-        {!open && loaded && !hayVencidos && hayProxVencer && (
-          <span style={{ fontSize: 9, fontWeight: 800, background: C.amberBg, color: C.amber, padding: "1px 5px", borderRadius: 3 }}>
-            ⚠ PROX. VENCER
-          </span>
-        )}
-      </button>
 
-      {/* ── Panel desplegado ─────────────────────────────────── */}
-      {open && (
+        {/* ── Barra superior del panel ── */}
         <div style={{
-          marginTop: 10,
-          border: `1px solid ${C.borderLight}`,
-          borderRadius: 10,
-          overflow: "hidden",
-          background: C.surface,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "10px 20px",
+          background: `linear-gradient(to right, ${C.green900}, ${C.green800})`,
+          color: "white",
         }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", opacity: 0.75 }}>
+              Detalle del producto
+            </span>
+            {loteActivo && (
+              <span style={{ fontSize: 11, background: "rgba(255,255,255,0.15)", padding: "3px 10px", borderRadius: 20, display: "flex", alignItems: "center", gap: 5 }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.green200, flexShrink: 0 }} />
+                Usando lote <strong>#{loteActivo.codigoLote || loteActivo.idLote}</strong>
+                &nbsp;· vence {fmtFecha(loteActivo.fechaVencimiento)}
+                &nbsp;· <strong>{stockTotal} un.</strong> total
+              </span>
+            )}
+            {!loteActivo && !loading && (
+              <span style={{ fontSize: 11, background: "rgba(163,45,45,0.3)", padding: "3px 10px", borderRadius: 20, color: "#ffcdd2" }}>
+                Sin stock activo
+              </span>
+            )}
+          </div>
+          <button onClick={onClose} style={{ background: "rgba(255,255,255,0.12)", border: "none", color: "white", padding: "4px 12px", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", gap: 5 }}>
+            ▲ Cerrar
+          </button>
+        </div>
 
-          {/* ══ SECCIÓN: PRECIOS DE VENTA ══════════════════════ */}
-          {presentaciones.length > 0 && (
-            <div style={{ borderBottom: `1px solid ${C.borderLight}` }}>
-              {/* Cabecera sección */}
-              <div style={{
-                display: "flex", alignItems: "center", gap: 8,
-                padding: "8px 14px", background: C.white,
-                borderBottom: `1px solid ${C.borderLight}`,
-              }}>
-                <span style={{ fontSize: 11, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  💰 Precios de venta
-                </span>
-              </div>
+        {loading ? (
+          <div style={{ padding: "28px 20px", textAlign: "center", fontSize: 13, color: C.muted }}>Cargando datos…</div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: presentaciones.length > 0 ? "1fr 1.6fr" : "1fr", gap: 0 }}>
 
-              {presError && (
-                <div style={{ margin: "6px 14px 0", padding: "6px 10px", background: C.redBg, border: "1px solid #f7c1c1", borderRadius: 6, fontSize: 11, color: C.red }}>
-                  ⚠️ {presError}
+            {/* ══ COLUMNA 1: PRECIOS DE VENTA ══ */}
+            {presentaciones.length > 0 && (
+              <div style={{ borderRight: `1px solid ${C.borderLight}` }}>
+                <div style={{ padding: "10px 20px", borderBottom: `1px solid ${C.borderLight}`, background: C.white }}>
+                  <span style={{ fontSize: 10.5, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                    💰 Precios de venta
+                  </span>
                 </div>
-              )}
-
-              {/* Tabla de precios */}
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-                <thead>
-                  <tr style={{ background: "#fafcfa" }}>
-                    <th style={{ padding: "6px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase" }}>Presentación</th>
-                    <th style={{ padding: "6px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase" }}>Formato</th>
-                    <th style={{ padding: "6px 14px", textAlign: "right", fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase" }}>Precio unitario</th>
-                    {canEdit && <th style={{ padding: "6px 14px", textAlign: "center", fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase" }}>Acción</th>}
-                  </tr>
-                </thead>
-                <tbody>
-                  {presentaciones.map((p, i) => (
-                    <tr key={p.idProdPres} style={{
-                      borderTop: i > 0 ? `1px solid ${C.borderLight}` : "none",
-                      background: C.white,
-                    }}>
-                      <td style={{ padding: "9px 14px", fontWeight: 600, color: C.text }}>
-                        {p.Presentacion?.tipo || `Pres. #${p.idPresentacion}`}
-                      </td>
-                      <td style={{ padding: "9px 14px", color: C.muted }}>
-                        {p.Presentacion?.formato || "—"}
-                      </td>
-                      <td style={{ padding: "9px 14px", textAlign: "right" }}>
-                        {editingPresId === p.idProdPres ? (
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 5 }}>
-                            <div style={{ position: "relative" }}>
-                              <span style={{ position: "absolute", left: 7, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: C.muted }}>$</span>
-                              <input
-                                type="number" min="0" step="0.01"
-                                value={editingPrecio}
-                                onChange={e => { setEditingPrecio(e.target.value); setPresError(""); }}
-                                onKeyDown={e => { if (e.key === "Enter") saveEditPres(p.idProdPres); if (e.key === "Escape") cancelEditPres(); }}
-                                autoFocus
-                                style={{ ...inp, width: 100, padding: "5px 7px 5px 18px", fontSize: 12 }}
-                              />
+                {presError && (
+                  <div style={{ margin: "8px 16px 0", padding: "6px 10px", background: C.redBg, border: "1px solid #f7c1c1", borderRadius: 6, fontSize: 11, color: C.red }}>⚠️ {presError}</div>
+                )}
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+                  <thead>
+                    <tr style={{ background: "#fafcfa" }}>
+                      <th style={{ padding: "7px 20px", textAlign: "left", fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase" }}>Presentación</th>
+                      <th style={{ padding: "7px 20px", textAlign: "right", fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase" }}>Precio</th>
+                      {canEdit && <th style={{ padding: "7px 16px", width: 70 }} />}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {presentaciones.map((p, i) => (
+                      <tr key={p.idProdPres} style={{ borderTop: i > 0 ? `1px solid ${C.borderLight}` : "none", background: C.white }}>
+                        <td style={{ padding: "10px 20px" }}>
+                          <div style={{ fontWeight: 600, color: C.text }}>{p.Presentacion?.tipo || `Pres. #${p.idPresentacion}`}</div>
+                          {p.Presentacion?.formato && <div style={{ fontSize: 11, color: C.muted, marginTop: 1 }}>{p.Presentacion.formato}</div>}
+                        </td>
+                        <td style={{ padding: "10px 20px", textAlign: "right" }}>
+                          {editingPresId === p.idProdPres ? (
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 5 }}>
+                              <div style={{ position: "relative" }}>
+                                <span style={{ position: "absolute", left: 7, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: C.muted }}>$</span>
+                                <input type="number" min="0" step="0.01" value={editingPrecio}
+                                  onChange={e => { setEditingPrecio(e.target.value); setPresError(""); }}
+                                  onKeyDown={e => { if (e.key === "Enter") saveEditPres(p.idProdPres); if (e.key === "Escape") cancelEditPres(); }}
+                                  autoFocus style={{ ...inp, width: 90, padding: "5px 7px 5px 18px", fontSize: 12 }} />
+                              </div>
+                              <button onClick={() => saveEditPres(p.idProdPres)} disabled={savingPres}
+                                style={{ padding: "4px 8px", borderRadius: 5, border: "none", background: C.green800, color: "white", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                                {savingPres ? "…" : "✓"}
+                              </button>
+                              <button onClick={cancelEditPres}
+                                style={{ padding: "4px 8px", borderRadius: 5, border: `1px solid ${C.border}`, background: C.white, color: C.muted, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>✕</button>
                             </div>
-                            <button onClick={() => saveEditPres(p.idProdPres)} disabled={savingPres}
-                              style={{ padding: "4px 8px", borderRadius: 5, border: "none", background: C.green800, color: "white", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
-                              {savingPres ? "…" : "✓"}
-                            </button>
-                            <button onClick={cancelEditPres}
-                              style={{ padding: "4px 8px", borderRadius: 5, border: `1px solid ${C.border}`, background: C.white, color: C.muted, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
-                              ✕
-                            </button>
-                          </div>
-                        ) : (
-                          <span style={{ fontWeight: 700, color: C.green800, fontSize: 13 }}>
-                            ${fmt(p.precio)}
-                          </span>
-                        )}
-                      </td>
-                      {canEdit && (
-                        <td style={{ padding: "9px 14px", textAlign: "center" }}>
-                          {editingPresId !== p.idProdPres && (
-                            <button onClick={() => startEditPres(p)}
-                              style={{ padding: "3px 9px", borderRadius: 5, border: `1px solid ${C.border}`, background: C.white, color: C.muted, fontSize: 10, fontWeight: 700, cursor: "pointer" }}>
-                              ✏️ Editar
-                            </button>
+                          ) : (
+                            <span style={{ fontWeight: 800, color: C.green800, fontSize: 14 }}>${fmt(p.precio)}</span>
                           )}
                         </td>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                        {canEdit && (
+                          <td style={{ padding: "10px 16px", textAlign: "center" }}>
+                            {editingPresId !== p.idProdPres && (
+                              <button onClick={() => startEditPres(p)}
+                                style={{ padding: "4px 10px", borderRadius: 5, border: `1px solid ${C.border}`, background: C.white, color: C.muted, fontSize: 10.5, fontWeight: 700, cursor: "pointer" }}>
+                                ✏️
+                              </button>
+                            )}
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
-          {/* ══ SECCIÓN: LOTES EN STOCK ═════════════════════════ */}
-          <div>
-            {/* Cabecera sección con resumen */}
-            <div style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "8px 14px", background: C.white,
-              borderBottom: `1px solid ${C.borderLight}`,
-            }}>
-              <span style={{ fontSize: 11, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                📦 Lotes en stock
-              </span>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                {/* Indicador del lote activo (FEFO) */}
-                {loteActivo && (
-                  <span style={{ fontSize: 10, color: C.muted }}>
-                    Usando: <strong style={{ color: C.green800 }}>#{loteActivo.codigoLote || loteActivo.idLote}</strong>
-                    <span style={{ color: C.muted }}> · vence {fmtFecha(loteActivo.fechaVencimiento)}</span>
-                  </span>
-                )}
+            {/* ══ COLUMNA 2: LOTES EN STOCK ══ */}
+            <div>
+              <div style={{ padding: "10px 20px", borderBottom: `1px solid ${C.borderLight}`, background: C.white, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontSize: 10.5, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>📦 Lotes en stock</span>
                 <span style={{
-                  fontSize: 10, fontWeight: 800,
+                  fontSize: 11, fontWeight: 800, padding: "2px 10px", borderRadius: 6,
                   background: stockTotal > 0 ? C.green100 : C.redBg,
                   color: stockTotal > 0 ? C.green800 : C.red,
-                  padding: "2px 8px", borderRadius: 5,
                 }}>
                   Total: {stockTotal} un.
                 </span>
               </div>
-            </div>
 
-            {lotes.length === 0 ? (
-              <div style={{ padding: "14px 16px", fontSize: 12, color: C.muted, fontStyle: "italic", textAlign: "center" }}>
-                Sin lotes registrados. Registrá una compra para agregar stock.
-              </div>
-            ) : (
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-                <thead>
-                  <tr style={{ background: "#fafcfa" }}>
-                    <th style={{ padding: "6px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase" }}>Código lote</th>
-                    <th style={{ padding: "6px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase" }}>Vencimiento</th>
-                    <th style={{ padding: "6px 14px", textAlign: "right", fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase" }}>Stock disp.</th>
-                    <th style={{ padding: "6px 14px", textAlign: "center", fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase" }}>Estado</th>
-                    {canEdit && <th style={{ padding: "6px 14px", textAlign: "center", fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase" }}>Acción</th>}
-                  </tr>
-                </thead>
-                <tbody>
-                  {[...lotes]
-                    .sort((a, b) => new Date(a.fechaVencimiento) - new Date(b.fechaVencimiento))
-                    .map((l, i) => {
-                      const vencido    = new Date(l.fechaVencimiento) < new Date();
-                      const diasRestantes = Math.ceil((new Date(l.fechaVencimiento) - new Date()) / (1000 * 60 * 60 * 24));
-                      const proxVencer = !vencido && diasRestantes <= 30;
-                      const anulado    = l.cantidadDisponible === 0 && !vencido;
-                      const esActivo   = loteActivo?.idLote === l.idLote;
+              {lotes.length === 0 ? (
+                <div style={{ padding: "20px", fontSize: 12.5, color: C.muted, fontStyle: "italic", textAlign: "center" }}>
+                  Sin lotes. Registrá una compra para agregar stock.
+                </div>
+              ) : (
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+                  <thead>
+                    <tr style={{ background: "#fafcfa" }}>
+                      <th style={{ padding: "7px 20px", textAlign: "left", fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase" }}>Lote</th>
+                      <th style={{ padding: "7px 12px", textAlign: "left", fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase" }}>Vencimiento</th>
+                      <th style={{ padding: "7px 12px", textAlign: "right", fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase" }}>Stock</th>
+                      <th style={{ padding: "7px 12px", textAlign: "center", fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase" }}>Estado</th>
+                      {canEdit && <th style={{ padding: "7px 16px", width: 70 }} />}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...lotes]
+                      .sort((a, b) => new Date(a.fechaVencimiento) - new Date(b.fechaVencimiento))
+                      .map((l, i) => {
+                        const vencido       = new Date(l.fechaVencimiento) < new Date();
+                        const diasRestantes = Math.ceil((new Date(l.fechaVencimiento) - new Date()) / (1000 * 60 * 60 * 24));
+                        const proxVencer    = !vencido && diasRestantes <= 30;
+                        const anulado       = l.cantidadDisponible === 0 && !vencido;
+                        const esActivo      = loteActivo?.idLote === l.idLote;
+                        const rowBg = vencido ? "#fff8f8" : proxVencer ? "#fffdf0" : esActivo ? "#f2faf4" : C.white;
 
-                      // Color de fila
-                      const rowBg = vencido
-                        ? "#fff8f8"
-                        : proxVencer
-                        ? "#fffdf0"
-                        : esActivo
-                        ? "#f2faf4"
-                        : C.white;
-
-                      return (
-                        <tr key={l.idLote} style={{
-                          borderTop: i > 0 ? `1px solid ${C.borderLight}` : "none",
-                          background: rowBg,
-                        }}>
-                          {/* Código lote + indicador FEFO */}
-                          <td style={{ padding: "9px 14px" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                              {esActivo && (
-                                <span title="Este es el lote que se descuenta en ventas (FEFO)" style={{
-                                  width: 7, height: 7, borderRadius: "50%",
-                                  background: C.green700, flexShrink: 0,
-                                  boxShadow: `0 0 0 2px ${C.green100}`,
-                                }} />
-                              )}
-                              <span style={{ fontWeight: 600, color: C.text, fontFamily: "monospace", fontSize: 12 }}>
-                                {l.codigoLote ? `#${l.codigoLote}` : `Lote ${l.idLote}`}
-                              </span>
-                            </div>
-                          </td>
-
-                          {/* Fecha vencimiento */}
-                          <td style={{ padding: "9px 14px", color: vencido ? C.red : proxVencer ? C.amber : C.muted }}>
-                            {fmtFecha(l.fechaVencimiento)}
-                            {proxVencer && !vencido && (
-                              <div style={{ fontSize: 10, color: C.amber, fontWeight: 600, marginTop: 1 }}>
-                                Vence en {diasRestantes} día{diasRestantes !== 1 ? "s" : ""}
+                        return (
+                          <tr key={l.idLote} style={{ borderTop: i > 0 ? `1px solid ${C.borderLight}` : "none", background: rowBg }}>
+                            <td style={{ padding: "10px 20px" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                                {esActivo && <span style={{ width: 7, height: 7, borderRadius: "50%", background: C.green700, flexShrink: 0, boxShadow: `0 0 0 2px ${C.green100}` }} />}
+                                <span style={{ fontWeight: 600, color: C.text, fontFamily: "monospace", fontSize: 12.5 }}>
+                                  {l.codigoLote ? `#${l.codigoLote}` : `Lote ${l.idLote}`}
+                                </span>
                               </div>
-                            )}
-                          </td>
-
-                          {/* Stock */}
-                          <td style={{ padding: "9px 14px", textAlign: "right" }}>
-                            <span style={{
-                              fontWeight: 700, fontSize: 13,
-                              color: vencido || anulado ? C.muted : l.cantidadDisponible > 0 ? C.green800 : C.red,
-                            }}>
-                              {l.cantidadDisponible}
-                              <span style={{ fontSize: 10, fontWeight: 400, color: C.muted }}> un.</span>
-                            </span>
-                          </td>
-
-                          {/* Badge estado */}
-                          <td style={{ padding: "9px 14px", textAlign: "center" }}>
-                            {vencido && l.cantidadDisponible > 0 ? (
-                              <span style={{ fontSize: 9.5, fontWeight: 800, color: C.red, background: C.redBg, padding: "2px 7px", borderRadius: 4 }}>VENCIDO</span>
-                            ) : vencido && l.cantidadDisponible === 0 ? (
-                              <span style={{ fontSize: 9.5, fontWeight: 700, color: C.muted, background: "#f0f0f0", padding: "2px 7px", borderRadius: 4 }}>AGOTADO</span>
-                            ) : proxVencer ? (
-                              <span style={{ fontSize: 9.5, fontWeight: 800, color: C.amber, background: C.amberBg, padding: "2px 7px", borderRadius: 4 }}>PROX. VENCER</span>
-                            ) : anulado ? (
-                              <span style={{ fontSize: 9.5, fontWeight: 700, color: C.muted, background: "#f0f0f0", padding: "2px 7px", borderRadius: 4 }}>ANULADO</span>
-                            ) : esActivo ? (
-                              <span style={{ fontSize: 9.5, fontWeight: 800, color: C.green800, background: C.green100, padding: "2px 7px", borderRadius: 4 }}>● ACTIVO</span>
-                            ) : (
-                              <span style={{ fontSize: 9.5, fontWeight: 600, color: C.muted, background: "#f5f5f5", padding: "2px 7px", borderRadius: 4 }}>EN ESPERA</span>
-                            )}
-                          </td>
-
-                          {/* Acción */}
-                          {canEdit && (
-                            <td style={{ padding: "9px 14px", textAlign: "center" }}>
-                              <button onClick={() => setEditingLote(l)}
-                                style={{ padding: "3px 9px", borderRadius: 5, border: `1px solid ${C.border}`, background: C.white, color: C.muted, fontSize: 10, fontWeight: 700, cursor: "pointer" }}>
-                                ✏️ Editar
-                              </button>
                             </td>
-                          )}
-                        </tr>
-                      );
-                    })}
-                </tbody>
-              </table>
-            )}
-          </div>
+                            <td style={{ padding: "10px 12px", color: vencido ? C.red : proxVencer ? C.amber : C.muted, fontSize: 12.5 }}>
+                              {fmtFecha(l.fechaVencimiento)}
+                              {proxVencer && !vencido && (
+                                <div style={{ fontSize: 10, color: C.amber, fontWeight: 700, marginTop: 1 }}>Vence en {diasRestantes}d</div>
+                              )}
+                            </td>
+                            <td style={{ padding: "10px 12px", textAlign: "right" }}>
+                              <span style={{ fontWeight: 800, fontSize: 13.5, color: vencido || anulado ? C.muted : l.cantidadDisponible > 0 ? C.green800 : C.red }}>
+                                {l.cantidadDisponible}
+                                <span style={{ fontSize: 10, fontWeight: 400, color: C.muted }}> un.</span>
+                              </span>
+                            </td>
+                            <td style={{ padding: "10px 12px", textAlign: "center" }}>
+                              {vencido && l.cantidadDisponible > 0
+                                ? <span style={{ fontSize: 9.5, fontWeight: 800, color: C.red, background: C.redBg, padding: "2px 7px", borderRadius: 4 }}>VENCIDO</span>
+                                : vencido && l.cantidadDisponible === 0
+                                ? <span style={{ fontSize: 9.5, fontWeight: 700, color: C.muted, background: "#f0f0f0", padding: "2px 7px", borderRadius: 4 }}>AGOTADO</span>
+                                : proxVencer
+                                ? <span style={{ fontSize: 9.5, fontWeight: 800, color: C.amber, background: C.amberBg, padding: "2px 7px", borderRadius: 4 }}>PROX. VENCER</span>
+                                : anulado
+                                ? <span style={{ fontSize: 9.5, fontWeight: 700, color: C.muted, background: "#f0f0f0", padding: "2px 7px", borderRadius: 4 }}>ANULADO</span>
+                                : esActivo
+                                ? <span style={{ fontSize: 9.5, fontWeight: 800, color: C.green800, background: C.green100, padding: "2px 7px", borderRadius: 4 }}>● ACTIVO</span>
+                                : <span style={{ fontSize: 9.5, fontWeight: 600, color: C.muted, background: "#f5f5f5", padding: "2px 7px", borderRadius: 4 }}>EN ESPERA</span>
+                              }
+                            </td>
+                            {canEdit && (
+                              <td style={{ padding: "10px 16px", textAlign: "center" }}>
+                                <button onClick={() => setEditingLote(l)}
+                                  style={{ padding: "4px 10px", borderRadius: 5, border: `1px solid ${C.border}`, background: C.white, color: C.muted, fontSize: 10.5, fontWeight: 700, cursor: "pointer" }}>
+                                  ✏️
+                                </button>
+                              </td>
+                            )}
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              )}
 
-          {/* ── Nota FEFO ──────────────────────────────────────── */}
-          {loteActivo && (
-            <div style={{
-              padding: "7px 14px",
-              background: "#f2faf4",
-              borderTop: `1px solid ${C.borderLight}`,
-              fontSize: 10.5, color: C.muted,
-              display: "flex", alignItems: "center", gap: 5,
-            }}>
-              <span style={{ width: 7, height: 7, borderRadius: "50%", background: C.green700, flexShrink: 0 }} />
-              Las ventas descontarán automáticamente del lote <strong style={{ color: C.green800 }}>#{loteActivo.codigoLote || loteActivo.idLote}</strong> (próximo a vencer · FEFO).
+              {/* Nota FEFO */}
+              {loteActivo && (
+                <div style={{ padding: "8px 20px", background: "#f2faf4", borderTop: `1px solid ${C.borderLight}`, fontSize: 11, color: C.muted, display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: C.green700, flexShrink: 0 }} />
+                  Las ventas descontarán del lote <strong style={{ color: C.green800 }}>#{loteActivo.codigoLote || loteActivo.idLote}</strong> (próximo a vencer · FEFO).
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      )}
-    </div>
+          </div>
+        )}
+      </td>
+    </tr>
   );
 }
 
-// ── Modal producto (crear / editar / ver) ─────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// MODAL PRODUCTO — con stepper para "Nuevo", normal para editar/ver
+// ═══════════════════════════════════════════════════════════════════
 function ProductoModal({ producto, categorias, marcas, presentaciones, onClose, onSave, mode }) {
   const isEdit = mode === "edit";
   const isView = mode === "view";
+  const isNew  = mode === "new";
+
+  // ── Stepper state (solo para "new") ──────────────────────────
+  const [step, setStep] = useState(1); // 1 = Datos, 2 = Presentación, 3 = Listo
 
   const [form, setForm] = useState({
     nombre:       producto?.nombre       || "",
@@ -592,7 +450,6 @@ function ProductoModal({ producto, categorias, marcas, presentaciones, onClose, 
     esUsoInterno: producto?.esUsoInterno ?? false,
   });
 
-  // Presentaciones del producto
   const [presas,         setPresas]         = useState([]);
   const [loadingP,       setLoadingP]       = useState(false);
   const [newPres,        setNewPres]        = useState({ idPresentacion: "", precio: "" });
@@ -600,7 +457,6 @@ function ProductoModal({ producto, categorias, marcas, presentaciones, onClose, 
   const [editingPrecio,  setEditingPrecio]  = useState("");
   const [savingPres,     setSavingPres]     = useState(false);
 
-  // Datos extra: medicamento o vacuna
   const [esMedicamento, setEsMedicamento] = useState(false);
   const [esVacuna,      setEsVacuna]      = useState(false);
   const [medForm, setMedForm] = useState({ idTipoMedicacion: "", ventaLibre: false });
@@ -609,10 +465,13 @@ function ProductoModal({ producto, categorias, marcas, presentaciones, onClose, 
   const [tiposMed, setTiposMed] = useState([]);
   const [especies, setEspecies] = useState([]);
 
-  const [saving, setSaving] = useState(false);
-  const [error,  setError]  = useState("");
+  const [saving, setSaving]   = useState(false);
+  const [error,  setError]    = useState("");
 
+  // presInicial solo para el stepper
   const [presInicial, setPresInicial] = useState({ idPresentacion: "", precio: "" });
+  // idProducto recién creado (step 2)
+  const [newProductId, setNewProductId] = useState(null);
 
   useEffect(() => {
     Promise.allSettled([
@@ -649,7 +508,8 @@ function ProductoModal({ producto, categorias, marcas, presentaciones, onClose, 
     setError("");
   };
 
-  const handleSubmit = async (e) => {
+  // ── Paso 1: crear producto ─────────────────────────────────────
+  const handleStep1 = async (e) => {
     e.preventDefault();
     if (!form.nombre || !form.idCategoria || !form.idMarca) { setError("Nombre, categoría y marca son obligatorios."); return; }
     if (esMedicamento && !medForm.idTipoMedicacion) { setError("Si es medicamento, el tipo de medicación es obligatorio."); return; }
@@ -664,77 +524,93 @@ function ProductoModal({ producto, categorias, marcas, presentaciones, onClose, 
         idMarca:      Number(form.idMarca),
         esUsoInterno: form.esUsoInterno,
       };
-      let idProd = producto?.idProducto;
-      if (isEdit) {
-        await axios.patch(`/product/${idProd}`, payload, { headers: headers() });
-      } else {
-        const res = await axios.post("/product", payload, { headers: headers() });
-        idProd = res.data?.idProducto;
-      }
-
-      if (!isEdit && presInicial.idPresentacion && presInicial.precio !== "") {
-        await axios.post("/prod-pres", {
-          idProducto:     idProd,
-          idPresentacion: Number(presInicial.idPresentacion),
-          precio:         parseFloat(presInicial.precio),
-        }, { headers: headers() });
-      }
+      const res = await axios.post("/product", payload, { headers: headers() });
+      const idProd = res.data?.idProducto;
+      setNewProductId(idProd);
 
       if (esMedicamento) {
-        const medPayload = { idTipoMedicacion: Number(medForm.idTipoMedicacion), ventaLibre: medForm.ventaLibre };
-        if (isEdit) await axios.patch(`/medication/${idProd}`, medPayload, { headers: headers() }).catch(() => axios.post("/medication", { idProducto: idProd, ...medPayload }, { headers: headers() }));
-        else await axios.post("/medication", { idProducto: idProd, ...medPayload }, { headers: headers() });
+        await axios.post("/medication", { idProducto: idProd, idTipoMedicacion: Number(medForm.idTipoMedicacion), ventaLibre: medForm.ventaLibre }, { headers: headers() });
       }
-
       if (esVacuna) {
-        const vacPayload = { dosis: vacForm.dosis, enfermedadPreventiva: vacForm.enfermedadPreventiva, idEspecie: vacForm.idEspecie ? Number(vacForm.idEspecie) : null };
-        if (isEdit) await axios.patch(`/vaccine/${idProd}`, vacPayload, { headers: headers() }).catch(() => axios.post("/vaccine", { idProducto: idProd, ...vacPayload }, { headers: headers() }));
-        else await axios.post("/vaccine", { idProducto: idProd, ...vacPayload }, { headers: headers() });
+        await axios.post("/vaccine", { idProducto: idProd, dosis: vacForm.dosis, enfermedadPreventiva: vacForm.enfermedadPreventiva, idEspecie: vacForm.idEspecie ? Number(vacForm.idEspecie) : null }, { headers: headers() });
       }
 
+      setStep(2);
+    } catch (err) {
+      setError(err.response?.data?.msg || err.response?.data?.errors?.[0]?.msg || "Error al guardar.");
+    } finally { setSaving(false); }
+  };
+
+  // ── Paso 2: agregar presentación ──────────────────────────────
+  const handleStep2 = async () => {
+    if (!presInicial.idPresentacion || presInicial.precio === "") {
+      // Permitir saltar
+      setStep(3);
+      return;
+    }
+    setSaving(true); setError("");
+    try {
+      await axios.post("/prod-pres", {
+        idProducto:     newProductId,
+        idPresentacion: Number(presInicial.idPresentacion),
+        precio:         parseFloat(presInicial.precio),
+      }, { headers: headers() });
+      setStep(3);
+    } catch (err) {
+      setError(err.response?.data?.msg || "Error al agregar presentación.");
+    } finally { setSaving(false); }
+  };
+
+  // ── Submit para editar ─────────────────────────────────────────
+  const handleEdit = async (e) => {
+    e.preventDefault();
+    if (!form.nombre || !form.idCategoria || !form.idMarca) { setError("Nombre, categoría y marca son obligatorios."); return; }
+    if (esMedicamento && !medForm.idTipoMedicacion) { setError("Si es medicamento, el tipo de medicación es obligatorio."); return; }
+    if (esVacuna && (!vacForm.dosis || !vacForm.enfermedadPreventiva)) { setError("Si es vacuna, dosis y enfermedad preventiva son obligatorios."); return; }
+    setSaving(true); setError("");
+    try {
+      const idProd = producto?.idProducto;
+      await axios.patch(`/product/${idProd}`, {
+        nombre: form.nombre, descripcion: form.descripcion || null,
+        idCategoria: Number(form.idCategoria), idMarca: Number(form.idMarca), esUsoInterno: form.esUsoInterno,
+      }, { headers: headers() });
+      if (esMedicamento) {
+        const mp = { idTipoMedicacion: Number(medForm.idTipoMedicacion), ventaLibre: medForm.ventaLibre };
+        await axios.patch(`/medication/${idProd}`, mp, { headers: headers() }).catch(() => axios.post("/medication", { idProducto: idProd, ...mp }, { headers: headers() }));
+      }
+      if (esVacuna) {
+        const vp = { dosis: vacForm.dosis, enfermedadPreventiva: vacForm.enfermedadPreventiva, idEspecie: vacForm.idEspecie ? Number(vacForm.idEspecie) : null };
+        await axios.patch(`/vaccine/${idProd}`, vp, { headers: headers() }).catch(() => axios.post("/vaccine", { idProducto: idProd, ...vp }, { headers: headers() }));
+      }
       onSave();
     } catch (err) {
       setError(err.response?.data?.msg || err.response?.data?.errors?.[0]?.msg || "Error al guardar.");
     } finally { setSaving(false); }
   };
 
-  // ── Presentaciones: agregar ───────────────────────────────────
+  // ── Presentaciones: agregar (modal editar) ────────────────────
   const addPresentacion = async () => {
     if (!newPres.idPresentacion || newPres.precio === "") { setError("Seleccioná presentación e ingresá el precio."); return; }
     setSaving(true); setError("");
     try {
-      await axios.post("/prod-pres", {
-        idProducto:     producto.idProducto,
-        idPresentacion: Number(newPres.idPresentacion),
-        precio:         parseFloat(newPres.precio),
-      }, { headers: headers() });
+      await axios.post("/prod-pres", { idProducto: producto.idProducto, idPresentacion: Number(newPres.idPresentacion), precio: parseFloat(newPres.precio) }, { headers: headers() });
       setNewPres({ idPresentacion: "", precio: "" });
       const r = await axios.get(`/prod-pres/product/${producto.idProducto}`, { headers: headers() });
       setPresas(r.data || []);
     } catch (err) { setError(err.response?.data?.msg || "Error al agregar presentación."); }
     finally { setSaving(false); }
   };
-
-  // ── Presentaciones: eliminar ──────────────────────────────────
   const deletePresentacion = async (idProdPres) => {
-    if (!window.confirm("¿Desactivar esta presentación? El historial queda preservado.")) return;
+    if (!window.confirm("¿Desactivar esta presentación?")) return;
     try {
       await axios.patch(`/prod-pres/${idProdPres}`, { activo: false }, { headers: headers() });
       setPresas(p => p.filter(x => x.idProdPres !== idProdPres));
     } catch (err) { setError(err.response?.data?.msg || "Error al eliminar."); }
   };
-
-  // ── Presentaciones: editar precio ─────────────────────────────
-  const startEditPres = (p) => {
-    setEditingPresId(p.idProdPres);
-    setEditingPrecio(String(p.precio));
-    setError("");
-  };
+  const startEditPres = (p) => { setEditingPresId(p.idProdPres); setEditingPrecio(String(p.precio)); setError(""); };
   const cancelEditPres = () => { setEditingPresId(null); setEditingPrecio(""); };
   const saveEditPres = async (idProdPres) => {
-    if (editingPrecio === "" || isNaN(Number(editingPrecio)) || Number(editingPrecio) < 0) {
-      setError("Ingresá un precio válido."); return;
-    }
+    if (editingPrecio === "" || isNaN(Number(editingPrecio)) || Number(editingPrecio) < 0) { setError("Ingresá un precio válido."); return; }
     setSavingPres(true); setError("");
     try {
       await axios.patch(`/prod-pres/${idProdPres}`, { precio: parseFloat(editingPrecio) }, { headers: headers() });
@@ -746,119 +622,244 @@ function ProductoModal({ producto, categorias, marcas, presentaciones, onClose, 
 
   const presUsadas = new Set(presas.map(p => p.idPresentacion));
 
+  // ── Stepper UI component ──────────────────────────────────────
+  const StepperBar = () => {
+    const steps = [
+      { n: 1, label: "Datos" },
+      { n: 2, label: "Presentación" },
+      { n: 3, label: "¡Listo!" },
+    ];
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0, padding: "16px 24px 0", background: C.green900 }}>
+        {steps.map((s, i) => {
+          const done    = step > s.n;
+          const active  = step === s.n;
+          return (
+            <div key={s.n} style={{ display: "flex", alignItems: "center" }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+                <div style={{
+                  width: 30, height: 30, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                  fontWeight: 800, fontSize: 13,
+                  background: done ? C.green200 : active ? "white" : "rgba(255,255,255,0.15)",
+                  color: done ? C.green900 : active ? C.green900 : "rgba(255,255,255,0.5)",
+                  border: active ? "2px solid white" : "2px solid transparent",
+                  transition: "all 0.2s",
+                }}>
+                  {done ? "✓" : s.n}
+                </div>
+                <span style={{ fontSize: 10, fontWeight: active ? 700 : 500, color: active ? "white" : "rgba(255,255,255,0.45)", whiteSpace: "nowrap" }}>
+                  {s.label}
+                </span>
+              </div>
+              {i < steps.length - 1 && (
+                <div style={{ width: 60, height: 2, background: step > s.n ? C.green200 : "rgba(255,255,255,0.2)", margin: "0 4px 18px", transition: "background 0.3s" }} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // ── Render paso 2 (presentación inicial) ─────────────────────
+  const renderStep2 = () => (
+    <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+      <div style={{ padding: "14px 18px", background: C.green100, borderRadius: 12, border: `1px solid ${C.green200}` }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: C.green800, marginBottom: 4 }}>
+          ✅ Producto creado exitosamente
+        </div>
+        <div style={{ fontSize: 12.5, color: C.muted }}>
+          Ahora podés agregar una presentación con su precio de venta. Es opcional — también podés hacerlo después desde "Editar".
+        </div>
+      </div>
+
+      <Field label="Tipo de presentación">
+        <select value={presInicial.idPresentacion} onChange={e => setPresInicial(p => ({ ...p, idPresentacion: e.target.value }))} style={{ ...inp, cursor: "pointer" }}>
+          <option value="">Seleccionar (opcional)…</option>
+          {presentaciones.map(p => (
+            <option key={p.idPresentacion} value={p.idPresentacion}>{p.tipo} — {p.formato}</option>
+          ))}
+        </select>
+      </Field>
+
+      {presInicial.idPresentacion && (
+        <Field label="Precio de venta ($)" required>
+          <div style={{ position: "relative" }}>
+            <span style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", fontSize: 14, color: C.muted, fontWeight: 600 }}>$</span>
+            <input type="number" min="0" step="0.01" value={presInicial.precio}
+              onChange={e => setPresInicial(p => ({ ...p, precio: e.target.value }))}
+              style={{ ...inp, paddingLeft: 24 }} placeholder="0.00" autoFocus />
+          </div>
+        </Field>
+      )}
+
+      <div style={{ padding: "12px 16px", background: C.amberBg, borderRadius: 10, border: `1px solid ${C.amberBorder}`, fontSize: 12, color: C.amber }}>
+        <strong>💡 ¿Y el stock?</strong> Los lotes y cantidades se registran desde <strong>Compras</strong> al ingresar una factura o compra de mercadería.
+      </div>
+
+      {error && (
+        <div style={{ padding: "10px 14px", background: C.redBg, border: "1px solid #f7c1c1", borderRadius: 9, fontSize: 13, color: C.red }}>⚠️ {error}</div>
+      )}
+
+      <div style={{ display: "flex", gap: 10 }}>
+        <button type="button" onClick={() => setStep(3)}
+          style={{ flex: 1, padding: 12, borderRadius: 10, border: `1px solid ${C.border}`, background: C.white, color: C.muted, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+          Omitir por ahora
+        </button>
+        <button type="button" onClick={handleStep2} disabled={saving}
+          style={{ flex: 2, padding: 12, borderRadius: 10, border: "none", background: saving ? C.muted : C.green800, color: "white", fontWeight: 700, fontSize: 14, cursor: saving ? "not-allowed" : "pointer" }}>
+          {saving ? "Guardando…" : presInicial.idPresentacion ? "Agregar presentación →" : "Continuar →"}
+        </button>
+      </div>
+    </div>
+  );
+
+  // ── Render paso 3 (éxito) ─────────────────────────────────────
+  const renderStep3 = () => (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 20, padding: "8px 0 4px" }}>
+      <div style={{ width: 70, height: 70, borderRadius: "50%", background: C.green100, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36 }}>🎉</div>
+      <div style={{ textAlign: "center" }}>
+        <h3 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 700, color: C.green800 }}>¡Producto creado!</h3>
+        <p style={{ margin: 0, fontSize: 13, color: C.muted, lineHeight: 1.6 }}>
+          El producto quedó registrado en el inventario.
+          {presInicial.idPresentacion && " La presentación y precio también fueron guardados."}<br />
+          Para ingresar <strong>stock</strong>, registrá una compra desde el módulo <strong>Compras</strong>.
+        </p>
+      </div>
+
+      <div style={{ width: "100%", display: "flex", gap: 10, marginTop: 8 }}>
+        <button type="button" onClick={onSave}
+          style={{ flex: 1, padding: 13, borderRadius: 10, border: "none", background: `linear-gradient(135deg, ${C.green900}, ${C.green800})`, color: "white", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+          Ir al inventario
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(10,30,20,0.5)", backdropFilter: "blur(5px)" }}>
-      <div style={{ position: "absolute", inset: 0 }} onClick={onClose} />
-      <div style={{ position: "relative", background: C.white, borderRadius: 18, width: "100%", maxWidth: 660, maxHeight: "94vh", display: "flex", flexDirection: "column", margin: "0 16px", border: `1px solid ${C.border}`, boxShadow: "0 24px 60px rgba(0,0,0,0.2)", overflow: "hidden" }}>
+      <div style={{ position: "absolute", inset: 0 }} onClick={step === 3 ? onSave : onClose} />
+      <div style={{ position: "relative", background: C.white, borderRadius: 18, width: "100%", maxWidth: isNew ? 520 : 660, maxHeight: "94vh", display: "flex", flexDirection: "column", margin: "0 16px", border: `1px solid ${C.border}`, boxShadow: "0 24px 60px rgba(0,0,0,0.2)", overflow: "hidden" }}>
 
-        {/* Header */}
-        <div style={{ background: C.green900, color: "white", padding: "18px 24px", flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div>
-            <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>
-              {isView ? "Solo lectura" : isEdit ? `Producto #${producto?.idProducto}` : "Registro nuevo"}
+        {/* ── Header ── */}
+        <div style={{ background: C.green900, color: "white", flexShrink: 0 }}>
+          <div style={{ padding: "18px 24px 0", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div>
+              <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>
+                {isView ? "Solo lectura" : isEdit ? `Producto #${producto?.idProducto}` : "Registro nuevo"}
+              </div>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>
+                {isView ? "Ver producto" : isEdit ? "Editar producto" : "Nuevo producto"}
+              </h3>
             </div>
-            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>
-              {isView ? "Ver producto" : isEdit ? "Editar producto" : "Nuevo producto"}
-            </h3>
+            <button onClick={step === 3 ? onSave : onClose} style={{ background: "rgba(255,255,255,0.12)", border: "none", color: "white", width: 32, height: 32, borderRadius: 8, cursor: "pointer", fontSize: 17, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
           </div>
-          <button onClick={onClose} style={{ background: "rgba(255,255,255,0.12)", border: "none", color: "white", width: 32, height: 32, borderRadius: 8, cursor: "pointer", fontSize: 17, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+          {/* Stepper solo para "new" */}
+          {isNew && <StepperBar />}
         </div>
 
         <div style={{ flex: 1, overflowY: "auto", padding: "22px 24px" }}>
-          <form onSubmit={handleSubmit}>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 18 }}>
-              <Field label="Nombre del producto" required col="1 / -1">
-                <input name="nombre" value={form.nombre} onChange={hc} readOnly={isView} required style={inp} placeholder="Ej: Frontline Plus" autoFocus={!isView} />
-              </Field>
-              <Field label="Categoría" required>
-                <select name="idCategoria" value={form.idCategoria} onChange={hc} disabled={isView} required style={{ ...inp, cursor: "pointer" }}>
-                  <option value="">Seleccionar…</option>
-                  {categorias.map(c => <option key={c.idCategoria} value={c.idCategoria}>{c.descripcion || c.nombre}</option>)}
-                </select>
-              </Field>
-              <Field label="Marca" required>
-                <select name="idMarca" value={form.idMarca} onChange={hc} disabled={isView} required style={{ ...inp, cursor: "pointer" }}>
-                  <option value="">Seleccionar…</option>
-                  {marcas.map(m => <option key={m.idMarca} value={m.idMarca}>{m.nombre || m.descripcion}</option>)}
-                </select>
-              </Field>
-              <Field label="Descripción" col="1 / -1">
-                <textarea name="descripcion" value={form.descripcion} onChange={hc} readOnly={isView} rows={2}
-                  style={{ ...inp, resize: "vertical" }} placeholder="Descripción opcional…" />
-              </Field>
-              <Field label="Uso interno" col="1 / -1">
-                <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13.5, color: C.text, cursor: isView ? "default" : "pointer" }}>
-                  <input type="checkbox" name="esUsoInterno" checked={form.esUsoInterno} onChange={hc} disabled={isView} style={{ width: 16, height: 16, accentColor: C.green700 }} />
-                  <span>Este producto es de uso interno (no se vende al público)</span>
-                </label>
-              </Field>
-            </div>
+          {/* ─── STEP 2 ─── */}
+          {isNew && step === 2 && renderStep2()}
 
-            {!isView && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 18 }}>
-                <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13.5, color: C.text, cursor: "pointer" }}>
-                  <input type="checkbox" checked={esMedicamento} onChange={e => { setEsMedicamento(e.target.checked); if (e.target.checked) setEsVacuna(false); }} style={{ width: 16, height: 16, accentColor: C.purple }} />
-                  <span>💊 Es un medicamento</span>
-                </label>
-                {esMedicamento && (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, padding: "14px 16px", background: C.purpleBg, borderRadius: 10, border: "1px solid #c4bfee" }}>
-                    <Field label="Tipo de medicación" required>
-                      <select value={medForm.idTipoMedicacion} onChange={e => setMedForm(p => ({ ...p, idTipoMedicacion: e.target.value }))} required style={{ ...inp, cursor: "pointer" }}>
-                        <option value="">Seleccionar…</option>
-                        {tiposMed.map(t => <option key={t.idTipoMedicacion} value={t.idTipoMedicacion}>{t.nombre || t.descripcion}</option>)}
-                      </select>
-                    </Field>
-                    <Field label="Venta libre">
-                      <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13.5, color: C.text, cursor: "pointer", paddingTop: 6 }}>
-                        <input type="checkbox" checked={medForm.ventaLibre} onChange={e => setMedForm(p => ({ ...p, ventaLibre: e.target.checked }))} style={{ width: 16, height: 16, accentColor: C.purple }} />
-                        <span>Sin receta</span>
-                      </label>
-                    </Field>
-                  </div>
-                )}
+          {/* ─── STEP 3 ─── */}
+          {isNew && step === 3 && renderStep3()}
 
-                <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13.5, color: C.text, cursor: "pointer" }}>
-                  <input type="checkbox" checked={esVacuna} onChange={e => { setEsVacuna(e.target.checked); if (e.target.checked) setEsMedicamento(false); }} style={{ width: 16, height: 16, accentColor: C.amber }} />
-                  <span>💉 Es una vacuna</span>
-                </label>
-                {esVacuna && (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, padding: "14px 16px", background: C.amberBg, borderRadius: 10, border: `1px solid ${C.amberBorder}` }}>
-                    <Field label="Dosis" required>
-                      <input value={vacForm.dosis} onChange={e => setVacForm(p => ({ ...p, dosis: e.target.value }))} style={inp} placeholder="Ej: 0.5 ml" />
-                    </Field>
-                    <Field label="Enfermedad preventiva" required>
-                      <input value={vacForm.enfermedadPreventiva} onChange={e => setVacForm(p => ({ ...p, enfermedadPreventiva: e.target.value }))} style={inp} placeholder="Ej: Parvovirus" />
-                    </Field>
-                    <Field label="Especie">
-                      <select value={vacForm.idEspecie} onChange={e => setVacForm(p => ({ ...p, idEspecie: e.target.value }))} style={{ ...inp, cursor: "pointer" }}>
-                        <option value="">Todas</option>
-                        {especies.map(e => <option key={e.idEspecie} value={e.idEspecie}>{e.nombre}</option>)}
-                      </select>
-                    </Field>
-                  </div>
-                )}
+          {/* ─── STEP 1 o EDIT/VIEW ─── */}
+          {(!isNew || step === 1) && (
+            <form onSubmit={isEdit ? handleEdit : handleStep1}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 18 }}>
+                <Field label="Nombre del producto" required col="1 / -1">
+                  <input name="nombre" value={form.nombre} onChange={hc} readOnly={isView} required style={inp} placeholder="Ej: Frontline Plus" autoFocus={!isView} />
+                </Field>
+                <Field label="Categoría" required>
+                  <select name="idCategoria" value={form.idCategoria} onChange={hc} disabled={isView} required style={{ ...inp, cursor: "pointer" }}>
+                    <option value="">Seleccionar…</option>
+                    {categorias.map(c => <option key={c.idCategoria} value={c.idCategoria}>{c.descripcion || c.nombre}</option>)}
+                  </select>
+                </Field>
+                <Field label="Marca" required>
+                  <select name="idMarca" value={form.idMarca} onChange={hc} disabled={isView} required style={{ ...inp, cursor: "pointer" }}>
+                    <option value="">Seleccionar…</option>
+                    {marcas.map(m => <option key={m.idMarca} value={m.idMarca}>{m.nombre || m.descripcion}</option>)}
+                  </select>
+                </Field>
+                <Field label="Descripción" col="1 / -1">
+                  <textarea name="descripcion" value={form.descripcion} onChange={hc} readOnly={isView} rows={2} style={{ ...inp, resize: "vertical" }} placeholder="Descripción opcional…" />
+                </Field>
+                <Field label="Uso interno" col="1 / -1">
+                  <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13.5, color: C.text, cursor: isView ? "default" : "pointer" }}>
+                    <input type="checkbox" name="esUsoInterno" checked={form.esUsoInterno} onChange={hc} disabled={isView} style={{ width: 16, height: 16, accentColor: C.green700 }} />
+                    <span>Este producto es de uso interno (no se vende al público)</span>
+                  </label>
+                </Field>
               </div>
-            )}
 
-            {isView && (esMedicamento || esVacuna) && (
-              <div style={{ marginBottom: 18, padding: "12px 16px", background: esMedicamento ? C.purpleBg : C.amberBg, borderRadius: 10, border: `1px solid ${esMedicamento ? "#c4bfee" : C.amberBorder}`, fontSize: 13, color: C.text }}>
-                {esMedicamento && <div><strong>💊 Medicamento</strong> · {tiposMed.find(t => t.idTipoMedicacion === medForm.idTipoMedicacion)?.nombre || "—"} · {medForm.ventaLibre ? "Venta libre" : "Requiere receta"}</div>}
-                {esVacuna      && <div><strong>💉 Vacuna</strong> · Previene: {vacForm.enfermedadPreventiva} · Dosis: {vacForm.dosis}</div>}
-              </div>
-            )}
+              {!isView && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 18 }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13.5, color: C.text, cursor: "pointer" }}>
+                    <input type="checkbox" checked={esMedicamento} onChange={e => { setEsMedicamento(e.target.checked); if (e.target.checked) setEsVacuna(false); }} style={{ width: 16, height: 16, accentColor: C.purple }} />
+                    <span>💊 Es un medicamento</span>
+                  </label>
+                  {esMedicamento && (
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, padding: "14px 16px", background: C.purpleBg, borderRadius: 10, border: "1px solid #c4bfee" }}>
+                      <Field label="Tipo de medicación" required>
+                        <select value={medForm.idTipoMedicacion} onChange={e => setMedForm(p => ({ ...p, idTipoMedicacion: e.target.value }))} required style={{ ...inp, cursor: "pointer" }}>
+                          <option value="">Seleccionar…</option>
+                          {tiposMed.map(t => <option key={t.idTipoMedicacion} value={t.idTipoMedicacion}>{t.nombre || t.descripcion}</option>)}
+                        </select>
+                      </Field>
+                      <Field label="Venta libre">
+                        <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13.5, color: C.text, cursor: "pointer", paddingTop: 6 }}>
+                          <input type="checkbox" checked={medForm.ventaLibre} onChange={e => setMedForm(p => ({ ...p, ventaLibre: e.target.checked }))} style={{ width: 16, height: 16, accentColor: C.purple }} />
+                          <span>Sin receta</span>
+                        </label>
+                      </Field>
+                    </div>
+                  )}
+                  <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13.5, color: C.text, cursor: "pointer" }}>
+                    <input type="checkbox" checked={esVacuna} onChange={e => { setEsVacuna(e.target.checked); if (e.target.checked) setEsMedicamento(false); }} style={{ width: 16, height: 16, accentColor: C.amber }} />
+                    <span>💉 Es una vacuna</span>
+                  </label>
+                  {esVacuna && (
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, padding: "14px 16px", background: C.amberBg, borderRadius: 10, border: `1px solid ${C.amberBorder}` }}>
+                      <Field label="Dosis" required>
+                        <input value={vacForm.dosis} onChange={e => setVacForm(p => ({ ...p, dosis: e.target.value }))} style={inp} placeholder="Ej: 0.5 ml" />
+                      </Field>
+                      <Field label="Enfermedad preventiva" required>
+                        <input value={vacForm.enfermedadPreventiva} onChange={e => setVacForm(p => ({ ...p, enfermedadPreventiva: e.target.value }))} style={inp} placeholder="Ej: Parvovirus" />
+                      </Field>
+                      <Field label="Especie">
+                        <select value={vacForm.idEspecie} onChange={e => setVacForm(p => ({ ...p, idEspecie: e.target.value }))} style={{ ...inp, cursor: "pointer" }}>
+                          <option value="">Todas</option>
+                          {especies.map(e => <option key={e.idEspecie} value={e.idEspecie}>{e.nombre}</option>)}
+                        </select>
+                      </Field>
+                    </div>
+                  )}
+                </div>
+              )}
 
-            {error && <div style={{ marginTop: 14, padding: "10px 14px", background: C.redBg, border: "1px solid #f7c1c1", borderRadius: 9, fontSize: 13, color: C.red }}>⚠️ {error}</div>}
+              {isView && (esMedicamento || esVacuna) && (
+                <div style={{ marginBottom: 18, padding: "12px 16px", background: esMedicamento ? C.purpleBg : C.amberBg, borderRadius: 10, border: `1px solid ${esMedicamento ? "#c4bfee" : C.amberBorder}`, fontSize: 13, color: C.text }}>
+                  {esMedicamento && <div><strong>💊 Medicamento</strong> · {tiposMed.find(t => t.idTipoMedicacion === medForm.idTipoMedicacion)?.nombre || "—"} · {medForm.ventaLibre ? "Venta libre" : "Requiere receta"}</div>}
+                  {esVacuna      && <div><strong>💉 Vacuna</strong> · Previene: {vacForm.enfermedadPreventiva} · Dosis: {vacForm.dosis}</div>}
+                </div>
+              )}
 
-            {!isView && (
-              <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
-                <button type="button" onClick={onClose} style={{ flex: 1, padding: 12, borderRadius: 10, border: `1px solid ${C.border}`, background: C.white, color: C.muted, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Cancelar</button>
-                <button type="submit" disabled={saving} style={{ flex: 2, padding: 12, borderRadius: 10, border: "none", background: saving ? C.muted : C.green800, color: "white", fontWeight: 700, fontSize: 14, cursor: saving ? "not-allowed" : "pointer" }}>
-                  {saving ? "Guardando…" : isEdit ? "Guardar cambios" : "Crear producto"}
-                </button>
-              </div>
-            )}
-          </form>
+              {error && <div style={{ marginTop: 14, padding: "10px 14px", background: C.redBg, border: "1px solid #f7c1c1", borderRadius: 9, fontSize: 13, color: C.red }}>⚠️ {error}</div>}
+
+              {!isView && (
+                <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
+                  <button type="button" onClick={onClose} style={{ flex: 1, padding: 12, borderRadius: 10, border: `1px solid ${C.border}`, background: C.white, color: C.muted, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Cancelar</button>
+                  <button type="submit" disabled={saving} style={{ flex: 2, padding: 12, borderRadius: 10, border: "none", background: saving ? C.muted : C.green800, color: "white", fontWeight: 700, fontSize: 14, cursor: saving ? "not-allowed" : "pointer" }}>
+                    {saving ? "Guardando…" : isEdit ? "Guardar cambios" : "Siguiente: Presentación →"}
+                  </button>
+                </div>
+              )}
+            </form>
+          )}
 
           {/* ── Presentaciones (editar / ver) ─────────────────── */}
           {(isEdit || isView) && producto?.idProducto && (
@@ -880,45 +881,30 @@ function ProductoModal({ producto, categorias, marcas, presentaciones, onClose, 
                               {p.Presentacion?.tipo || `#${p.idPresentacion}`}
                               {p.Presentacion?.formato && <span style={{ fontWeight: 400, color: C.muted }}> — {p.Presentacion.formato}</span>}
                             </span>
-
                             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                               {editingPresId === p.idProdPres ? (
-                                /* Edición inline */
                                 <>
                                   <div style={{ position: "relative" }}>
                                     <span style={{ position: "absolute", left: 9, top: "50%", transform: "translateY(-50%)", fontSize: 12, color: C.muted }}>$</span>
-                                    <input
-                                      type="number" min="0" step="0.01"
-                                      value={editingPrecio}
+                                    <input type="number" min="0" step="0.01" value={editingPrecio}
                                       onChange={e => { setEditingPrecio(e.target.value); setError(""); }}
                                       onKeyDown={e => { if (e.key === "Enter") saveEditPres(p.idProdPres); if (e.key === "Escape") cancelEditPres(); }}
-                                      autoFocus
-                                      style={{ ...inp, width: 110, padding: "6px 8px 6px 20px", fontSize: 13 }}
-                                    />
+                                      autoFocus style={{ ...inp, width: 110, padding: "6px 8px 6px 20px", fontSize: 13 }} />
                                   </div>
                                   <button onClick={() => saveEditPres(p.idProdPres)} disabled={savingPres}
                                     style={{ padding: "6px 12px", borderRadius: 7, border: "none", background: C.green800, color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
                                     {savingPres ? "…" : "✓ Guardar"}
                                   </button>
                                   <button onClick={cancelEditPres}
-                                    style={{ padding: "6px 10px", borderRadius: 7, border: `1px solid ${C.border}`, background: C.white, color: C.muted, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-                                    ✕
-                                  </button>
+                                    style={{ padding: "6px 10px", borderRadius: 7, border: `1px solid ${C.border}`, background: C.white, color: C.muted, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>✕</button>
                                 </>
                               ) : (
-                                /* Vista normal */
                                 <>
                                   <span style={{ fontSize: 13, color: C.green800, fontWeight: 700 }}>${fmt(p.precio)}</span>
                                   {isEdit && (
                                     <>
-                                      <button onClick={() => startEditPres(p)}
-                                        style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.white, color: C.muted, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
-                                        ✏️ Precio
-                                      </button>
-                                      <button onClick={() => deletePresentacion(p.idProdPres)}
-                                        style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #f7c1c1", background: C.redBg, color: C.red, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
-                                        Eliminar
-                                      </button>
+                                      <button onClick={() => startEditPres(p)} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.white, color: C.muted, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>✏️ Precio</button>
+                                      <button onClick={() => deletePresentacion(p.idProdPres)} style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #f7c1c1", background: C.redBg, color: C.red, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>Eliminar</button>
                                     </>
                                   )}
                                 </>
@@ -929,8 +915,6 @@ function ProductoModal({ producto, categorias, marcas, presentaciones, onClose, 
                       </div>
                     )
                   }
-
-                  {/* Agregar nueva presentación */}
                   {isEdit && (
                     <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
                       <div style={{ flex: 2 }}>
@@ -992,6 +976,8 @@ export default function InventarioPage() {
   const [deleting,       setDeleting]       = useState(false);
   const [msgOk,          setMsgOk]          = useState("");
   const [msgErr,         setMsgErr]         = useState("");
+  // Panel expandido: idProducto o null
+  const [expandedId,     setExpandedId]     = useState(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -1037,6 +1023,8 @@ export default function InventarioPage() {
       return matchS && matchCat && matchTab;
     });
   }, [productos, search, filterCat, tab]);
+
+  const toggleExpand = (id) => setExpandedId(prev => prev === id ? null : id);
 
   return (
     <div style={{ maxWidth: 1280, margin: "0 auto", padding: "20px 24px" }}>
@@ -1112,46 +1100,85 @@ export default function InventarioPage() {
                   {canCreate && <button onClick={() => setModal({ type: "new" })} style={{ background: "none", border: "none", color: C.green700, fontWeight: 700, cursor: "pointer", fontSize: 13 }}>+ Crear nuevo</button>}
                 </td></tr>
               ) : filtered.map((p, i) => {
-                const stock = stockTotal(p);
-                const esMed = !!(p.Medication || p.Medicamento);
-                const esVac = !!(p.Vaccine || p.Vacuna);
+                const stock     = stockTotal(p);
+                const esMed     = !!(p.Medication || p.Medicamento);
+                const esVac     = !!(p.Vaccine || p.Vacuna);
+                const isExpanded = expandedId === p.idProducto;
+
                 return (
-                  <tr key={p.idProducto} style={{ borderBottom: i < filtered.length - 1 ? `1px solid ${C.borderLight}` : "none" }}>
-                    <td style={{ padding: "12px 16px", fontSize: 12, color: C.muted }}>{p.idProducto}</td>
-                    <td style={{ padding: "12px 16px", maxWidth: 280 }}>
-                      <div style={{ fontWeight: 600, fontSize: 13.5, color: C.text }}>{p.nombre}</div>
-                      <div style={{ display: "flex", gap: 5, marginTop: 4, flexWrap: "wrap" }}>
-                        {esMed && <span style={{ fontSize: 10, fontWeight: 700, background: C.purpleBg, color: C.purple, padding: "1px 6px", borderRadius: 4 }}>💊 Med</span>}
-                        {esVac && <span style={{ fontSize: 10, fontWeight: 700, background: C.amberBg, color: C.amber, padding: "1px 6px", borderRadius: 4 }}>💉 Vac</span>}
-                      </div>
-                      {/* Acordeón inline — con edición si el usuario puede */}
-                      <ProductoAcordeon idProducto={p.idProducto} canEdit={canCreate} />
-                    </td>
-                    <td style={{ padding: "12px 16px" }}>
-                      <span style={{ fontSize: 11, background: C.blueBg, color: C.blue, padding: "2px 8px", borderRadius: 6, fontWeight: 600 }}>
-                        {p.Category?.descripcion || p.Categoria?.descripcion || "—"}
-                      </span>
-                    </td>
-                    <td style={{ padding: "12px 16px", fontSize: 13, color: C.muted }}>{p.Brand?.descripcion || p.Marca?.descripcion || `#${p.idMarca}`}</td>
-                    <td style={{ padding: "12px 16px" }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, padding: "3px 9px", borderRadius: 6, background: stock > 0 ? C.green100 : C.redBg, color: stock > 0 ? C.green800 : C.red }}>
-                        {stock} un.
-                      </span>
-                    </td>
-                    <td style={{ padding: "12px 16px" }}>
-                      {p.esUsoInterno
-                        ? <span style={{ fontSize: 11, background: C.amberBg, color: C.amber, padding: "2px 8px", borderRadius: 6, fontWeight: 600 }}>Interno</span>
-                        : <span style={{ fontSize: 11, background: C.green100, color: C.green800, padding: "2px 8px", borderRadius: 6, fontWeight: 600 }}>Venta</span>
-                      }
-                    </td>
-                    <td style={{ padding: "12px 16px", textAlign: "right" }}>
-                      <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
-                        <button onClick={() => setModal({ type: "view", data: p })} style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.white, color: C.text, fontSize: 12, cursor: "pointer" }}>Ver</button>
-                        {canCreate && <button onClick={() => setModal({ type: "edit", data: p })} style={{ padding: "6px 12px", borderRadius: 8, border: `1.5px solid ${C.green700}`, background: C.white, color: C.green700, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Editar</button>}
-                        {canDelete && <button onClick={() => setConfirm(p.idProducto)} style={{ padding: "6px 12px", borderRadius: 8, border: `1.5px solid ${C.red}`, background: C.white, color: C.red, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Eliminar</button>}
-                      </div>
-                    </td>
-                  </tr>
+                  <>
+                    <tr
+                      key={p.idProducto}
+                      style={{
+                        borderBottom: isExpanded ? "none" : (i < filtered.length - 1 ? `1px solid ${C.borderLight}` : "none"),
+                        background: isExpanded ? "#f4f9f5" : C.white,
+                        transition: "background 0.15s",
+                      }}
+                    >
+                      <td style={{ padding: "13px 16px", fontSize: 12, color: C.muted }}>{p.idProducto}</td>
+                      <td style={{ padding: "13px 16px", maxWidth: 260 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          {/* Botón expandir */}
+                          <button
+                            onClick={() => toggleExpand(p.idProducto)}
+                            title={isExpanded ? "Cerrar detalle" : "Ver stock y precios"}
+                            style={{
+                              flexShrink: 0, width: 24, height: 24, borderRadius: 6,
+                              border: `1.5px solid ${isExpanded ? C.green700 : C.border}`,
+                              background: isExpanded ? C.green100 : C.white,
+                              color: isExpanded ? C.green800 : C.muted,
+                              cursor: "pointer", fontSize: 11, fontWeight: 800,
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              transition: "all 0.15s",
+                            }}
+                          >
+                            {isExpanded ? "▲" : "▼"}
+                          </button>
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: 13.5, color: C.text }}>{p.nombre}</div>
+                            <div style={{ display: "flex", gap: 5, marginTop: 3, flexWrap: "wrap" }}>
+                              {esMed && <span style={{ fontSize: 10, fontWeight: 700, background: C.purpleBg, color: C.purple, padding: "1px 6px", borderRadius: 4 }}>💊 Med</span>}
+                              {esVac && <span style={{ fontSize: 10, fontWeight: 700, background: C.amberBg, color: C.amber, padding: "1px 6px", borderRadius: 4 }}>💉 Vac</span>}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{ padding: "13px 16px" }}>
+                        <span style={{ fontSize: 11, background: C.blueBg, color: C.blue, padding: "2px 8px", borderRadius: 6, fontWeight: 600 }}>
+                          {p.Category?.descripcion || p.Categoria?.descripcion || "—"}
+                        </span>
+                      </td>
+                      <td style={{ padding: "13px 16px", fontSize: 13, color: C.muted }}>{p.Brand?.descripcion || p.Marca?.descripcion || `#${p.idMarca}`}</td>
+                      <td style={{ padding: "13px 16px" }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, padding: "3px 9px", borderRadius: 6, background: stock > 0 ? C.green100 : C.redBg, color: stock > 0 ? C.green800 : C.red }}>
+                          {stock} un.
+                        </span>
+                      </td>
+                      <td style={{ padding: "13px 16px" }}>
+                        {p.esUsoInterno
+                          ? <span style={{ fontSize: 11, background: C.amberBg, color: C.amber, padding: "2px 8px", borderRadius: 6, fontWeight: 600 }}>Interno</span>
+                          : <span style={{ fontSize: 11, background: C.green100, color: C.green800, padding: "2px 8px", borderRadius: 6, fontWeight: 600 }}>Venta</span>
+                        }
+                      </td>
+                      <td style={{ padding: "13px 16px", textAlign: "right" }}>
+                        <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                          <button onClick={() => setModal({ type: "view", data: p })} style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.white, color: C.text, fontSize: 12, cursor: "pointer" }}>Ver</button>
+                          {canCreate && <button onClick={() => setModal({ type: "edit", data: p })} style={{ padding: "6px 12px", borderRadius: 8, border: `1.5px solid ${C.green700}`, background: C.white, color: C.green700, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Editar</button>}
+                          {canDelete && <button onClick={() => setConfirm(p.idProducto)} style={{ padding: "6px 12px", borderRadius: 8, border: `1.5px solid ${C.red}`, background: C.white, color: C.red, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Eliminar</button>}
+                        </div>
+                      </td>
+                    </tr>
+
+                    {/* ── Fila expandida con panel de detalle ── */}
+                    {isExpanded && (
+                      <ProductoExpandedPanel
+                        key={`exp-${p.idProducto}`}
+                        idProducto={p.idProducto}
+                        canEdit={canCreate}
+                        onClose={() => setExpandedId(null)}
+                      />
+                    )}
+                  </>
                 );
               })}
             </tbody>
