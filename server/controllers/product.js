@@ -39,8 +39,9 @@ const getProducts = async (req, res) => {
                 { model: Vaccine, as: 'Vacuna' },
                 { 
                     model: ProductPresentation, 
-                    as: 'Presentaciones', // Alias explícito
+                    as: 'Presentaciones',
                     where: { activo: true },
+                    required: false,         
                     attributes: ['idProdPres', 'precio'],
                     include: [{ 
                         model: Presentation, 

@@ -250,14 +250,24 @@ function ProductPickerModal({ isOpen, onClose, onSelect, categories }) {
             }}>
               <div style={{ fontWeight: 600, fontSize: 14, color: C.text, lineHeight: 1.3 }}>{p.nombre}</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {p.presentacion && (
-                  <span style={{ fontSize: 11, background: C.blueBg, color: C.blue, padding: "2px 7px", borderRadius: 5 }}>
-                    {p.presentacion}
+                  {p.presentacion && (
+                      <span style={{ fontSize: 11, background: C.blueBg, color: C.blue, padding: "2px 7px", borderRadius: 5 }}>
+                          {p.presentacion}
+                      </span>
+                  )}
+                  <span style={{ fontSize: 11, background: C.green100, color: C.green800, padding: "2px 7px", borderRadius: 5 }}>
+                      Stock: {p.stock ?? 0}
                   </span>
-                )}
-                <span style={{ fontSize: 11, background: C.green100, color: C.green800, padding: "2px 7px", borderRadius: 5 }}>
-                  Stock: {p.stock ?? 0}
-                </span>
+                  {(p.Categoria?.descripcion || p.categoria) && (
+                      <span style={{ fontSize: 11, background: C.surface, color: C.muted, padding: "2px 7px", borderRadius: 5, border: `1px solid ${C.border}` }}>
+                          {p.Categoria?.descripcion || p.categoria}
+                      </span>
+                  )}
+                  {(p.Marca?.descripcion || p.Brand?.descripcion) && (
+                      <span style={{ fontSize: 11, background: "#eeedfe", color: "#534ab7", padding: "2px 7px", borderRadius: 5 }}>
+                          {p.Marca?.descripcion || p.Brand?.descripcion}
+                      </span>
+                  )}
               </div>
               <PresentationSelector
                 product={p}

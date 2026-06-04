@@ -829,19 +829,36 @@ function HistorialVentas({ onBack, user, canAnular }) {
                   const esProducto = !!d.idProducto;
                   const nombreServicio = d.DetalleCita?.PrecioServicio?.Service?.descripcion;
                   const nombreItem = esProducto ? (d.Producto?.nombre || "Producto") : (nombreServicio || "Servicio Técnico");
-                  const loteInfo = d.Lote?.codigoLote ? `Lote: ${d.Lote.codigoLote}` : "";
+                  const loteInfo = d.Lote?.codigoLote ? d.Lote.codigoLote : null;
                   const mascotaInfo = d.DetalleCita?.Cita?.Mascota?.nombre || "";
                   return (
-                    <div key={i} style={{ display: "flex", justifyContent: "space-between", paddingBottom: 10, borderBottom: `0.5px solid ${C.borderLight}`, alignItems: "flex-start" }}>
-                      <div>
-                        <div style={{ fontWeight: 500, color: C.text, fontSize: 13 }}>
-                          {nombreItem}
-                          {(loteInfo || mascotaInfo) && <span style={{ fontSize: 11, color: C.muted, fontWeight: 400, marginLeft: 6 }}>{esProducto ? loteInfo : mascotaInfo}</span>}
-                        </div>
-                        <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>{d.cantidad} un. × ${fmt(d.precioUnidad)}</div>
+                      <div key={i} style={{ display: "flex", justifyContent: "space-between", paddingBottom: 10, borderBottom: `0.5px solid ${C.borderLight}`, alignItems: "flex-start" }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontWeight: 500, color: C.text, fontSize: 13 }}>
+                                  {nombreItem}
+                                  {!esProducto && mascotaInfo && (
+                                      <span style={{ fontSize: 11, color: C.muted, fontWeight: 400, marginLeft: 6 }}>
+                                          {mascotaInfo}
+                                      </span>
+                                  )}
+                              </div>
+                              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3, flexWrap: "wrap" }}>
+                                  <span style={{ fontSize: 12, color: C.muted }}>{d.cantidad} un. × ${fmt(d.precioUnidad)}</span>
+                                  {esProducto && loteInfo && (
+                                      <span style={{
+                                          fontSize: 10, fontWeight: 600,
+                                          background: C.green100, color: C.green800,
+                                          padding: "1px 7px", borderRadius: 4,
+                                          border: `0.5px solid ${C.green200}`,
+                                          fontFamily: "monospace",
+                                      }}>
+                                          Lote #{loteInfo}
+                                      </span>
+                                  )}
+                              </div>
+                          </div>
+                          <strong style={{ fontSize: 13, color: C.text, flexShrink: 0, marginLeft: 12 }}>${fmt(d.precioUnidad * d.cantidad)}</strong>
                       </div>
-                      <strong style={{ fontSize: 13, color: C.text }}>${fmt(d.precioUnidad * d.cantidad)}</strong>
-                    </div>
                   );
                 })}
               </div>
@@ -883,8 +900,9 @@ function ProductModal({ isOpen, onClose, onAddProduct, categories, productResult
     const matchCat = filterCategory === "all" || String(p.idCategoria) === String(filterCategory);
     const pres = p.presentacion || p.nombrePresentacion || "";
     const matchPres = filterPresentation === "all" || pres === filterPresentation;
-    return matchName && matchCat && matchPres;
-  });
+    const tienePresYPrecio = p.precio > 0 && p.idProdPres;  // ← solo con precio asociado
+    return matchName && matchCat && matchPres && tienePresYPrecio;
+  }); 
 
   const handleClose = () => {
     setSearchTerm(""); setFilterCategory("all");
@@ -1004,8 +1022,24 @@ function ProductModal({ isOpen, onClose, onAddProduct, categories, productResult
                     )}
                   </div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 10 }}>
-                    {pres && <span style={{ background: C.blueBg, color: C.blue, borderRadius: 5, padding: "2px 7px", fontSize: 11, border: `0.5px solid #b5d4f4` }}>{pres}</span>}
-                    <span style={{ background: C.green100, color: C.green800, borderRadius: 5, padding: "2px 7px", fontSize: 11, border: `0.5px solid #c0dd97` }}>Stock: {stock}</span>
+                      {pres && (
+                          <span style={{ background: C.blueBg, color: C.blue, borderRadius: 5, padding: "2px 7px", fontSize: 11, border: `0.5px solid #b5d4f4` }}>
+                              {pres}
+                          </span>
+                      )}
+                      <span style={{ background: C.green100, color: C.green800, borderRadius: 5, padding: "2px 7px", fontSize: 11, border: `0.5px solid #c0dd97` }}>
+                          Stock: {stock}
+                      </span>
+                      {(prod.Categoria?.descripcion || prod.categoria) && (
+                          <span style={{ background: C.surface, color: C.muted, borderRadius: 5, padding: "2px 7px", fontSize: 11, border: `0.5px solid ${C.border}` }}>
+                              {prod.Categoria?.descripcion || prod.categoria}
+                          </span>
+                      )}
+                      {(prod.Marca?.descripcion || prod.Brand?.descripcion) && (
+                          <span style={{ background: C.purpleBg, color: C.purple, borderRadius: 5, padding: "2px 7px", fontSize: 11, border: `0.5px solid #c4bfee` }}>
+                              {prod.Marca?.descripcion || prod.Brand?.descripcion}
+                          </span>
+                      )}
                   </div>
                   <div style={{ fontSize: 18, fontWeight: 500, color: C.text }}>${fmt(precio)}</div>
                 </div>
