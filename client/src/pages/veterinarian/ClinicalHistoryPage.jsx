@@ -222,20 +222,14 @@ function MedicationPickerModal({ isOpen, prodPres, onSelect, onClose }) {
               : pp?.presentacion || pp?.formato || "";
             const precio = parseFloat(pp?.precio || 0);
             const stock = (() => {
-              const lotes =
-                pp?.Product?.Lotes ||
-                pp?.Producto?.Lotes ||
-                [];
-            
+              const lotes = pp?.Product?.Lotes || pp?.Producto?.Lotes || [];
               if (lotes.length > 0) {
                 const hoy = new Date();
-                const vigentes = lotes.filter(l =>
-                  Number(l.cantidadDisponible) > 0 &&           // ← era l.stock
-                  (!l.fechaVencimiento || new Date(l.fechaVencimiento) > hoy)
-                );
-                return vigentes.reduce((sum, l) => sum + Number(l.cantidadDisponible), 0);  // ← era l.stock
+                return lotes
+                  .filter(l => Number(l.cantidadDisponible) > 0 && 
+                               (!l.fechaVencimiento || new Date(l.fechaVencimiento) > hoy))
+                  .reduce((sum, l) => sum + Number(l.cantidadDisponible), 0);
               }
-            
               return pp?._stockCalculado ?? null;
             })();
             const sinStock = stock != null && stock <= 0;
@@ -1015,6 +1009,23 @@ function PatientHistory({ mascota, onBack }) {
         axios.get("/prod-pres",          { headers: hdrs() }),
         axios.get("/pet-states", { headers: hdrs() }),
       ]);
+
+      const resProds = await axios.get("/products", { headers: hdrs() });
+      const stockMap = {};
+      (resProds.data || []).forEach(p => { 
+        stockMap[p.idProducto] = p.stock ?? 0; 
+      });
+
+      const prodPresConStock = (resProdPres.data || []).map(pp => ({
+        ...pp,
+        _stockCalculado: stockMap[
+          pp.idProducto ?? 
+          pp.Product?.idProducto ?? 
+          pp.Producto?.idProducto
+        ] ?? null,
+      }));
+      setProdPres(prodPresConStock);
+
 
       const all   = resHist.data || [];
       const suyos = all.filter((h) =>

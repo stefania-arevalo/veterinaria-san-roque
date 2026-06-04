@@ -52,7 +52,7 @@ const ProductPresentation = sequelize.define("ProductPresentation", {
 // ─── ASOCIACIONES DE MODELOS ─────────────────────────────────────────────────
 ProductPresentation.associate = (models) => {
     // Conecta con el producto (Agregado alias explícito 'Product' si tu arquitectura lo requiere, o se mantiene por defecto)
-    ProductPresentation.belongsTo(models.Product, { foreignKey: 'idProducto', as: 'Product' });
+    ProductPresentation.belongsTo(models.Product, { foreignKey: 'idProducto' });
     
     // Conecta con la presentación (tipo, formato, etc.)
     ProductPresentation.belongsTo(models.Presentation, { foreignKey: 'idPresentacion', as: 'Presentacion'});
