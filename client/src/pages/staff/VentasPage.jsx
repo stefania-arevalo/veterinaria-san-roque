@@ -533,7 +533,14 @@ function HistorialVentas({ onBack, user, canAnular }) {
   const [modalError, setModalError] = useState("");
   const [ventaParaEmail, setVentaParaEmail] = useState(null);
 
+  // ── Filtros ──
+  const [filtFechaDesde, setFiltFechaDesde] = useState("");
+  const [filtFechaHasta, setFiltFechaHasta] = useState("");
+  const [filtEstado, setFiltEstado]         = useState("todas");
+  const [filtCliente, setFiltCliente]       = useState("");
+
   const fetchVentas = async () => {
+    setLoading(true);
     try {
       const res = await axios.get("/sales", { headers: headers() });
       setVentas(res.data || []);
@@ -542,6 +549,33 @@ function HistorialVentas({ onBack, user, canAnular }) {
   };
 
   useEffect(() => { fetchVentas(); }, []);
+
+  // ── Ventas filtradas ──
+  const ventasFiltradas = useMemo(() => {
+    return ventas.filter((v) => {
+      if (filtFechaDesde && v.fecha < filtFechaDesde) return false;
+      if (filtFechaHasta && v.fecha > filtFechaHasta) return false;
+      if (filtEstado !== "todas") {
+        const estado = (v.EstadoVenta?.descripcion || "completada").toLowerCase();
+        if (filtEstado === "anulada"   && estado !== "anulada")   return false;
+        if (filtEstado === "activa"    && estado === "anulada")   return false;
+      }
+      if (filtCliente.trim()) {
+        const q = filtCliente.toLowerCase();
+        const nombre = `${v.Cliente?.nombres || ""} ${v.Cliente?.apellidos || ""}`.toLowerCase();
+        const dni    = String(v.Cliente?.dni || "");
+        if (!nombre.includes(q) && !dni.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [ventas, filtFechaDesde, filtFechaHasta, filtEstado, filtCliente]);
+
+  const hayFiltros = filtFechaDesde || filtFechaHasta || filtEstado !== "todas" || filtCliente.trim();
+
+  const limpiarFiltros = () => {
+    setFiltFechaDesde(""); setFiltFechaHasta("");
+    setFiltEstado("todas"); setFiltCliente("");
+  };
 
   const handleAnularConfirmado = async () => {
     try {
@@ -559,9 +593,17 @@ function HistorialVentas({ onBack, user, canAnular }) {
     const anulada = desc?.toLowerCase() === "anulada";
     return {
       padding: "4px 10px", borderRadius: 12, fontSize: 11, fontWeight: 500,
-      background: anulada ? C.redBg : C.green100,
-      color: anulada ? C.red : C.green800,
+      background: anulada ? C.redBg  : C.green100,
+      color:      anulada ? C.red    : C.green800,
     };
+  };
+
+  // ── estilos locales reutilizables ──
+  const filtInp = {
+    padding: "8px 11px", borderRadius: 8,
+    border: `0.5px solid ${C.border}`,
+    fontSize: 13, outline: "none",
+    background: C.white, color: C.text,
   };
 
   return (
@@ -570,27 +612,23 @@ function HistorialVentas({ onBack, user, canAnular }) {
         <AlertModal icon={Icon.warning} iconBg={C.amberBg}
           title="¿Anular esta venta?"
           message="Esta acción <strong>no se puede deshacer</strong>. El stock será restaurado."
-          confirmText="Sí, anular" confirmBg={C.red}
-          cancelText="Cancelar"
-          onConfirm={handleAnularConfirmado}
-          onCancel={() => setConfirmAnular(null)}
-        />
+          confirmText="Sí, anular" confirmBg={C.red} cancelText="Cancelar"
+          onConfirm={handleAnularConfirmado} onCancel={() => setConfirmAnular(null)} />
       )}
       {modalExito && (
         <AlertModal icon={Icon.success} iconBg={C.green100}
           title="Operación exitosa" message={modalExito}
           confirmText="Aceptar" confirmBg={C.green800}
-          onConfirm={() => setModalExito("")}
-        />
+          onConfirm={() => setModalExito("")} />
       )}
       {modalError && (
         <AlertModal icon={Icon.error} iconBg={C.redBg}
           title="Ocurrió un error" message={modalError}
           confirmText="Cerrar" confirmBg={C.red}
-          onConfirm={() => setModalError("")}
-        />
+          onConfirm={() => setModalError("")} />
       )}
 
+      {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <button onClick={onBack} style={{
           display: "flex", alignItems: "center", gap: 8,
@@ -608,6 +646,83 @@ function HistorialVentas({ onBack, user, canAnular }) {
         </div>
       </div>
 
+      {/* ── Barra de filtros ── */}
+      <div style={{
+        background: C.white, border: `0.5px solid ${C.border}`,
+        borderRadius: 10, padding: "14px 16px",
+        marginBottom: 16,
+        display: "flex", flexWrap: "wrap", gap: 10, alignItems: "flex-end",
+      }}>
+
+        {/* Fecha desde */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <span style={{ fontSize: 10, fontWeight: 600, color: C.muted, textTransform: "uppercase", letterSpacing: "0.04em" }}>Desde</span>
+          <input type="date" value={filtFechaDesde}
+            onChange={e => setFiltFechaDesde(e.target.value)}
+            style={filtInp} />
+        </div>
+
+        {/* Fecha hasta */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <span style={{ fontSize: 10, fontWeight: 600, color: C.muted, textTransform: "uppercase", letterSpacing: "0.04em" }}>Hasta</span>
+          <input type="date" value={filtFechaHasta}
+            onChange={e => setFiltFechaHasta(e.target.value)}
+            style={filtInp} />
+        </div>
+
+        {/* Estado */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <span style={{ fontSize: 10, fontWeight: 600, color: C.muted, textTransform: "uppercase", letterSpacing: "0.04em" }}>Estado</span>
+          <select value={filtEstado} onChange={e => setFiltEstado(e.target.value)}
+            style={{ ...filtInp, cursor: "pointer" }}>
+            <option value="todas">Todas</option>
+            <option value="activa">Activas</option>
+            <option value="anulada">Anuladas</option>
+          </select>
+        </div>
+
+        {/* Cliente */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: "1 1 180px" }}>
+          <span style={{ fontSize: 10, fontWeight: 600, color: C.muted, textTransform: "uppercase", letterSpacing: "0.04em" }}>Cliente / DNI</span>
+          <div style={{ position: "relative" }}>
+            <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }}>
+              {Icon.search}
+            </span>
+            <input
+              type="text"
+              placeholder="Buscar..."
+              value={filtCliente}
+              onChange={e => setFiltCliente(e.target.value)}
+              style={{ ...filtInp, paddingLeft: 32, width: "100%", boxSizing: "border-box" }}
+            />
+          </div>
+        </div>
+
+        {/* Contador + limpiar */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginLeft: "auto" }}>
+          <span style={{
+            fontSize: 12, color: C.muted, whiteSpace: "nowrap",
+            background: C.surface, padding: "6px 10px",
+            borderRadius: 7, border: `0.5px solid ${C.border}`,
+          }}>
+            {ventasFiltradas.length} de {ventas.length} ventas
+          </span>
+          {hayFiltros && (
+            <button onClick={limpiarFiltros} style={{
+              display: "flex", alignItems: "center", gap: 5,
+              background: C.redBg, color: C.red,
+              border: `0.5px solid #f7c1c1`,
+              padding: "7px 12px", borderRadius: 8,
+              fontSize: 12, fontWeight: 500, cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}>
+              {Icon.x} Limpiar filtros
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Tabla */}
       <Card>
         <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
           <thead>
@@ -624,10 +739,14 @@ function HistorialVentas({ onBack, user, canAnular }) {
           <tbody>
             {loading ? (
               <tr><td colSpan="6" style={{ padding: 40, textAlign: "center", color: C.muted, fontSize: 13 }}>Cargando ventas...</td></tr>
-            ) : ventas.length === 0 ? (
-              <tr><td colSpan="6" style={{ padding: 40, textAlign: "center", color: C.muted, fontSize: 13 }}>No hay ventas registradas.</td></tr>
-            ) : ventas.map((v, idx) => (
-              <tr key={v.idVenta} style={{ borderBottom: idx < ventas.length - 1 ? `0.5px solid ${C.borderLight}` : "none" }}>
+            ) : ventasFiltradas.length === 0 ? (
+              <tr>
+                <td colSpan="6" style={{ padding: 40, textAlign: "center", color: C.muted, fontSize: 13 }}>
+                  {hayFiltros ? "Sin resultados para los filtros aplicados." : "No hay ventas registradas."}
+                </td>
+              </tr>
+            ) : ventasFiltradas.map((v, idx) => (
+              <tr key={v.idVenta} style={{ borderBottom: idx < ventasFiltradas.length - 1 ? `0.5px solid ${C.borderLight}` : "none" }}>
                 <td style={{ padding: "12px 16px", fontWeight: 500, color: C.text, fontSize: 13 }}>#{v.idVenta}</td>
                 <td style={{ padding: "12px 16px", fontSize: 13, color: C.text }}>{v.Cliente?.nombres} {v.Cliente?.apellidos}</td>
                 <td style={{ padding: "12px 16px", fontSize: 13, color: C.text }}>
@@ -646,17 +765,10 @@ function HistorialVentas({ onBack, user, canAnular }) {
                       background: C.blueBg, color: C.blue, border: `0.5px solid #b5d4f4`,
                       padding: "6px 12px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 500,
                     }}>Ver detalle</button>
-                    <button
-                      onClick={() => setVentaParaEmail(v)}
-                      style={{
-                        background: '#eaf3de', color: '#1f5c38',
-                        border: '0.5px solid #c0dd97',
-                        padding: '6px 12px', borderRadius: 6,
-                        cursor: 'pointer', fontSize: 12, fontWeight: 500,
-                      }}
-                    >
-                      📧 Enviar
-                    </button>
+                    <button onClick={() => setVentaParaEmail(v)} style={{
+                      background: "#eaf3de", color: "#1f5c38", border: "0.5px solid #c0dd97",
+                      padding: "6px 12px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 500,
+                    }}>📧 Enviar</button>
                     {canAnular && v.EstadoVenta?.descripcion?.toLowerCase() !== "anulada" && (
                       <button onClick={() => setConfirmAnular(v.idVenta)} style={{
                         background: C.redBg, color: C.red, border: `0.5px solid #f7c1c1`,
@@ -671,14 +783,13 @@ function HistorialVentas({ onBack, user, canAnular }) {
         </table>
       </Card>
 
+      {/* Modal email y detalle — sin cambios, copiá los tuyos tal cual */}
       {ventaParaEmail && (
-        <EmailComprobanteModal
-          venta={ventaParaEmail}
-          onClose={() => setVentaParaEmail(null)}
-        />
+        <EmailComprobanteModal venta={ventaParaEmail} onClose={() => setVentaParaEmail(null)} />
       )}
 
       {ventaDetalle && (
+        /* ... tu modal de detalle existente sin modificar ... */
         <div style={{
           position: "fixed", inset: 0, background: "rgba(10,30,20,0.55)",
           backdropFilter: "blur(6px)", display: "flex", alignItems: "center",
@@ -690,31 +801,17 @@ function HistorialVentas({ onBack, user, canAnular }) {
             overflow: "hidden", border: `0.5px solid ${C.border}`,
             boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
           }}>
-            <div style={{
-              background: C.green900, color: "white",
-              padding: "16px 20px", display: "flex",
-              justifyContent: "space-between", alignItems: "center", flexShrink: 0,
-            }}>
+            <div style={{ background: C.green900, color: "white", padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ fontSize: 15, fontWeight: 500 }}>Venta #{ventaDetalle.idVenta}</span>
-                <span style={{
-                  background: "rgba(255,255,255,0.15)", padding: "3px 8px",
-                  borderRadius: 6, fontSize: 11, fontWeight: 500,
-                }}>{ventaDetalle.EstadoVenta?.descripcion || "Completada"}</span>
+                <span style={{ background: "rgba(255,255,255,0.15)", padding: "3px 8px", borderRadius: 6, fontSize: 11, fontWeight: 500 }}>
+                  {ventaDetalle.EstadoVenta?.descripcion || "Completada"}
+                </span>
               </div>
-              <button onClick={() => setVentaDetalle(null)} style={{
-                background: "rgba(255,255,255,0.1)", border: "none", color: "white",
-                width: 32, height: 32, borderRadius: 6, cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>{Icon.x}</button>
+              <button onClick={() => setVentaDetalle(null)} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "white", width: 32, height: 32, borderRadius: 6, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>{Icon.x}</button>
             </div>
-
             <div style={{ padding: "16px 20px", overflowY: "auto", flex: 1 }}>
-              <div style={{
-                display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12,
-                marginBottom: 16, background: C.surface, padding: 14,
-                borderRadius: 8, border: `0.5px solid ${C.border}`,
-              }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16, background: C.surface, padding: 14, borderRadius: 8, border: `0.5px solid ${C.border}` }}>
                 {[
                   ["Cliente", `${ventaDetalle.Cliente?.nombres} ${ventaDetalle.Cliente?.apellidos}`],
                   ["Vendedor", ventaDetalle.Vendedor?.nombres || "Personal"],
@@ -727,35 +824,22 @@ function HistorialVentas({ onBack, user, canAnular }) {
                   </div>
                 ))}
               </div>
-
-              <p style={{ fontSize: 11, fontWeight: 500, color: C.muted, textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: 10, borderBottom: `0.5px solid ${C.borderLight}`, paddingBottom: 8 }}>
-                Ítems comprados
-              </p>
+              <p style={{ fontSize: 11, fontWeight: 500, color: C.muted, textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: 10, borderBottom: `0.5px solid ${C.borderLight}`, paddingBottom: 8 }}>Ítems comprados</p>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {ventaDetalle.detalles?.map((d, i) => {
                   const esProducto = !!d.idProducto;
                   const nombreServicio = d.DetalleCita?.PrecioServicio?.Service?.descripcion;
                   const nombreItem = esProducto ? (d.Producto?.nombre || "Producto") : (nombreServicio || "Servicio Técnico");
                   const loteInfo = d.Lote?.codigoLote ? `Lote: ${d.Lote.codigoLote}` : "";
-                  const mascotaInfo = d.DetalleCita?.Cita?.Mascota?.nombre ? `${d.DetalleCita.Cita.Mascota.nombre}` : "";
+                  const mascotaInfo = d.DetalleCita?.Cita?.Mascota?.nombre || "";
                   return (
-                    <div key={i} style={{
-                      display: "flex", justifyContent: "space-between",
-                      paddingBottom: 10, borderBottom: `0.5px solid ${C.borderLight}`,
-                      alignItems: "flex-start",
-                    }}>
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", paddingBottom: 10, borderBottom: `0.5px solid ${C.borderLight}`, alignItems: "flex-start" }}>
                       <div>
                         <div style={{ fontWeight: 500, color: C.text, fontSize: 13 }}>
                           {nombreItem}
-                          {(loteInfo || mascotaInfo) && (
-                            <span style={{ fontSize: 11, color: C.muted, fontWeight: 400, marginLeft: 6 }}>
-                              {esProducto ? loteInfo : mascotaInfo}
-                            </span>
-                          )}
+                          {(loteInfo || mascotaInfo) && <span style={{ fontSize: 11, color: C.muted, fontWeight: 400, marginLeft: 6 }}>{esProducto ? loteInfo : mascotaInfo}</span>}
                         </div>
-                        <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
-                          {d.cantidad} un. × ${fmt(d.precioUnidad)}
-                        </div>
+                        <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>{d.cantidad} un. × ${fmt(d.precioUnidad)}</div>
                       </div>
                       <strong style={{ fontSize: 13, color: C.text }}>${fmt(d.precioUnidad * d.cantidad)}</strong>
                     </div>
@@ -763,15 +847,9 @@ function HistorialVentas({ onBack, user, canAnular }) {
                 })}
               </div>
             </div>
-
             <div style={{ padding: "14px 20px", background: C.surface, borderTop: `0.5px solid ${C.border}`, flexShrink: 0 }}>
-              {[
-                ["IVA registrado (21%)", `$${fmt(ventaDetalle.iva)}`],
-                ["Descuento aplicado", `-$${fmt(ventaDetalle.descuento || 0)}`],
-              ].map(([label, val]) => (
-                <div key={label} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: C.muted, marginBottom: 6 }}>
-                  <span>{label}</span><span>{val}</span>
-                </div>
+              {[["IVA registrado (21%)", `$${fmt(ventaDetalle.iva)}`], ["Descuento aplicado", `-$${fmt(ventaDetalle.descuento || 0)}`]].map(([label, val]) => (
+                <div key={label} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: C.muted, marginBottom: 6 }}><span>{label}</span><span>{val}</span></div>
               ))}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, paddingTop: 10, borderTop: `0.5px solid ${C.border}` }}>
                 <span style={{ fontSize: 13, fontWeight: 500, color: C.text, textTransform: "uppercase", letterSpacing: "0.3px" }}>Total pagado</span>

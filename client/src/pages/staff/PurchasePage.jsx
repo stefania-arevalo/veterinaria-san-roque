@@ -280,24 +280,74 @@ function HistorialCompras({ onBack, canAnular }) {
   const [msgOk,    setMsgOk]    = useState("");
   const [msgErr,   setMsgErr]   = useState("");
 
-  useEffect(() => {
-    axios.get("/purchases", { headers: headers() })
-      .then(r => setCompras(r.data || []))
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
+  // ── Filtros ──
+  const [filtFechaDesde, setFiltFechaDesde] = useState("");
+  const [filtFechaHasta, setFiltFechaHasta] = useState("");
+  const [filtProveedor,  setFiltProveedor]  = useState("");
+  const [filtVisitador,  setFiltVisitador]  = useState("");
+
+  const fetchCompras = async () => {
+    setLoading(true);
+    try {
+      const r = await axios.get("/purchases", { headers: headers() });
+      setCompras(r.data || []);
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { fetchCompras(); }, []);
+
+  // Listas derivadas para los selects de filtro
+  const proveedoresUnicos = useMemo(() => {
+    const seen = new Set();
+    return compras
+      .filter(c => c.Proveedor?.idProveedor && !seen.has(c.Proveedor.idProveedor) && seen.add(c.Proveedor.idProveedor))
+      .map(c => ({ id: c.Proveedor.idProveedor, label: c.Proveedor.razonSocial }));
+  }, [compras]);
+
+  const visitadoresUnicos = useMemo(() => {
+    const seen = new Set();
+    return compras
+      .filter(c => c.Visitador?.idVisitador && !seen.has(c.Visitador.idVisitador) && seen.add(c.Visitador.idVisitador))
+      .map(c => ({ id: c.Visitador.idVisitador, label: `${c.Visitador.nombre} ${c.Visitador.apellido}` }));
+  }, [compras]);
+
+  // Compras filtradas
+  const comprasFiltradas = useMemo(() => {
+    return compras.filter((c) => {
+      if (filtFechaDesde && c.fecha < filtFechaDesde) return false;
+      if (filtFechaHasta && c.fecha > filtFechaHasta) return false;
+      if (filtProveedor && String(c.Proveedor?.idProveedor) !== filtProveedor) return false;
+      if (filtVisitador && String(c.Visitador?.idVisitador) !== filtVisitador) return false;
+      return true;
+    });
+  }, [compras, filtFechaDesde, filtFechaHasta, filtProveedor, filtVisitador]);
+
+  const hayFiltros = filtFechaDesde || filtFechaHasta || filtProveedor || filtVisitador;
+
+  const limpiarFiltros = () => {
+    setFiltFechaDesde(""); setFiltFechaHasta("");
+    setFiltProveedor(""); setFiltVisitador("");
+  };
 
   const anular = async () => {
     try {
       await axios.delete(`/purchase/${confirm}`, { headers: headers() });
       setConfirm(null);
       setMsgOk("La compra fue anulada y el stock fue restaurado correctamente.");
-      const r = await axios.get("/purchases", { headers: headers() });
-      setCompras(r.data || []);
+      fetchCompras();
     } catch {
       setConfirm(null);
       setMsgErr("No se pudo anular la compra.");
     }
+  };
+
+  const filtInp = {
+    padding: "8px 11px", borderRadius: 8,
+    border: `1px solid ${C.border}`,
+    fontSize: 13, outline: "none",
+    background: C.white, color: C.text,
+    cursor: "pointer",
   };
 
   return (
@@ -332,6 +382,75 @@ function HistorialCompras({ onBack, canAnular }) {
         }}>← Volver a Nueva Compra</button>
       </div>
 
+      {/* ── Barra de filtros ── */}
+      <div style={{
+        background: C.white, border: `1px solid ${C.border}`,
+        borderRadius: 10, padding: "14px 16px",
+        marginBottom: 16,
+        display: "flex", flexWrap: "wrap", gap: 10, alignItems: "flex-end",
+      }}>
+
+        {/* Fecha desde */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.04em" }}>Desde</span>
+          <input type="date" value={filtFechaDesde}
+            onChange={e => setFiltFechaDesde(e.target.value)}
+            style={{ ...filtInp, cursor: "text" }} />
+        </div>
+
+        {/* Fecha hasta */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.04em" }}>Hasta</span>
+          <input type="date" value={filtFechaHasta}
+            onChange={e => setFiltFechaHasta(e.target.value)}
+            style={{ ...filtInp, cursor: "text" }} />
+        </div>
+
+        {/* Proveedor */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 180 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.04em" }}>Proveedor</span>
+          <select value={filtProveedor} onChange={e => setFiltProveedor(e.target.value)} style={filtInp}>
+            <option value="">Todos</option>
+            {proveedoresUnicos.map(p => (
+              <option key={p.id} value={p.id}>{p.label}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Visitador */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 180 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.04em" }}>Visitador</span>
+          <select value={filtVisitador} onChange={e => setFiltVisitador(e.target.value)} style={filtInp}>
+            <option value="">Todos</option>
+            {visitadoresUnicos.map(v => (
+              <option key={v.id} value={v.id}>{v.label}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Contador + limpiar */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginLeft: "auto" }}>
+          <span style={{
+            fontSize: 12, color: C.muted, whiteSpace: "nowrap",
+            background: C.surface, padding: "6px 10px",
+            borderRadius: 7, border: `1px solid ${C.border}`,
+          }}>
+            {comprasFiltradas.length} de {compras.length} compras
+          </span>
+          {hayFiltros && (
+            <button onClick={limpiarFiltros} style={{
+              background: C.redBg, color: C.red,
+              border: `1px solid #f7c1c1`,
+              padding: "7px 12px", borderRadius: 8,
+              fontSize: 12, fontWeight: 600, cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}>
+              ✕ Limpiar
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Tabla */}
       <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.border}`, overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -349,11 +468,15 @@ function HistorialCompras({ onBack, canAnular }) {
           <tbody>
             {loading ? (
               <tr><td colSpan={8} style={{ padding: 48, textAlign: "center", color: C.muted, fontSize: 13 }}>Cargando compras…</td></tr>
-            ) : compras.length === 0 ? (
-              <tr><td colSpan={8} style={{ padding: 48, textAlign: "center", color: C.muted, fontSize: 13 }}>No hay compras registradas.</td></tr>
-            ) : compras.map((compra, idx) => (
+            ) : comprasFiltradas.length === 0 ? (
+              <tr>
+                <td colSpan={8} style={{ padding: 48, textAlign: "center", color: C.muted, fontSize: 13 }}>
+                  {hayFiltros ? "Sin resultados para los filtros aplicados." : "No hay compras registradas."}
+                </td>
+              </tr>
+            ) : comprasFiltradas.map((compra, idx) => (
               <tr key={compra.idCompra}
-                style={{ borderBottom: idx < compras.length - 1 ? `1px solid ${C.borderLight}` : "none", transition: "background 0.12s" }}
+                style={{ borderBottom: idx < comprasFiltradas.length - 1 ? `1px solid ${C.borderLight}` : "none", transition: "background 0.12s" }}
                 onMouseEnter={e => e.currentTarget.style.background = C.surface}
                 onMouseLeave={e => e.currentTarget.style.background = C.white}
               >
@@ -382,10 +505,10 @@ function HistorialCompras({ onBack, canAnular }) {
                       background: C.blueBg, color: C.blue, border: `1px solid #b5d4f4`, cursor: "pointer",
                     }}>Ver detalle</button>
                     {canAnular && (
-                    <button onClick={() => setConfirm(compra.idCompra)} style={{
-                      padding: "6px 12px", borderRadius: 7, fontSize: 12, fontWeight: 600,
-                      background: C.redBg, color: C.red, border: `1px solid #f7c1c1`, cursor: "pointer",
-                    }}>Anular</button>
+                      <button onClick={() => setConfirm(compra.idCompra)} style={{
+                        padding: "6px 12px", borderRadius: 7, fontSize: 12, fontWeight: 600,
+                        background: C.redBg, color: C.red, border: `1px solid #f7c1c1`, cursor: "pointer",
+                      }}>Anular</button>
                     )}
                   </div>
                 </td>
@@ -395,19 +518,10 @@ function HistorialCompras({ onBack, canAnular }) {
         </table>
       </div>
 
-      {/* Modal detalle */}
+      {/* Modal detalle — sin cambios */}
       {detalle && (
-        <div style={{
-          position: "fixed", inset: 0, zIndex: 2000,
-          background: "rgba(10,30,20,0.55)", backdropFilter: "blur(6px)",
-          display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
-        }}>
-          <div style={{
-            background: C.white, borderRadius: 14, width: "100%", maxWidth: 540,
-            maxHeight: "90vh", display: "flex", flexDirection: "column",
-            border: `1px solid ${C.border}`, boxShadow: "0 20px 60px rgba(0,0,0,0.18)",
-            overflow: "hidden",
-          }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(10,30,20,0.55)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ background: C.white, borderRadius: 14, width: "100%", maxWidth: 540, maxHeight: "90vh", display: "flex", flexDirection: "column", border: `1px solid ${C.border}`, boxShadow: "0 20px 60px rgba(0,0,0,0.18)", overflow: "hidden" }}>
             <div style={{ background: C.green900, padding: "16px 20px", color: "white", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
               <div>
                 <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>Compra</div>
@@ -415,7 +529,6 @@ function HistorialCompras({ onBack, canAnular }) {
               </div>
               <button onClick={() => setDetalle(null)} style={{ background: "rgba(255,255,255,0.12)", border: "none", color: "white", width: 32, height: 32, borderRadius: 8, cursor: "pointer", fontSize: 17, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
             </div>
-
             <div style={{ flex: 1, overflowY: "auto", padding: "18px 20px" }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, background: C.surface, padding: 14, borderRadius: 10, border: `1px solid ${C.border}`, marginBottom: 16 }}>
                 {[
@@ -432,10 +545,7 @@ function HistorialCompras({ onBack, canAnular }) {
                   </div>
                 ))}
               </div>
-
-              <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 10, borderBottom: `1px solid ${C.borderLight}`, paddingBottom: 8 }}>
-                Productos recibidos
-              </p>
+              <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 10, borderBottom: `1px solid ${C.borderLight}`, paddingBottom: 8 }}>Productos recibidos</p>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {(detalle.detalles || []).map((d, i) => (
                   <div key={i} style={{ display: "flex", justifyContent: "space-between", paddingBottom: 10, borderBottom: `1px solid ${C.borderLight}`, alignItems: "flex-start" }}>
@@ -450,22 +560,14 @@ function HistorialCompras({ onBack, canAnular }) {
                 ))}
               </div>
             </div>
-
             <div style={{ padding: "14px 20px", background: C.surface, borderTop: `1px solid ${C.border}`, flexShrink: 0 }}>
-              {[
-                ["IVA (21%)", `$${fmt(detalle.iva)}`],
-                ["Descuento", `-$${fmt(detalle.descuento || 0)}`],
-              ].map(([k, v]) => (
-                <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: C.muted, marginBottom: 6 }}>
-                  <span>{k}</span><span>{v}</span>
-                </div>
+              {[["IVA (21%)", `$${fmt(detalle.iva)}`], ["Descuento", `-$${fmt(detalle.descuento || 0)}`]].map(([k, v]) => (
+                <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: C.muted, marginBottom: 6 }}><span>{k}</span><span>{v}</span></div>
               ))}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, paddingTop: 10, borderTop: `1px solid ${C.border}` }}>
                 <span style={{ fontSize: 13, fontWeight: 600, color: C.text, textTransform: "uppercase", letterSpacing: "0.04em" }}>Total</span>
                 <span style={{ fontSize: 22, fontWeight: 600, color: C.green800 }}>
-                  ${fmt(
-                    parseFloat(detalle.iva || 0) + (detalle.detalles || []).reduce((acc, d) => acc + parseFloat(d.precioUnidad || 0) * (d.cantidad || 1), 0) - parseFloat(detalle.descuento || 0)
-                  )}
+                  ${fmt(parseFloat(detalle.iva || 0) + (detalle.detalles || []).reduce((acc, d) => acc + parseFloat(d.precioUnidad || 0) * (d.cantidad || 1), 0) - parseFloat(detalle.descuento || 0))}
                 </span>
               </div>
             </div>
