@@ -573,6 +573,12 @@ function TreatmentForm({ initial, idHistorial, tiposTrat, estadosTrat, onSave, o
       setErr("Descripción, fecha inicio, tipo y estado son obligatorios.");
       return;
     }
+    console.log("Payload tratamiento:", {
+      ...form,
+      idHistorial: Number(form.idHistorial),
+      idTipoTratamiento: Number(form.idTipoTratamiento),
+      idEstadoTratamiento: Number(form.idEstadoTratamiento),
+    });
     setSaving(true);
     try {
       await onSave({
