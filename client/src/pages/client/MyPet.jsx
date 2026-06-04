@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { usePets } from "../../hooks/usePets";
 import { useClinicalHistory } from "../../hooks/useClinicalHistory";
+import axios from "../../api/axios";
+import { CarnetVacunal } from "../../components/shared/CarnetVacunal";
 
 const C = {
   green900: "#1a3d28", green800: "#1f5c38", green700: "#276b42",
@@ -36,6 +38,31 @@ export default function MyPets() {
   const [selectedPet,  setSelectedPet]  = useState(null);
   const [filterDate,   setFilterDate]   = useState("");
   const [expandedId,   setExpandedId]   = useState(null);
+  const [vaccines, setVaccines] = useState([]);
+  const [vacunasAplicadas, setVacunasAplicadas] = useState([]);
+
+
+  useEffect(() => {
+    axios.get("/vaccines", { headers: { Authorization: `Bearer ${localStorage.getItem("accessToken")}` } })
+      .then(r => setVaccines(r.data || []))
+      .catch(() => {});
+  }, []);
+
+  // Cuando cambia la mascota seleccionada, traer sus vacunas aplicadas
+  useEffect(() => {
+    if (!selectedPet) return;
+    const token = localStorage.getItem("accessToken");
+    axios.get("/applied-vaccines", { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => {
+        // Filtrar solo las de esta mascota usando los historiales cargados
+        // La mascota queda identificada por los idHistorial que ya tenemos en `history`
+        const ids = history.map(h => Number(h.idHistorial));
+        const suyas = (r.data || []).filter(v => ids.includes(Number(v.idHistorial)));
+        setVacunasAplicadas(suyas);
+      })
+      .catch(() => {});
+  }, [selectedPet, history]);
+    
 
   useEffect(() => {
     if (pets.length === 0) return;
@@ -225,6 +252,30 @@ export default function MyPets() {
               <InfoChip label="Colores"    value={selectedPet.colores} />
             </div>
           </div>
+
+          {/* Carnet de Vacunación */}
+          {vaccines.length > 0 && (
+            <div style={{
+              background: C.white, borderRadius: 16, overflow: "hidden",
+              border: `1px solid ${C.border}`, boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+              padding: "20px 24px", width: "100%", boxSizing: "border-box"
+            }}>
+              <CarnetVacunal
+                mascota={{
+                  ...selectedPet,
+                  // Normalizar alias para que CarnetVacunal los encuentre
+                  Raza: selectedPet.Breed
+                    ? { ...selectedPet.Breed, Especie: selectedPet.Breed.Species, idEspecie: selectedPet.Breed.idEspecie ?? selectedPet.Breed.Species?.idEspecie }
+                    : selectedPet.Raza,
+                  Dueño: selectedPet.Client ?? selectedPet.Dueño,
+                  AnimalSize: selectedPet.AnimalSize,
+                }}
+                vacunas={vaccines}
+                aplicadas={vacunasAplicadas}
+              />
+            </div>
+          )}   
+        
 
           {/* Historial clínico */}
           <div style={{
