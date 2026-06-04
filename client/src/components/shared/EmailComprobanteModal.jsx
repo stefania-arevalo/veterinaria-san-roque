@@ -7,7 +7,7 @@ const headers = () => ({ Authorization: `Bearer ${token()}` });
 
 export default function EmailComprobanteModal({ venta, onClose }) {
   const esConsumidorFinal = !venta.Cliente || Number(venta.idCliente) === 1 || venta.Cliente?.nombres === 'Consumidor';
-  
+  const esAnulada = venta.EstadoVenta?.descripcion?.toLowerCase() === 'anulada';
   const [email, setEmail] = useState('');
   const [emailOriginal, setEmailOriginal] = useState('');
   const [loadingEmail, setLoadingEmail] = useState(!esConsumidorFinal);
@@ -47,6 +47,7 @@ export default function EmailComprobanteModal({ venta, onClose }) {
       total: fmt(venta.total),
       tipoPago: venta.FormaPago?.descripcion || '',
       itemsDetalle,
+      esAnulada,
     });
     setSending(false);
     setResult(res.ok ? 'ok' : 'error');
@@ -65,7 +66,9 @@ export default function EmailComprobanteModal({ venta, onClose }) {
         <div style={{ background: C.green900, padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{ color: 'white', fontWeight: 500, fontSize: 15 }}>Enviar comprobante</div>
-            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 2 }}>Venta #{venta.idVenta} · ${fmt(venta.total)}</div>
+            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 2 }}>
+              {esAnulada ? '⚠️ Venta ANULADA' : 'Venta activa'} · #{venta.idVenta} · ${fmt(venta.total)}
+            </div>
           </div>
           <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', width: 32, height: 32, borderRadius: 6, cursor: 'pointer', fontSize: 18 }}>✕</button>
         </div>
@@ -140,7 +143,7 @@ export default function EmailComprobanteModal({ venta, onClose }) {
                   disabled={sending || loadingEmail || !email || !email.includes('@')}
                   style={{ flex: 2, padding: '11px', background: (sending || loadingEmail || !email) ? '#d1ddd4' : C.green800, color: 'white', border: 'none', borderRadius: 8, cursor: (sending || !email) ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 500 }}
                 >
-                  {sending ? 'Enviando...' : '📧 Enviar comprobante'}
+                  {sending ? 'Enviando...' : esAnulada ? '📧 Enviar aviso de anulación' : '📧 Enviar comprobante'}
                 </button>
               </div>
             </>

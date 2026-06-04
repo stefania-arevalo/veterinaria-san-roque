@@ -23,7 +23,10 @@ export async function enviarRecordatorioTurno({ clienteNombre, clienteEmail, fec
   }
 }
 
-export async function enviarComprobantePago({ toEmail, clienteNombre, ventaId, fecha, total, tipoPago, itemsDetalle }) {
+export async function enviarComprobantePago({ 
+  toEmail, clienteNombre, ventaId, fecha, total, tipoPago, itemsDetalle, 
+  esAnulada = false  
+}) {
   if (!toEmail) return { ok: false, error: 'Sin email' };
   try {
     await emailjs.send(SERVICE_ID, T_COMPROBANTE, {
@@ -34,6 +37,10 @@ export async function enviarComprobantePago({ toEmail, clienteNombre, ventaId, f
       venta_total:    `$${total}`,
       tipo_pago:      tipoPago,
       items_detalle:  itemsDetalle,
+      estado_venta:   esAnulada ? '🚫 ANULADA' : '✅ Pagada',
+      nota_anulacion: esAnulada 
+        ? 'Tu comprobante de pago ha sido ANULADO. Si realizaste un pago, comunicate con nosotros para coordinar el reintegro.\n' 
+        : '',
     }, PUBLIC_KEY);
     return { ok: true };
   } catch (err) {
