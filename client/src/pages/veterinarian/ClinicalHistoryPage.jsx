@@ -222,13 +222,21 @@ function MedicationPickerModal({ isOpen, prodPres, onSelect, onClose }) {
               : pp?.presentacion || pp?.formato || "";
             const precio = parseFloat(pp?.precio || 0);
             const stock = (() => {
-              const lotes = pp?.Product?.Lotes || [];
-              const hoy = new Date();
-              const vigentes = lotes.filter(l =>
-                l.stock > 0 && (!l.fechaVencimiento || new Date(l.fechaVencimiento) > hoy)
-              );
-              if (!vigentes.length) return 0;
-              return vigentes.reduce((sum, l) => sum + Number(l.stock), 0);
+              const lotes =
+                pp?.Product?.Lotes ||
+                pp?.Producto?.Lotes ||
+                [];
+            
+              if (lotes.length > 0) {
+                const hoy = new Date();
+                const vigentes = lotes.filter(l =>
+                  Number(l.cantidadDisponible) > 0 &&           // ← era l.stock
+                  (!l.fechaVencimiento || new Date(l.fechaVencimiento) > hoy)
+                );
+                return vigentes.reduce((sum, l) => sum + Number(l.cantidadDisponible), 0);  // ← era l.stock
+              }
+            
+              return pp?._stockCalculado ?? null;
             })();
             const sinStock = stock != null && stock <= 0;
             const q = getQty(id);

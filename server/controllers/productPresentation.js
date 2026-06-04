@@ -22,6 +22,8 @@ async function getAllProdPres(req, res, next) {
           {
             model: Product,
             attributes: ["idProducto", "nombre"],
+            as: 'Product',
+
             include: [
               { 
                 model: Medication, 
@@ -34,6 +36,10 @@ async function getAllProdPres(req, res, next) {
                 // Usamos los atributos exactos de tu modelo Batch:
                 attributes: ["idLote", "codigoLote", "cantidadDisponible", "fechaVencimiento"],
                 required: false  // LEFT JOIN — si el producto no tiene lotes, aparece igual
+              },
+              {
+                model: Presentation,
+                as: 'Presentacion',
               }
             ]
           },
