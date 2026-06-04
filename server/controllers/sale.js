@@ -207,7 +207,8 @@ async function getAllSales(req, res, next) {
                         { 
                             model: Batch, 
                             as: 'Lote', 
-                            attributes: ['idLote'] 
+                            attributes: ['idLote', 'codigoLote'],
+                            required: false
                         },
                         { 
                             model: AppointmentDetail, 
