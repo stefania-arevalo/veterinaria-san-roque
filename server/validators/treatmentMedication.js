@@ -28,11 +28,15 @@ const validateCreate = [
     // Validación de duplicidad: No agregar el mismo producto al mismo tratamiento dos veces
     body().custom(async (body) => {
         const { idTratamiento, idProd_Pres } = body;
+        
+        // Guard
+        if (!idTratamiento || !idProd_Pres) return true;
+        
         const duplicate = await TreatmentMedication.findOne({ 
             where: { idTratamiento, idProd_Pres } 
         });
         if (duplicate) throw new Error("Este medicamento ya ha sido asignado a este tratamiento.");
-    })
+    }),
 ];
 
 const validateUpdate = [
@@ -46,24 +50,17 @@ const validateUpdate = [
         .optional()
         .isIn([0, 1]).withMessage("El valor debe ser 0 o 1."),
 
-    body().custom(async (body, { req }) => {
-        const idActual = req.params.id;
-        const { idTratamiento, idProd_Pres } = body;
-
-        // Si se están modificando estos campos, verificar que no creen un duplicado
-        if (idTratamiento || idProd_Pres) {
-            const current = await TreatmentMedication.findByPk(idActual);
-            const duplicate = await TreatmentMedication.findOne({
-                where: {
-                    idTratamiento: idTratamiento || current.idTratamiento,
-                    idProd_Pres: idProd_Pres || current.idProd_Pres,
-                    idTratMed: { [Op.ne]: idActual }
-                }
-            });
-            if (duplicate) throw new Error("Ya existe este medicamento en el tratamiento.");
-        }
-        return true;
-    })
+    body().custom(async (body) => {
+    const { idTratamiento, idProd_Pres } = body;
+    
+    // Guard
+    if (!idTratamiento || !idProd_Pres) return true;
+    
+    const duplicate = await TreatmentMedication.findOne({ 
+        where: { idTratamiento, idProd_Pres } 
+    });
+    if (duplicate) throw new Error("Este medicamento ya ha sido asignado a este tratamiento.");
+}),
 ];
 
 const validateId = [param("id").isInt().withMessage("El ID debe ser un entero.")];

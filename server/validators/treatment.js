@@ -6,7 +6,9 @@ const TreatmentType = require("../models/treatmentType");
 const TreatmentState = require("../models/treatmentState");
 
 const validateCreate = [
-    body("fechaInicio").notEmpty().withMessage("La fecha de inicio es obligatoria.").isDate(),
+    body("fechaInicio")
+        .notEmpty().withMessage("La fecha de inicio es obligatoria.")
+        .isDate({ strictMode: false }).withMessage("Formato de fecha inválido."),
     body("fechaFin").optional().isDate().withMessage("Formato de fecha inválido."),
     body("descripcion").notEmpty().trim().isLength({ min: 5 }).withMessage("La descripción es obligatoria y debe ser más larga."),
     
@@ -26,15 +28,26 @@ const validateCreate = [
     // Validación de duplicidad
     body().custom(async (body) => {
         const { idHistorial, idTipoTratamiento, descripcion, fechaInicio } = body;
+        
+        // Guard: si falta algún campo, los otros validators ya lo reportan
+        if (!idHistorial || !idTipoTratamiento || !descripcion || !fechaInicio) return true;
+        
         const duplicate = await Treatment.findOne({ 
-            where: { idHistorial, idTipoTratamiento, descripcion: descripcion.trim(), fechaInicio } 
+            where: { 
+                idHistorial, 
+                idTipoTratamiento, 
+                descripcion: descripcion.trim(), 
+                fechaInicio 
+            } 
         });
         if (duplicate) throw new Error("Ya existe un tratamiento similar registrado en este historial.");
-    })
+    }),
 ];
 
 const validateUpdate = [
-    body("fechaInicio").optional().isDate(),
+    body("fechaInicio")
+        .notEmpty().withMessage("La fecha de inicio es obligatoria.")
+        .isDate({ strictMode: false }).withMessage("Formato de fecha inválido."),
     body("fechaFin").optional().isDate(),
     body("descripcion").optional().trim().notEmpty(),
     body("idHistorial").optional().isInt().custom(async (val) => {
@@ -47,24 +60,22 @@ const validateUpdate = [
     }),
     body("idEstadoTratamiento").optional().isInt(),
     
-    body().custom(async (body, { req }) => {
-        const idActual = req.params.id;
-        // Si no se envían campos para validar unicidad, pasamos
-        if (!body.descripcion && !body.fechaInicio) return true;
-
-        const current = await Treatment.findByPk(idActual);
+    body().custom(async (body) => {
+        const { idHistorial, idTipoTratamiento, descripcion, fechaInicio } = body;
         
-        const duplicate = await Treatment.findOne({
-            where: {
-                idHistorial: current.idHistorial,
-                idTipoTratamiento: current.idTipoTratamiento,
-                descripcion: body.descripcion ? body.descripcion.trim() : current.descripcion,
-                fechaInicio: body.fechaInicio || current.fechaInicio,
-                idTratamiento: { [Op.ne]: idActual }
-            }
+        // Guard: si falta algún campo, los otros validators ya lo reportan
+        if (!idHistorial || !idTipoTratamiento || !descripcion || !fechaInicio) return true;
+        
+        const duplicate = await Treatment.findOne({ 
+            where: { 
+                idHistorial, 
+                idTipoTratamiento, 
+                descripcion: descripcion.trim(), 
+                fechaInicio 
+            } 
         });
-        if (duplicate) throw new Error("Ya existe otro tratamiento con estos datos.");
-    })
+        if (duplicate) throw new Error("Ya existe un tratamiento similar registrado en este historial.");
+    }),
 ];
 
 const validateId = [param("id").isInt().withMessage("El ID debe ser un número entero.")];
