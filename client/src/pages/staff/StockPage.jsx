@@ -1008,8 +1008,8 @@ export default function InventarioPage() {
       {msgErr && <AlertModal emoji="❌" emojiBg={C.redBg}   title="Error"  message={msgErr} confirmText="Cerrar"  confirmBg={C.red}      onConfirm={() => setMsgErr("")} />}
       {confirm && (
         <AlertModal emoji="⚠️" emojiBg={C.amberBg} title="¿Eliminar producto?"
-          message="Esta acción eliminará el producto y sus presentaciones. <strong>No se puede deshacer.</strong>"
-          confirmText="Sí, eliminar" confirmBg={C.red} cancelText="Cancelar"
+          message="El producto dejará de aparecer en el catálogo y no podrá venderse.<strong> El historial de ventas y compras quedará preservado.</strong>"
+          confirmText="Sí, desactivar" confirmBg={C.red} cancelText="Cancelar"
           onConfirm={handleDelete} onCancel={() => setConfirm(null)} />
       )}
 

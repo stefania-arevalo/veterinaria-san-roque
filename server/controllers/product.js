@@ -108,7 +108,7 @@ async function updateProduct(req, res, next) {
         // Validación de "No cambios"
         // Comparamos lo que llega en el body contra lo que tenemos en la instancia
         let hasChanges = false;
-        const fields = ['nombre', 'descripcion', 'idCategoria', 'idMarca'];
+        const fields = ['nombre', 'descripcion', 'idCategoria', 'idMarca', 'activo', 'esUsoInterno'];
 
         fields.forEach(field => {
             if (req.body[field] !== undefined) {
