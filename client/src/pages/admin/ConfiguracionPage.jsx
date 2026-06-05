@@ -205,54 +205,6 @@ const SECCIONES = [
           { field: "idMatricula",      label: "N° Matrícula",         required: true, type: "number" },
           { field: "fechaExpedicion",  label: "Fecha de expedición",  required: true, type: "date"   },
           { field: "fechaVencimiento", label: "Fecha de vencimiento", required: true, type: "date"   },
-
-          // Columna virtual: estado libre/ocupada — solo visible en tabla
-          {
-            field: "__estado",
-            label: "Estado",
-            hideInForm: true,
-            render: (_val, row) => {
-              const ocupada = !!row.Veterinarian;
-              return (
-                <span style={{
-                  display: "inline-flex", alignItems: "center", gap: 5,
-                  fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20,
-                  background: ocupada ? "#fee2e2" : "#dcfce7",
-                  color:      ocupada ? "#991b1b" : "#166534",
-                }}>
-                  <span style={{
-                    width: 6, height: 6, borderRadius: "50%",
-                    background: ocupada ? "#dc2626" : "#16a34a",
-                  }} />
-                  {ocupada ? "Ocupada" : "Libre"}
-                </span>
-              );
-            },
-          },
-
-          // Columna virtual: veterinario asignado — solo visible en tabla
-          {
-            field: "__veterinario",
-            label: "Veterinario asignado",
-            hideInForm: true,
-            render: (_val, row) => {
-              const vet = row.Veterinarian;
-              if (!vet) {
-                return <span style={{ fontSize: 12, color: "#94a3b8" }}>—</span>;
-              }
-              // El backend incluye Veterinarian.Staff con nombres/apellidos
-              const staff = vet.Staff;
-              const nombre = staff
-                ? `${staff.nombres} ${staff.apellidos}`
-                : `Personal #${vet.idPersonal}`;
-              return (
-                <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                  <span style={{ fontSize: 15 }}>🩺</span>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "#0369a1" }}>{nombre}</span>
-                </div>
-              );
-            },
-          },
         ],
       },
     ],
