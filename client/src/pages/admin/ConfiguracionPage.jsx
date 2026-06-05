@@ -191,32 +191,6 @@ const SECCIONES = [
           { field: "fechaLiquidacion", label: "Fecha de liquidación", required: true, type: "date" },
           { field: "horasTrabajadas",  label: "Horas trabajadas",     required: true, type: "number", placeholder: "ej: 160" },
           { field: "tarifaHora",       label: "Tarifa por hora ($)",  required: true, type: "number", placeholder: "ej: 500.00" },
-          // Columna virtual: personal asignado — solo visible en tabla, no en formulario
-          {
-            field: "__personal",
-            label: "Personal asignado",
-            hideInForm: true,
-            render: (_val, row) => {
-              const staff = row.Staff;
-              if (!staff) {
-                return (
-                  <span style={{
-                    display: "inline-flex", alignItems: "center", gap: 5,
-                    fontSize: 11, fontWeight: 700, padding: "2px 9px", borderRadius: 20,
-                    background: "#dcfce7", color: "#166534",
-                  }}>
-                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#16a34a" }} />
-                    Libre
-                  </span>
-                );
-              }
-              return (
-                <span style={{ fontSize: 12, color: "#1a202c", fontWeight: 600 }}>
-                  {staff.nombres} {staff.apellidos}
-                </span>
-              );
-            },
-          },
         ],
       },
       // ── MATRÍCULAS — con columnas de veterinario asignado + badge libre/ocupada
