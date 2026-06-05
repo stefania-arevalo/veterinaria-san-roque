@@ -1181,44 +1181,6 @@ export function StaffEditDrawer({ staff, localities, onClose, onSaved }) {
     </div>
   );
 
-  // Tab "personal" ahora incluye salario
-  const renderPersonalTab = () => (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <Field label="Nombres"   required error={errors.nombres}>  <input style={inputStyle(errors.nombres)}   value={form.nombres}   onChange={e => set("nombres", e.target.value)} /></Field>
-        <Field label="Apellidos" required error={errors.apellidos}><input style={inputStyle(errors.apellidos)} value={form.apellidos} onChange={e => set("apellidos", e.target.value)} /></Field>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <Field label="DNI" required error={errors.dni}><input style={inputStyle(errors.dni)} value={form.dni} onChange={e => set("dni", e.target.value.replace(/\D/g,""))} maxLength={10} /></Field>
-        <Field label="Sexo" required error={errors.sexo}><select style={inputStyle(errors.sexo)} value={form.sexo} onChange={e => set("sexo", e.target.value)}><option value="">— Seleccionar —</option>{SEXO_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select></Field>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <Field label="Fecha de nacimiento" required error={errors.fechaNacimiento}><input type="date" style={inputStyle(errors.fechaNacimiento)} value={form.fechaNacimiento} onChange={e => set("fechaNacimiento", e.target.value)} /></Field>
-        <Field label="Teléfono" required error={errors.telefono}><input style={inputStyle(errors.telefono)} value={form.telefono} onChange={e => set("telefono", e.target.value)} /></Field>
-      </div>
-      <Field label="Correo electrónico" error={errors.correo}><input type="email" style={inputStyle(errors.correo)} value={form.correo} onChange={e => set("correo", e.target.value)} /></Field>
-      <Field label="Dirección" required error={errors.direccion}><input style={inputStyle(errors.direccion)} value={form.direccion} onChange={e => set("direccion", e.target.value)} /></Field>
-      <Field label="Localidad"><select style={inputStyle(false)} value={form.idLocalidad} onChange={e => set("idLocalidad", e.target.value)}><option value="">— Seleccionar localidad —</option>{localities.map(l => <option key={l.idLocalidad} value={l.idLocalidad}>{l.nombre}</option>)}</select></Field>
-
-      {/* Salario inline en edición */}
-      <div style={{ borderTop: `1px solid ${VET_COLORS.border}`, paddingTop: 14, marginTop: 4 }}>
-        <div style={{ marginBottom: 10 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-            💰 Salario / Tarifa base <span style={{ fontSize: 10, fontWeight: 400, color: "#94a3b8", textTransform: "none", letterSpacing: 0 }}>(opcional)</span>
-          </div>
-          {staff.Salary && (
-            <div style={{ marginTop: 6, background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "#166534" }}>
-              Actual: ${staff.Salary.tarifaHora}/h · {staff.Salary.horasTrabajadas}h · Total: ${(staff.Salary.tarifaHora * staff.Salary.horasTrabajadas).toLocaleString("es-AR")} · {staff.Salary.fechaLiquidacion}
-            </div>
-          )}
-        </div>
-        <InlineSalarioPicker
-          value={form.idSalario}
-          onChange={(v) => set("idSalario", v)}
-        />
-      </div>
-    </div>
-  );
 
   const tabs = [
     { key: "personal", label: "Datos personales" },
