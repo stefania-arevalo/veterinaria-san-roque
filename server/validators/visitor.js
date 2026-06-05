@@ -1,4 +1,5 @@
 const { body, param } = require("express-validator");
+const { Op } = require("sequelize");
 const Provider = require("../models/provider");
 const Visitor = require("../models/visitor"); // Importamos el modelo para la validación
 
