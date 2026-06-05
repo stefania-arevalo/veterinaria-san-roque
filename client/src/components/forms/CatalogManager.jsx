@@ -11,6 +11,31 @@ const C = {
   danger:  "#c62828",
 };
 
+// ─── Hook: carga opciones para campos FK ──────────────────────────────────
+function useFkOptions(columns) {
+  const [fkOptions, setFkOptions] = useState({});
+
+  useEffect(() => {
+    columns.filter(c => c.type === "fk").forEach(async col => {
+      try {
+        const res = await axios.get(col.fkEndpoint, { headers: auth() });
+        const data = Array.isArray(res.data) ? res.data : [];
+        setFkOptions(prev => ({
+          ...prev,
+          [col.field]: data.map(item => ({
+            value: item[col.fkId],
+            label: item[col.fkLabel],
+          })),
+        }));
+      } catch {
+        setFkOptions(prev => ({ ...prev, [col.field]: [] }));
+      }
+    });
+  }, [columns]);
+
+  return fkOptions;
+}
+
 // ─── Modal confirmación eliminar ──────────────────────────────────────────
 function ConfirmDeleteModal({ item, labelField, onConfirm, onCancel }) {
   return (
@@ -42,26 +67,24 @@ function ConfirmDeleteModal({ item, labelField, onConfirm, onCancel }) {
 }
 
 // ─── Modal crear / editar ─────────────────────────────────────────────────
-function FormModal({ title, columns, initialData, onSave, onCancel, saving, serverErrors }) {
-  const [form, setForm]     = useState(() => {
+function FormModal({ title, columns, initialData, onSave, onCancel, saving, serverErrors, fkOptions }) {
+  const [form, setForm] = useState(() => {
     const base = {};
     columns.forEach(c => { base[c.field] = initialData?.[c.field] ?? ""; });
     return base;
   });
   const [errors, setErrors] = useState({});
 
-  // Cuando llegan errores del servidor, mapearlos a los campos
   useEffect(() => {
     if (!serverErrors?.length) return;
     const mapped = {};
     serverErrors.forEach(msg => {
-      // Busca qué campo del formulario corresponde al mensaje
       const col = columns.find(c =>
         msg.toLowerCase().includes(c.label.toLowerCase()) ||
         msg.toLowerCase().includes(c.field.toLowerCase())
       );
       if (col) mapped[col.field] = msg;
-      else mapped["__general"] = msg; // errores sin campo claro van al pie
+      else mapped["__general"] = msg;
     });
     setErrors(prev => ({ ...prev, ...mapped }));
   }, [serverErrors]);
@@ -76,80 +99,110 @@ function FormModal({ title, columns, initialData, onSave, onCancel, saving, serv
   };
 
   const inputStyle = (field) => ({
-    width:"100%", padding:"9px 12px", borderRadius:8, fontSize:13,
-    border:`1px solid ${errors[field] ? C.danger : C.border}`,
-    outline:"none", boxSizing:"border-box", background:"white",
+    width: "100%", padding: "9px 12px", borderRadius: 8, fontSize: 13,
+    border: `1px solid ${errors[field] ? C.danger : C.border}`,
+    outline: "none", boxSizing: "border-box", background: "white",
   });
 
+  const handleChange = (field, value) => {
+    setForm(p => ({ ...p, [field]: value }));
+    setErrors(p => ({ ...p, [field]: undefined }));
+  };
+
   return (
-    <div style={{ position:"fixed", inset:0, display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000 }}>
-      <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.45)" }} onClick={onCancel} />
+    <div style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)" }} onClick={onCancel} />
       <div style={{
-        position:"relative", background:"white", borderRadius:14,
-        padding:"28px 32px", width:440, maxWidth:"90vw",
-        borderTop:`6px solid ${C.accent}`, boxShadow:"0 20px 40px rgba(0,0,0,0.12)",
-        maxHeight:"85vh", overflowY:"auto",
+        position: "relative", background: "white", borderRadius: 14,
+        padding: "28px 32px", width: 440, maxWidth: "90vw",
+        borderTop: `6px solid ${C.accent}`, boxShadow: "0 20px 40px rgba(0,0,0,0.12)",
+        maxHeight: "85vh", overflowY: "auto",
       }}>
-        <h3 style={{ margin:"0 0 20px", fontSize:16, fontWeight:700, color:"#1a202c" }}>{title}</h3>
-        <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+        <h3 style={{ margin: "0 0 20px", fontSize: 16, fontWeight: 700, color: "#1a202c" }}>{title}</h3>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {columns.map(col => (
             <div key={col.field}>
-              <label style={{ display:"block", fontSize:12, fontWeight:600, color:"#475569", marginBottom:5 }}>
-                {col.label}{col.required && <span style={{ color:C.danger }}> *</span>}
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 5 }}>
+                {col.label}{col.required && <span style={{ color: C.danger }}> *</span>}
               </label>
-              {col.type === "select" ? (
+
+              {/* ── SELECT normal (opciones fijas) ── */}
+              {col.type === "select" && (
                 <select
                   value={form[col.field]}
-                  onChange={e => { setForm(p => ({ ...p, [col.field]:e.target.value })); setErrors(p => ({ ...p, [col.field]: undefined })); }}
-                  style={{ ...inputStyle(col.field), cursor:"pointer" }}
+                  onChange={e => handleChange(col.field, e.target.value)}
+                  style={{ ...inputStyle(col.field), cursor: "pointer" }}
                 >
                   <option value="">— Seleccionar —</option>
                   {col.options?.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
-              ) : col.type === "textarea" ? (
+              )}
+
+              {/* ── FK: select que carga datos del backend ── */}
+              {col.type === "fk" && (
+                <select
+                  value={form[col.field]}
+                  onChange={e => handleChange(col.field, Number(e.target.value))}
+                  style={{ ...inputStyle(col.field), cursor: "pointer" }}
+                >
+                  <option value="">— Seleccionar —</option>
+                  {!fkOptions?.[col.field] || fkOptions[col.field].length === 0
+                    ? <option disabled>Cargando...</option>
+                    : fkOptions[col.field].map(o => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))
+                  }
+                </select>
+              )}
+
+              {/* ── TEXTAREA ── */}
+              {col.type === "textarea" && (
                 <textarea
                   value={form[col.field]}
-                  onChange={e => { setForm(p => ({ ...p, [col.field]:e.target.value })); setErrors(p => ({ ...p, [col.field]: undefined })); }}
+                  onChange={e => handleChange(col.field, e.target.value)}
                   rows={3} placeholder={col.placeholder || ""}
-                  style={{ ...inputStyle(col.field), resize:"vertical" }}
+                  style={{ ...inputStyle(col.field), resize: "vertical" }}
                 />
-              ) : (
+              )}
+
+              {/* ── INPUT genérico (text, number, date, time, email, tel) ── */}
+              {!["select", "fk", "textarea"].includes(col.type) && (
                 <input
                   type={col.type || "text"}
                   value={form[col.field]}
-                  onChange={e => { setForm(p => ({ ...p, [col.field]:e.target.value })); setErrors(p => ({ ...p, [col.field]: undefined })); }}
+                  onChange={e => handleChange(col.field, e.target.value)}
                   placeholder={col.placeholder || ""}
                   style={inputStyle(col.field)}
                 />
               )}
+
               {errors[col.field] && (
-                <p style={{ margin:"4px 0 0", fontSize:11, color:C.danger }}>{errors[col.field]}</p>
+                <p style={{ margin: "4px 0 0", fontSize: 11, color: C.danger }}>{errors[col.field]}</p>
               )}
             </div>
           ))}
 
-          {/* Errores generales que no mapearon a ningún campo */}
           {errors.__general && (
             <div style={{
-              padding:"10px 14px", borderRadius:8, fontSize:12,
-              background:"#fff5f5", border:`1px solid #fecaca`, color:C.danger,
+              padding: "10px 14px", borderRadius: 8, fontSize: 12,
+              background: "#fff5f5", border: `1px solid #fecaca`, color: C.danger,
             }}>
               {errors.__general}
             </div>
           )}
         </div>
 
-        <div style={{ display:"flex", gap:10, marginTop:24 }}>
+        <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
           <button onClick={onCancel} style={{
-            flex:1, padding:"10px", borderRadius:8,
-            border:`1px solid ${C.border}`, background:"white",
-            cursor:"pointer", fontWeight:600, fontSize:13,
+            flex: 1, padding: "10px", borderRadius: 8,
+            border: `1px solid ${C.border}`, background: "white",
+            cursor: "pointer", fontWeight: 600, fontSize: 13,
           }}>Cancelar</button>
           <button onClick={() => { if (validate()) onSave(form); }} disabled={saving} style={{
-            flex:1, padding:"10px", borderRadius:8, border:"none",
+            flex: 1, padding: "10px", borderRadius: 8, border: "none",
             background: saving ? "#94a3b8" : C.accent,
-            color:"white", cursor: saving ? "not-allowed" : "pointer",
-            fontWeight:600, fontSize:13,
+            color: "white", cursor: saving ? "not-allowed" : "pointer",
+            fontWeight: 600, fontSize: 13,
           }}>
             {saving ? "Guardando..." : "Guardar"}
           </button>
@@ -183,6 +236,7 @@ export default function CatalogManager({
   canCreate = true, canEdit = true, canDelete = true,
 }) {
   const fetchUrl = getEndpoint || endpoint;
+  const fkOptions = useFkOptions(columns); 
 
   const [rows,         setRows]         = useState([]);
   const [loading,      setLoading]      = useState(true);
@@ -260,6 +314,16 @@ export default function CatalogManager({
   const formCols  = columns.filter(c => !c.hideInForm);
   const tableCols = columns.filter(c => !c.hideInTable);
 
+  // Para mostrar el label en la tabla en vez del ID crudo
+  const resolveCell = (col, row) => {
+    if (col.render) return col.render(row[col.field], row);
+    if (col.type === "fk" && fkOptions[col.field]) {
+      const opt = fkOptions[col.field].find(o => o.value === row[col.field]);
+      return opt?.label ?? row[col.field] ?? <span style={{ color: "#94a3b8" }}>—</span>;
+    }
+    return row[col.field] ?? <span style={{ color: "#94a3b8" }}>—</span>;
+  };
+
   return (
     <div style={{ background:"white", borderRadius:14, border:`0.5px solid ${C.border}`, overflow:"hidden" }}>
 
@@ -283,6 +347,7 @@ export default function CatalogManager({
           onCancel={() => { setShowForm(false); setEditTarget(null); }}
           saving={saving}
           serverErrors={serverErrors}
+          fkOptions={fkOptions} 
         />
       )}
       {deleteTarget && (
@@ -382,10 +447,7 @@ export default function CatalogManager({
                 >
                   {tableCols.map(col => (
                     <td key={col.field} style={{ padding:"11px 16px", color:"#1a202c", verticalAlign:"middle" }}>
-                      {col.render
-                        ? col.render(row[col.field], row)
-                        : (row[col.field] ?? <span style={{ color:"#94a3b8" }}>—</span>)
-                      }
+                      {resolveCell(col, row)}
                     </td>
                   ))}
                   {(canEdit || canDelete) && (

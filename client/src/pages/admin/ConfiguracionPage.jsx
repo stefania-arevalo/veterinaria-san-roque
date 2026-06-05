@@ -41,7 +41,7 @@ const SECCIONES = [
         searchField: "descripcion",
         columns: [
           { field: "descripcion",    label: "Descripción",        required: true },
-          { field: "idTipoServicio", label: "ID Tipo de Servicio", required: true, type: "number", placeholder: "ej: 1" },
+          { field: "idTipoServicio", label: "ID Tipo de Servicio", required: true, type: "fk", fkEndpoint: "/service-types", fkId: "idTipoServicio", fkLabel: "descripcion" },
         ],
       },
       // Modelo: idPrecioServicio | idServicio | idTamaño | precio | duracionEstimada
@@ -53,8 +53,8 @@ const SECCIONES = [
         labelField: "idPrecioServicio",
         searchField: "idServicio",
         columns: [
-          { field: "idServicio",        label: "ID Servicio",            required: true, type: "number", placeholder: "ej: 1" },
-          { field: "idTamaño",          label: "ID Tamaño Animal",       required: true, type: "number", placeholder: "ej: 1" },
+          { field: "idServicio",        label: "ID Servicio",            required: true, type: "fk", fkEndpoint: "/services",     fkId: "idServicio", fkLabel: "descripcion" },
+          { field: "idTamaño",          label: "ID Tamaño Animal",       required: true, type: "fk", fkEndpoint: "/animal-sizes", fkId: "idTamaño",   fkLabel: "descripcion" },
           { field: "precio",            label: "Precio",                  required: true, type: "number", placeholder: "ej: 1500.00" },
           { field: "duracionEstimada",  label: "Duración estimada (min)",              type: "number", placeholder: "ej: 30" },
         ],
@@ -140,8 +140,6 @@ const SECCIONES = [
     titulo: "Empleados",
     catalogos: [
       // Modelo: idRol | descripcion
-      // ⚠️ El router de /roles tiene validateId en el GET /roles lo que es un bug
-      // del backend — ese middleware no debería estar en el GET de lista.
       {
         title: "Roles de Usuario",
         endpoint: "/role",
@@ -149,6 +147,9 @@ const SECCIONES = [
         idField: "idRol",
         labelField: "descripcion",
         searchField: "descripcion",
+        canCreate: false,   // ← solo lectura
+        canEdit:   false,
+        canDelete: false,
         columns: [
           { field: "descripcion", label: "Descripción", required: true },
         ],
@@ -257,7 +258,7 @@ const SECCIONES = [
           { field: "telefono",    label: "Teléfono",       required: true, type: "tel" },
           { field: "direccion",   label: "Dirección" },
           { field: "correo",      label: "Correo",         type: "email" },
-          { field: "idLocalidad", label: "ID Localidad",   required: true, type: "number", placeholder: "ej: 1" },
+          { field: "idLocalidad", label: "ID Localidad",   required: true, type: "fk", fkEndpoint: "/localities", fkId: "idLocalidad", fkLabel: "nombre" },
         ],
       },
       // Modelo: idVisitador | nombre | apellido | telefono | correo | idProveedor
@@ -273,7 +274,7 @@ const SECCIONES = [
           { field: "apellido",    label: "Apellido",     required: true },
           { field: "telefono",    label: "Teléfono",     type: "tel" },
           { field: "correo",      label: "Correo",       type: "email" },
-          { field: "idProveedor", label: "ID Proveedor", required: true, type: "number", placeholder: "ej: 1" },
+          { field: "idProveedor", label: "ID Proveedor", required: true, type: "fk", fkEndpoint: "/providers", fkId: "idProveedor", fkLabel: "razonSocial" },
         ],
       },
     ],
@@ -351,7 +352,7 @@ const SECCIONES = [
         searchField: "nombre",
         columns: [
           { field: "nombre",    label: "Nombre",     required: true },
-          { field: "idEspecie", label: "ID Especie", required: true, type: "number", placeholder: "ej: 1" },
+          { field: "idEspecie", label: "ID Especie", required: true, type: "fk", fkEndpoint: "/species", fkId: "idEspecie", fkLabel: "nombre" },
         ],
       },
       // Modelo: idTamaño | descripcion  (nombre del campo con tilde, igual que en BD)
