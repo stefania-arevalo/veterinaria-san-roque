@@ -25,7 +25,7 @@ const validateCreate = [
             return true;
         }),
     body("duracionEstimada")
-        .optional()
+        .optional({ nullable: true, checkFalsy: true })
         .isInt({ min: 1 }).withMessage("La duración debe ser un número entero mayor a 0.")
 ];
 
@@ -52,7 +52,7 @@ const validateUpdate = [
             return true;
         }),
     body("duracionEstimada")
-        .optional()
+        .optional({ nullable: true, checkFalsy: true })
         .isInt({ min: 1 }).withMessage("La duración debe ser un número entero mayor a 0.")
 ];
 

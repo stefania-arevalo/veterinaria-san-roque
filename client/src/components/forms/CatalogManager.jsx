@@ -200,7 +200,11 @@ export default function CatalogManager({
       setShowForm(false); setEditTarget(null);
       fetchData();
     } catch (e) {
-      showToast(e?.response?.data?.message || "Ocurrió un error al guardar.", "error");
+      const backendErrors = e?.response?.data?.errors;
+      const msg = backendErrors?.length > 0
+        ? backendErrors.map(err => err.msg).join(" · ")
+        : (e?.response?.data?.msg || e?.response?.data?.message || "Ocurrió un error al guardar.");
+      showToast(msg, "error");
     } finally {
       setSaving(false);
     }
