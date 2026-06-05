@@ -42,13 +42,29 @@ function ConfirmDeleteModal({ item, labelField, onConfirm, onCancel }) {
 }
 
 // ─── Modal crear / editar ─────────────────────────────────────────────────
-function FormModal({ title, columns, initialData, onSave, onCancel, saving }) {
+function FormModal({ title, columns, initialData, onSave, onCancel, saving, serverErrors }) {
   const [form, setForm]     = useState(() => {
     const base = {};
     columns.forEach(c => { base[c.field] = initialData?.[c.field] ?? ""; });
     return base;
   });
   const [errors, setErrors] = useState({});
+
+  // Cuando llegan errores del servidor, mapearlos a los campos
+  useEffect(() => {
+    if (!serverErrors?.length) return;
+    const mapped = {};
+    serverErrors.forEach(msg => {
+      // Busca qué campo del formulario corresponde al mensaje
+      const col = columns.find(c =>
+        msg.toLowerCase().includes(c.label.toLowerCase()) ||
+        msg.toLowerCase().includes(c.field.toLowerCase())
+      );
+      if (col) mapped[col.field] = msg;
+      else mapped["__general"] = msg; // errores sin campo claro van al pie
+    });
+    setErrors(prev => ({ ...prev, ...mapped }));
+  }, [serverErrors]);
 
   const validate = () => {
     const errs = {};
@@ -84,7 +100,7 @@ function FormModal({ title, columns, initialData, onSave, onCancel, saving }) {
               {col.type === "select" ? (
                 <select
                   value={form[col.field]}
-                  onChange={e => setForm(p => ({ ...p, [col.field]:e.target.value }))}
+                  onChange={e => { setForm(p => ({ ...p, [col.field]:e.target.value })); setErrors(p => ({ ...p, [col.field]: undefined })); }}
                   style={{ ...inputStyle(col.field), cursor:"pointer" }}
                 >
                   <option value="">— Seleccionar —</option>
@@ -93,7 +109,7 @@ function FormModal({ title, columns, initialData, onSave, onCancel, saving }) {
               ) : col.type === "textarea" ? (
                 <textarea
                   value={form[col.field]}
-                  onChange={e => setForm(p => ({ ...p, [col.field]:e.target.value }))}
+                  onChange={e => { setForm(p => ({ ...p, [col.field]:e.target.value })); setErrors(p => ({ ...p, [col.field]: undefined })); }}
                   rows={3} placeholder={col.placeholder || ""}
                   style={{ ...inputStyle(col.field), resize:"vertical" }}
                 />
@@ -101,7 +117,7 @@ function FormModal({ title, columns, initialData, onSave, onCancel, saving }) {
                 <input
                   type={col.type || "text"}
                   value={form[col.field]}
-                  onChange={e => setForm(p => ({ ...p, [col.field]:e.target.value }))}
+                  onChange={e => { setForm(p => ({ ...p, [col.field]:e.target.value })); setErrors(p => ({ ...p, [col.field]: undefined })); }}
                   placeholder={col.placeholder || ""}
                   style={inputStyle(col.field)}
                 />
@@ -111,7 +127,18 @@ function FormModal({ title, columns, initialData, onSave, onCancel, saving }) {
               )}
             </div>
           ))}
+
+          {/* Errores generales que no mapearon a ningún campo */}
+          {errors.__general && (
+            <div style={{
+              padding:"10px 14px", borderRadius:8, fontSize:12,
+              background:"#fff5f5", border:`1px solid #fecaca`, color:C.danger,
+            }}>
+              {errors.__general}
+            </div>
+          )}
         </div>
+
         <div style={{ display:"flex", gap:10, marginTop:24 }}>
           <button onClick={onCancel} style={{
             flex:1, padding:"10px", borderRadius:8,
@@ -166,6 +193,7 @@ export default function CatalogManager({
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [saving,       setSaving]       = useState(false);
   const [toast,        setToast]        = useState(null);
+  const [serverErrors, setServerErrors] = useState(null);
 
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
@@ -188,9 +216,9 @@ export default function CatalogManager({
 
   const handleSave = async (formData) => {
     setSaving(true);
+    setServerErrors(null);
     try {
       if (editTarget) {
-        // PATCH — todos los routers del backend usan PATCH para actualizar
         await axios.patch(`${endpoint}/${editTarget[idField]}`, formData, { headers: auth() });
         showToast("Registro actualizado correctamente.");
       } else {
@@ -201,10 +229,13 @@ export default function CatalogManager({
       fetchData();
     } catch (e) {
       const backendErrors = e?.response?.data?.errors;
-      const msg = backendErrors?.length > 0
-        ? backendErrors.map(err => err.msg).join(" · ")
-        : (e?.response?.data?.msg || e?.response?.data?.message || "Ocurrió un error al guardar.");
-      showToast(msg, "error");
+      if (backendErrors?.length > 0) {
+        setServerErrors(backendErrors.map(err => err.msg ?? err));
+        // toast solo para errores sin campo específico
+      } else {
+        const msg = e?.response?.data?.msg || e?.response?.data?.message || "Ocurrió un error al guardar.";
+        showToast(msg, "error");
+      }
     } finally {
       setSaving(false);
     }
@@ -251,6 +282,7 @@ export default function CatalogManager({
           onSave={handleSave}
           onCancel={() => { setShowForm(false); setEditTarget(null); }}
           saving={saving}
+          serverErrors={serverErrors}
         />
       )}
       {deleteTarget && (
