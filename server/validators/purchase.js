@@ -10,7 +10,7 @@ const ProductPresentation = require("../models/productPresentation");
 const validateCreatePurchase = [
   body("fecha")
     .notEmpty().withMessage("La fecha es obligatoria.")
-    .isDate().withMessage("El formato de fecha no es válido.")
+    .isDate().withMessage("El formato de fecha no es válido."),
 
   body("hora")
     .notEmpty().withMessage("La hora es obligatoria.")
