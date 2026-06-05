@@ -131,6 +131,15 @@ function Step1Personal({ form, errors, onChange, localities }) {
           {localities.map((l) => <option key={l.idLocalidad} value={l.idLocalidad}>{l.nombre}</option>)}
         </select>
       </Field>
+      <Field label="Tarifa por hora ($)" error={errors.tarifaHora} colSpan="1 / -1">
+        <input type="number" style={inputStyle(errors.tarifaHora)} value={form.tarifaHora} onChange={(e) => onChange("tarifaHora", e.target.value)} placeholder="ej: 1500" />
+      </Field>
+      <Field label="Horas trabajadas" error={errors.horasTrabajadas}>
+        <input type="number" style={inputStyle(errors.horasTrabajadas)} value={form.horasTrabajadas} onChange={(e) => onChange("horasTrabajadas", e.target.value)} placeholder="ej: 160" />
+      </Field>
+      <Field label="Fecha de liquidación" error={errors.fechaLiquidacion}>
+        <input type="date" style={inputStyle(errors.fechaLiquidacion)} value={form.fechaLiquidacion} onChange={(e) => onChange("fechaLiquidacion", e.target.value)} />
+      </Field>
     </div>
   );
 }
@@ -236,9 +245,18 @@ function Step3Acceso({ selectedRole, accessMode, onModeChange, userForm, onUserF
 export default function StaffCreateDrawer({ onClose, onSaved, localities }) {
   const STEPS = ["Datos personales", "Tipo de rol", "Acceso al sistema"];
   const [step, setStep]               = useState(1);
-  const [personal, setPersonal]       = useState({ nombres: "", apellidos: "", dni: "", sexo: "", fechaNacimiento: "", telefono: "", direccion: "", correo: "", idLocalidad: "" });
+  const [personal, setPersonal] = useState({
+    nombres: "", apellidos: "", dni: "", sexo: "",
+    fechaNacimiento: "", telefono: "", direccion: "",
+    correo: "", idLocalidad: "",
+    tarifaHora: "", horasTrabajadas: "", fechaLiquidacion: ""  
+  });
   const [selectedRole, setSelectedRole] = useState(null);
-  const [roleForm, setRoleForm]       = useState({ especialidad: "", matricula: "", certificados: "", areaResponsabilidad: "" });
+  const [roleForm, setRoleForm] = useState({
+    especialidad: "", matricula: "",
+    fechaExpedicion: "", fechaVencimiento: "",  // ← agregar
+    certificados: "", areaResponsabilidad: ""
+  });
   const [accessMode, setAccessMode]   = useState("none");
   const [userForm, setUserForm]       = useState({ usuario: "", contraseña: "", idUsuarioExistente: "" });
   const [existingUsers, setExistingUsers] = useState([]);
@@ -270,7 +288,7 @@ export default function StaffCreateDrawer({ onClose, onSaved, localities }) {
   const validateStep2 = () => {
     const e = {};
     if (!selectedRole) e.idRol = "Seleccioná un tipo de rol";
-    if (selectedRole === 2) { if (!roleForm.especialidad.trim()) e.especialidad = "Obligatorio"; if (!roleForm.matricula.toString().trim()) e.matricula = "Obligatorio"; }
+    if (selectedRole === 2) { if (!roleForm.especialidad.trim()) e.especialidad = "Obligatorio"; if (!roleForm.matricula.toString().trim()) e.matricula = "Obligatorio"; if (!roleForm.fechaExpedicion) e.fechaExpedicion = "Obligatorio";}
     if (selectedRole === 1 && !roleForm.areaResponsabilidad.trim()) e.areaResponsabilidad = "Obligatorio";
     setErrors(e); return Object.keys(e).length === 0;
   };
@@ -299,9 +317,16 @@ export default function StaffCreateDrawer({ onClose, onSaved, localities }) {
     setSaving(true); setGlobalError("");
     try {
       // 1. Crear Staff sin idUsuario todavía
-      const staffPayload = { ...personal, idLocalidad: personal.idLocalidad ? parseInt(personal.idLocalidad) : null };
-      const staffRes   = axios.post("/staff", staffPayload, { headers: authHeaders() });
+      const { tarifaHora, horasTrabajadas, fechaLiquidacion, ...staffFields } = personal;
+      const staffPayload = { ...staffFields, idLocalidad: personal.idLocalidad ? parseInt(personal.idLocalidad) : null };
+
+      const staffRes = await axios.post("/staff", staffPayload, { headers: authHeaders() });
       const idPersonal = staffRes.data.idPersonal;
+
+      // Crear salario si se completó al menos un campo
+      if (tarifaHora || horasTrabajadas || fechaLiquidacion) {
+        await axios.post("/salary", { idPersonal, tarifaHora, horasTrabajadas, fechaLiquidacion }, { headers: authHeaders() });
+      }
 
       // 2. Crear datos del rol
       if (selectedRole === 2) await axios.post("/veterinarian", { idPersonal, especialidad: roleForm.especialidad, idMatricula: parseInt(roleForm.matricula) }, { headers: authHeaders() });
@@ -373,17 +398,26 @@ export function StaffEditDrawer({ staff, localities, onClose, onSaved }) {
 
   const [activeTab, setActiveTab] = useState("personal");
   const [form, setForm] = useState({
-    nombres: staff.nombres || "", apellidos: staff.apellidos || "", dni: staff.dni || "",
-    sexo: staff.sexo || "", fechaNacimiento: staff.fechaNacimiento || "",
+    nombres: staff.nombres || "", apellidos: staff.apellidos || "",
+    dni: staff.dni || "", sexo: staff.sexo || "",
+    fechaNacimiento: staff.fechaNacimiento || "",
     telefono: staff.telefono || "", direccion: staff.direccion || "",
     correo: staff.correo || "", idLocalidad: staff.idLocalidad || "",
+    tarifaHora: staff.Salary?.tarifaHora ?? "",
+    horasTrabajadas: staff.Salary?.horasTrabajadas ?? "",
+    fechaLiquidacion: staff.Salary?.fechaLiquidacion ?? "",
   });
 
   const vet  = staff.Veterinarian || null;
   const asst = staff.Assistant    || null;
   const adm  = staff.Admin        || null;
 
-  const [vetForm,  setVetFormS]  = useState({ especialidad: vet?.especialidad || "", idMatricula: vet?.idMatricula != null ? String(vet.idMatricula) : "" });
+  const [vetForm, setVetFormS] = useState({
+    especialidad: vet?.especialidad || "",
+    idMatricula: vet?.idMatricula != null ? String(vet.idMatricula) : "",
+    fechaExpedicion: vet?.fechaExpedicion || "",   
+    fechaVencimiento: vet?.fechaVencimiento || "",  
+  });
   const [asstForm, setAsstFormS] = useState({ certificados: asst?.certificados || "" });
   const [admForm,  setAdmFormS]  = useState({ areaResponsabilidad: adm?.areaResponsabilidad || "" });
 
@@ -455,7 +489,18 @@ export function StaffEditDrawer({ staff, localities, onClose, onSaved }) {
     if (!validatePersonal()) return;
     setSaving(true); setGlobalErr("");
     try {
-      await axios.patch(`/staff/${staff.idPersonal}`, form, { headers: authHeaders() });
+      const { tarifaHora, horasTrabajadas, fechaLiquidacion, ...staffFields } = form;
+
+      await axios.patch(`/staff/${staff.idPersonal}`, staffFields, { headers: authHeaders() });
+
+      // Salario: si ya existe lo actualizamos, si no lo creamos
+      const salaryPayload = { tarifaHora, horasTrabajadas, fechaLiquidacion, idPersonal: staff.idPersonal };
+      if (staff.Salary?.idSalario) {
+        await axios.patch(`/salary/${staff.Salary.idSalario}`, salaryPayload, { headers: authHeaders() });
+      } else if (tarifaHora || horasTrabajadas || fechaLiquidacion) {
+        await axios.post("/salary", salaryPayload, { headers: authHeaders() });
+      }
+
       flashSaved("personal"); onSaved("Datos personales actualizados.");
     } catch (err) { setGlobalErr(err?.response?.data?.msg || "Error al guardar datos personales."); }
     finally { setSaving(false); }
@@ -465,7 +510,12 @@ export function StaffEditDrawer({ staff, localities, onClose, onSaved }) {
     if (!validateRol()) return;
     setSaving(true); setGlobalErr("");
     try {
-      if (idRol === 2 && vet) await axios.patch(`/veterinarian/${staff.idPersonal}`, { especialidad: vetForm.especialidad, idMatricula: parseInt(vetForm.idMatricula) }, { headers: authHeaders() });
+      if (idRol === 2 && vet) await axios.patch(`/veterinarian/${staff.idPersonal}`, {
+        especialidad: vetForm.especialidad,
+        idMatricula: parseInt(vetForm.idMatricula),
+        fechaExpedicion: vetForm.fechaExpedicion || null,   
+        fechaVencimiento: vetForm.fechaVencimiento || null,  
+      }, { headers: authHeaders() });
       else if (idRol === 3 && asst) await axios.patch(`/assistant/${staff.idPersonal}`, { certificados: asstForm.certificados || null }, { headers: authHeaders() });
       else if (idRol === 1 && adm) await axios.patch(`/admin/${staff.idPersonal}`, { areaResponsabilidad: admForm.areaResponsabilidad }, { headers: authHeaders() });
       flashSaved("rol"); onSaved("Datos del rol actualizados.");
@@ -509,7 +559,15 @@ export function StaffEditDrawer({ staff, localities, onClose, onSaved }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <div style={{ background: "#e0f2fe", border: "1px solid #bae6fd", borderRadius: 10, padding: "12px 16px", display: "flex", alignItems: "center", gap: 10 }}><div><div style={{ fontWeight: 700, fontSize: 13, color: "#0369a1" }}>Datos de Veterinario</div></div></div>
         <Field label="Especialidad" required error={errors.especialidad}><input style={inputStyle(errors.especialidad)} value={vetForm.especialidad} onChange={e => setVet("especialidad", e.target.value)} placeholder="Clínica General, Cirugía..." /></Field>
-        <Field label="Número de matrícula" required error={errors.idMatricula}><input type="number" style={inputStyle(errors.idMatricula)} value={vetForm.idMatricula} onChange={e => setVet("idMatricula", e.target.value)} placeholder="12345" /></Field>
+        <Field label="N° de matrícula" required error={errors.matricula}>
+          <input type="number" style={inputStyle(errors.matricula)} value={roleForm.matricula} onChange={set("matricula")} placeholder="12345" />
+        </Field>
+        <Field label="Fecha de expedición" required error={errors.fechaExpedicion}>
+          <input type="date" style={inputStyle(errors.fechaExpedicion)} value={roleForm.fechaExpedicion} onChange={set("fechaExpedicion")} />
+        </Field>
+        <Field label="Fecha de vencimiento" error={errors.fechaVencimiento}>
+          <input type="date" style={inputStyle(errors.fechaVencimiento)} value={roleForm.fechaVencimiento} onChange={set("fechaVencimiento")} />
+        </Field>
         {staff.Veterinarian?.Horarios?.length > 0 && (
           <div style={{ background: "#f8fafc", border: `1px solid ${VET_COLORS.border}`, borderRadius: 10, padding: "12px 14px" }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Horarios registrados</div>
@@ -643,6 +701,22 @@ export function StaffEditDrawer({ staff, localities, onClose, onSaved }) {
               <Field label="Correo electrónico" error={errors.correo}><input type="email" style={inputStyle(errors.correo)} value={form.correo} onChange={e => set("correo", e.target.value)} /></Field>
               <Field label="Dirección" required error={errors.direccion}><input style={inputStyle(errors.direccion)} value={form.direccion} onChange={e => set("direccion", e.target.value)} /></Field>
               <Field label="Localidad"><select style={inputStyle(false)} value={form.idLocalidad} onChange={e => set("idLocalidad", e.target.value)}><option value="">— Seleccionar localidad —</option>{localities.map(l => <option key={l.idLocalidad} value={l.idLocalidad}>{l.nombre}</option>)}</select></Field>
+              <div style={{ borderTop: `1px dashed ${VET_COLORS.border}`, paddingTop: 14, marginTop: 4 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
+                  Salario
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <Field label="Tarifa por hora ($)" error={errors.tarifaHora}>
+                    <input type="number" style={inputStyle(errors.tarifaHora)} value={form.tarifaHora} onChange={e => set("tarifaHora", e.target.value)} placeholder="ej: 1500" />
+                  </Field>
+                  <Field label="Horas trabajadas" error={errors.horasTrabajadas}>
+                    <input type="number" style={inputStyle(errors.horasTrabajadas)} value={form.horasTrabajadas} onChange={e => set("horasTrabajadas", e.target.value)} placeholder="ej: 160" />
+                  </Field>
+                  <Field label="Fecha de liquidación" error={errors.fechaLiquidacion}>
+                    <input type="date" style={inputStyle(errors.fechaLiquidacion)} value={form.fechaLiquidacion} onChange={e => set("fechaLiquidacion", e.target.value)} />
+                  </Field>
+                </div>
+              </div>
             </div>
           )}
           {activeTab === "rol" && renderRolFields()}
