@@ -282,7 +282,7 @@ function ProductPickerModal({ isOpen, onClose, onSelect, categories }) {
 }
 
 // ── HistorialCompras ──────────────────────────────────────────────
-function HistorialCompras({ onBack, canAnular }) {
+function HistorialCompras({ onBack, canEliminar }) {
   const [compras,  setCompras]  = useState([]);
   const [loading,  setLoading]  = useState(true);
   const [detalle,  setDetalle]  = useState(null);
@@ -348,7 +348,7 @@ function HistorialCompras({ onBack, canAnular }) {
     setFiltProveedor(""); setFiltVisitador("");
   };
 
-  const anular = async () => {
+  const eliminar = async () => {
     try {
       await axios.delete(`/purchase/${confirm}`, { headers: headers() });
       setConfirm(null);
@@ -356,7 +356,7 @@ function HistorialCompras({ onBack, canAnular }) {
       fetchCompras();
     } catch {
       setConfirm(null);
-      setMsgErr("No se pudo anular la compra.");
+      setMsgErr("No se pudo eliminar la compra.");
     }
   };
 
@@ -372,10 +372,10 @@ function HistorialCompras({ onBack, canAnular }) {
     <div style={{ maxWidth: 1280, margin: "0 auto", padding: "20px 24px" }}>
       {confirm && (
         <AlertModal emoji="⚠️" emojiBg={C.amberBg}
-          title="¿Anular esta compra?"
+          title="¿Eliminar esta compra?"
           message="Esta acción <strong>no se puede deshacer</strong>. El stock ingresado será revertido."
-          confirmText="Sí, anular" confirmBg={C.red} cancelText="Cancelar"
-          onConfirm={anular} onCancel={() => setConfirm(null)} />
+          confirmText="Sí, eliminar" confirmBg={C.red} cancelText="Cancelar"
+          onConfirm={eliminar} onCancel={() => setConfirm(null)} />
       )}
       {msgOk && (
         <AlertModal emoji="✅" emojiBg={C.green100} title="Operación exitosa" message={msgOk}
@@ -530,11 +530,11 @@ function HistorialCompras({ onBack, canAnular }) {
                       padding: "6px 12px", borderRadius: 7, fontSize: 12, fontWeight: 600,
                       background: C.blueBg, color: C.blue, border: `1px solid #b5d4f4`, cursor: "pointer",
                     }}>Ver detalle</button>
-                    {canAnular && (
+                    {canEliminar && (
                       <button onClick={() => setConfirm(compra.idCompra)} style={{
                         padding: "6px 12px", borderRadius: 7, fontSize: 12, fontWeight: 600,
                         background: C.redBg, color: C.red, border: `1px solid #f7c1c1`, cursor: "pointer",
-                      }}>Anular</button>
+                      }}>Eliminar</button>
                     )}
                   </div>
                 </td>
@@ -609,7 +609,7 @@ function HistorialCompras({ onBack, canAnular }) {
 // ═══════════════════════════════════════════════════════════════════
 export default function ComprasPage() {
   const { user } = useAuth();
-  const canAnular = [1].includes(user?.idRol);  // Admin, asistente y vendedor pueden anular compras
+  const canEliminar = [1].includes(user?.idRol);  // Admin, asistente y vendedor pueden eliminar compras
   const [showHistory, setShowHistory] = useState(false);
 
   // Listas lookup
@@ -861,7 +861,7 @@ export default function ComprasPage() {
     return (
       <HistorialCompras 
         onBack={() => setShowHistory(false)} 
-        canAnular={canAnular} 
+        canEliminar={canEliminar} 
       />
     );
   }

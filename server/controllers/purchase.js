@@ -197,7 +197,7 @@ async function deletePurchase(req, res, next) {
         await Purchase.destroy({ where: { idCompra: id }, transaction: t });
         
         await t.commit();
-        return res.status(200).send({ msg: "Compra anulada y stock reverted." });
+        return res.status(200).send({ msg: "Compra eliminada y stock revertido." });
         
     } catch (error) {
         if (t) await t.rollback();
