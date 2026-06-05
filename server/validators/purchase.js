@@ -11,13 +11,6 @@ const validateCreatePurchase = [
   body("fecha")
     .notEmpty().withMessage("La fecha es obligatoria.")
     .isDate().withMessage("El formato de fecha no es válido.")
-    .custom((value) => {
-      const hoy = new Date().toLocaleDateString('en-CA'); 
-      if (value < hoy) {
-          throw new Error("La fecha no puede ser anterior al día de hoy.");
-      }
-      return true;
-    }),
 
   body("hora")
     .notEmpty().withMessage("La hora es obligatoria.")
@@ -131,7 +124,6 @@ const validateCreatePurchase = [
     .notEmpty().withMessage("El precio de compra (costo) es obligatorio.")
     .isDecimal({ min: 0.01 }).withMessage("El precio de costo debe ser mayor a 0."),
 
-  // 👇 NUEVA VALIDACIÓN ESTRICTA PARA EL PRECIO DE VENTA
   body("items.*.precioVentaPublico")
     .notEmpty().withMessage("El precio de venta al público es obligatorio.")
     .isDecimal({ min: 0.01 }).withMessage("El precio de venta debe ser mayor a 0.")
