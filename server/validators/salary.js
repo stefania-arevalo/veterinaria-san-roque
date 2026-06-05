@@ -10,15 +10,7 @@ const validateCreateSalary = [
     .isInt({ min: 0 }).withMessage("Las horas deben ser un número entero positivo."),
   body("tarifaHora")
     .notEmpty().withMessage("La tarifa es obligatoria.")
-    .isFloat({ min: 0.01 }).withMessage("La tarifa debe ser mayor a 0."),
-  body("idUsuario")
-    .notEmpty().withMessage("El idUsuario es obligatorio.")
-    .isInt().withMessage("El idUsuario debe ser un número entero.")
-    .custom(async (value) => {
-        const exists = await User.findByPk(value);
-        if (!exists) throw new Error("El usuario seleccionado no existe.");
-        return true;
-      }),
+    .isFloat({ min: 0.01 }).withMessage("La tarifa debe ser mayor a 0.")
 ];
 
 const validateUpdateSalary = [
