@@ -31,8 +31,9 @@ const validateCreate = [
 
 const validateUpdate = [
     body("nombre").optional(),
-    body("descripcion").notEmpty().withMessage("La descripcion es obligatoria."),
+    body("descripcion").optional(),  
     body("idCategoria")
+        .optional()                 
         .isInt().withMessage("La categoría debe ser un entero.")
         .custom(async (value) => {
             const exists = await Category.findByPk(value);
@@ -40,18 +41,19 @@ const validateUpdate = [
             return true;
         }),
     body("idMarca")
+        .optional()                
         .isInt().withMessage("La marca debe ser un entero.")
         .custom(async (value) => {
-            const exists = await Category.findByPk(value);
+            const exists = await Brand.findByPk(value);  
             if (!exists) throw new Error("La marca no existe.");
             return true;
         }),
+    body("activo").optional().isBoolean(),   
+    body("esUsoInterno").optional().isBoolean(), 
     body().custom(async (body, { req }) => {
         const { id } = req.params;
         const { nombre, idMarca } = body;
-        // Solo validamos unicidad si alguno de los campos fue enviado en el body
         if (nombre || idMarca) {
-            // Buscamos si existe otro producto con esa combinación
             const existing = await Product.findOne({
                 where: {
                     nombre: nombre || (await Product.findByPk(id)).nombre,
