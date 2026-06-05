@@ -110,7 +110,7 @@ const validateCreatePurchase = [
     .notEmpty().withMessage("El código de lote es obligatorio.")
     .isString().withMessage("El código de lote debe ser un texto.")
     .trim()
-    .customSanitizer(v => v.toUpperCase()), // Pasa automáticamente a mayúsculas como espera tu controlador
+    .customSanitizer(v => v.toUpperCase()), 
 
   body("items.*.fechaVencimiento")
     .notEmpty().withMessage("La fecha de vencimiento del lote es obligatoria.")
