@@ -17,7 +17,6 @@ const SECCIONES = [
     id: "servicios",
     titulo: "Servicios",
     catalogos: [
-      // Modelo: idTipoServicio | descripcion
       {
         title: "Tipos de Servicio",
         endpoint: "/service-type",
@@ -29,9 +28,6 @@ const SECCIONES = [
           { field: "descripcion", label: "Descripción", required: true },
         ],
       },
-      // Modelo: idServicio | descripcion | idTipoServicio
-      // ⚠️ El GET /services falla en el backend por EagerLoadingError.
-      // Fix en backend → service controller: { model: ServiceType, as: 'ServiceType' }
       {
         title: "Servicios",
         endpoint: "/service",
@@ -44,7 +40,6 @@ const SECCIONES = [
           { field: "idTipoServicio", label: "ID Tipo de Servicio", required: true, type: "fk", fkEndpoint: "/service-types", fkId: "idTipoServicio", fkLabel: "descripcion" },
         ],
       },
-      // Modelo: idPrecioServicio | idServicio | idTamaño | precio | duracionEstimada
       {
         title: "Precios de Servicio",
         endpoint: "/service-price",
@@ -59,7 +54,6 @@ const SECCIONES = [
           { field: "duracionEstimada",  label: "Duración estimada (min)",              type: "number", placeholder: "ej: 30" },
         ],
       },
-      // Modelo: idTipoCita | descripcion
       {
         title: "Tipos de Cita",
         endpoint: "/appointment-type",
@@ -71,7 +65,6 @@ const SECCIONES = [
           { field: "descripcion", label: "Descripción", required: true },
         ],
       },
-      // Modelo: idTipoPago | descripcion
       {
         title: "Tipos de Pago",
         endpoint: "/payment-type",
@@ -83,7 +76,6 @@ const SECCIONES = [
           { field: "descripcion", label: "Descripción", required: true },
         ],
       },
-      // Modelo: idTipoBoleta | descripcion
       {
         title: "Tipos de Boleta",
         endpoint: "/receipt-type",
@@ -95,7 +87,6 @@ const SECCIONES = [
           { field: "descripcion", label: "Descripción", required: true },
         ],
       },
-      // Modelo: idEstadoCita | descripcion
       {
         title: "Estados de Cita",
         endpoint: "/appointment-state",
@@ -107,7 +98,6 @@ const SECCIONES = [
           { field: "descripcion", label: "Descripción", required: true },
         ],
       },
-      // Modelo: idEstadoServicio | descripcion
       {
         title: "Estados de Servicio en Cita",
         endpoint: "/service-appointment-state",
@@ -119,7 +109,6 @@ const SECCIONES = [
           { field: "descripcion", label: "Descripción", required: true },
         ],
       },
-      // Modelo: idEstadoVenta | descripcion
       {
         title: "Estados de Venta",
         endpoint: "/sale-state",
@@ -139,7 +128,6 @@ const SECCIONES = [
     id: "empleados",
     titulo: "Empleados",
     catalogos: [
-      // Modelo: idRol | descripcion
       {
         title: "Roles de Usuario",
         endpoint: "/role",
@@ -147,14 +135,13 @@ const SECCIONES = [
         idField: "idRol",
         labelField: "descripcion",
         searchField: "descripcion",
-        canCreate: false,   // ← solo lectura
+        canCreate: false,
         canEdit:   false,
         canDelete: false,
         columns: [
           { field: "descripcion", label: "Descripción", required: true },
         ],
       },
-      // Modelo: idHorario | diaSemana | turno | horaInicio | horaFin
       {
         title: "Horarios de Atención",
         endpoint: "/schedule",
@@ -193,8 +180,6 @@ const SECCIONES = [
           { field: "horaFin",    label: "Hora de fin",    type: "time", required: true },
         ],
       },
-      // Modelo: idSalario | fechaLiquidacion | horasTrabajadas | tarifaHora
-      // Es catálogo porque define estructuras salariales reutilizables por el staff.
       {
         title: "Salarios / Tarifas",
         endpoint: "/salary",
@@ -206,11 +191,35 @@ const SECCIONES = [
           { field: "fechaLiquidacion", label: "Fecha de liquidación", required: true, type: "date" },
           { field: "horasTrabajadas",  label: "Horas trabajadas",     required: true, type: "number", placeholder: "ej: 160" },
           { field: "tarifaHora",       label: "Tarifa por hora ($)",  required: true, type: "number", placeholder: "ej: 500.00" },
+          // Columna virtual: personal asignado — solo visible en tabla, no en formulario
+          {
+            field: "__personal",
+            label: "Personal asignado",
+            hideInForm: true,
+            render: (_val, row) => {
+              const staff = row.Staff;
+              if (!staff) {
+                return (
+                  <span style={{
+                    display: "inline-flex", alignItems: "center", gap: 5,
+                    fontSize: 11, fontWeight: 700, padding: "2px 9px", borderRadius: 20,
+                    background: "#dcfce7", color: "#166534",
+                  }}>
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#16a34a" }} />
+                    Libre
+                  </span>
+                );
+              }
+              return (
+                <span style={{ fontSize: 12, color: "#1a202c", fontWeight: 600 }}>
+                  {staff.nombres} {staff.apellidos}
+                </span>
+              );
+            },
+          },
         ],
       },
-      // Modelo: idMatricula (PK manual) | fechaExpedicion | fechaVencimiento
-      // Nota: las matrículas están aquí porque son el catálogo base;
-      // se asocian al veterinario desde la página de gestión de personal.
+      // ── MATRÍCULAS — con columnas de veterinario asignado + badge libre/ocupada
       {
         title: "Matrículas Profesionales",
         endpoint: "/card",
@@ -222,6 +231,54 @@ const SECCIONES = [
           { field: "idMatricula",      label: "N° Matrícula",         required: true, type: "number" },
           { field: "fechaExpedicion",  label: "Fecha de expedición",  required: true, type: "date"   },
           { field: "fechaVencimiento", label: "Fecha de vencimiento", required: true, type: "date"   },
+
+          // Columna virtual: estado libre/ocupada — solo visible en tabla
+          {
+            field: "__estado",
+            label: "Estado",
+            hideInForm: true,
+            render: (_val, row) => {
+              const ocupada = !!row.Veterinarian;
+              return (
+                <span style={{
+                  display: "inline-flex", alignItems: "center", gap: 5,
+                  fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20,
+                  background: ocupada ? "#fee2e2" : "#dcfce7",
+                  color:      ocupada ? "#991b1b" : "#166534",
+                }}>
+                  <span style={{
+                    width: 6, height: 6, borderRadius: "50%",
+                    background: ocupada ? "#dc2626" : "#16a34a",
+                  }} />
+                  {ocupada ? "Ocupada" : "Libre"}
+                </span>
+              );
+            },
+          },
+
+          // Columna virtual: veterinario asignado — solo visible en tabla
+          {
+            field: "__veterinario",
+            label: "Veterinario asignado",
+            hideInForm: true,
+            render: (_val, row) => {
+              const vet = row.Veterinarian;
+              if (!vet) {
+                return <span style={{ fontSize: 12, color: "#94a3b8" }}>—</span>;
+              }
+              // El backend incluye Veterinarian.Staff con nombres/apellidos
+              const staff = vet.Staff;
+              const nombre = staff
+                ? `${staff.nombres} ${staff.apellidos}`
+                : `Personal #${vet.idPersonal}`;
+              return (
+                <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                  <span style={{ fontSize: 15 }}>🩺</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "#0369a1" }}>{nombre}</span>
+                </div>
+              );
+            },
+          },
         ],
       },
     ],
@@ -232,7 +289,6 @@ const SECCIONES = [
     id: "contactos",
     titulo: "Contactos",
     catalogos: [
-      // Modelo: idLocalidad | nombre
       {
         title: "Localidades",
         endpoint: "/locality",
@@ -244,7 +300,6 @@ const SECCIONES = [
           { field: "nombre", label: "Nombre", required: true },
         ],
       },
-      // Modelo: idProveedor | razonSocial | cuit | telefono | direccion | correo | idLocalidad
       {
         title: "Proveedores",
         endpoint: "/provider",
@@ -261,7 +316,6 @@ const SECCIONES = [
           { field: "idLocalidad", label: "ID Localidad",   required: true, type: "fk", fkEndpoint: "/localities", fkId: "idLocalidad", fkLabel: "nombre" },
         ],
       },
-      // Modelo: idVisitador | nombre | apellido | telefono | correo | idProveedor
       {
         title: "Visitadores Médicos",
         endpoint: "/visitor",
@@ -285,7 +339,6 @@ const SECCIONES = [
     id: "tratamientos",
     titulo: "Tratamientos",
     catalogos: [
-      // Modelo: idTipoTratamiento | nombre | descripcion
       {
         title: "Tipos de Tratamiento",
         endpoint: "/treatment-type",
@@ -298,7 +351,6 @@ const SECCIONES = [
           { field: "descripcion", label: "Descripción", required: true, type: "textarea" },
         ],
       },
-      // Modelo: idEstadoTratamiento | descripcion
       {
         title: "Estados de Tratamiento",
         endpoint: "/treatment-state",
@@ -310,7 +362,6 @@ const SECCIONES = [
           { field: "descripcion", label: "Descripción", required: true },
         ],
       },
-      // Modelo: idTipoMedicacion | descripcion
       {
         title: "Tipos de Medicación",
         endpoint: "/medication-type",
@@ -330,7 +381,6 @@ const SECCIONES = [
     id: "pacientes",
     titulo: "Pacientes / Mascotas",
     catalogos: [
-      // Modelo: idEspecie | nombre
       {
         title: "Especies",
         endpoint: "/species",
@@ -342,7 +392,6 @@ const SECCIONES = [
           { field: "nombre", label: "Nombre", required: true },
         ],
       },
-      // Modelo: idRaza | nombre | idEspecie
       {
         title: "Razas",
         endpoint: "/breed",
@@ -355,7 +404,6 @@ const SECCIONES = [
           { field: "idEspecie", label: "ID Especie", required: true, type: "fk", fkEndpoint: "/species", fkId: "idEspecie", fkLabel: "nombre" },
         ],
       },
-      // Modelo: idTamaño | descripcion  (nombre del campo con tilde, igual que en BD)
       {
         title: "Tamaños de Animal",
         endpoint: "/animal-size",
@@ -367,7 +415,6 @@ const SECCIONES = [
           { field: "descripcion", label: "Descripción", required: true, placeholder: "ej: Pequeño (0-5 kg)" },
         ],
       },
-      // Modelo: idEstadoMascota | descripcion
       {
         title: "Estados de Mascota",
         endpoint: "/pet-state",
@@ -387,7 +434,6 @@ const SECCIONES = [
     id: "productos",
     titulo: "Productos / Stock",
     catalogos: [
-      // Modelo: idCategoria | descripcion
       {
         title: "Categorías de Producto",
         endpoint: "/category",
@@ -399,7 +445,6 @@ const SECCIONES = [
           { field: "descripcion", label: "Descripción", required: true },
         ],
       },
-      // Modelo: idMarca | descripcion
       {
         title: "Marcas",
         endpoint: "/brand",
@@ -411,7 +456,6 @@ const SECCIONES = [
           { field: "descripcion", label: "Descripción", required: true },
         ],
       },
-      // Modelo: idPresentacion | tipo | concentracion | formato | cantidad
       {
         title: "Presentaciones de Producto",
         endpoint: "/presentation",
