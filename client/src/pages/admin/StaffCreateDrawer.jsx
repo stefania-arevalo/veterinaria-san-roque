@@ -131,15 +131,67 @@ function Step1Personal({ form, errors, onChange, localities }) {
           {localities.map((l) => <option key={l.idLocalidad} value={l.idLocalidad}>{l.nombre}</option>)}
         </select>
       </Field>
-      <Field label="Tarifa por hora ($)" error={errors.tarifaHora} colSpan="1 / -1">
-        <input type="number" style={inputStyle(errors.tarifaHora)} value={form.tarifaHora} onChange={(e) => onChange("tarifaHora", e.target.value)} placeholder="ej: 1500" />
-      </Field>
-      <Field label="Horas trabajadas" error={errors.horasTrabajadas}>
-        <input type="number" style={inputStyle(errors.horasTrabajadas)} value={form.horasTrabajadas} onChange={(e) => onChange("horasTrabajadas", e.target.value)} placeholder="ej: 160" />
-      </Field>
-      <Field label="Fecha de liquidación" error={errors.fechaLiquidacion}>
-        <input type="date" style={inputStyle(errors.fechaLiquidacion)} value={form.fechaLiquidacion} onChange={(e) => onChange("fechaLiquidacion", e.target.value)} />
-      </Field>
+      {/* SECCIÓN SALARIO */}
+      <div style={{ gridColumn: "1 / -1", borderTop: `1px dashed ${VET_COLORS.border}`, paddingTop: 14, marginTop: 4 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
+          💰 Salario
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
+          {[
+            { key: "none",     icon: "⏭️", label: "Sin salario",         desc: "Asignar después" },
+            { key: "create",   icon: "➕", label: "Crear nuevo",          desc: "Ingresar tarifa nueva" },
+            { key: "existing", icon: "🔗", label: "Asociar existente",    desc: "Vincular salario libre" },
+          ].map((opt) => (
+            <button key={opt.key} type="button"
+              onClick={() => onChange("salaryMode", opt.key)}
+              style={{
+                padding: "10px 8px", borderRadius: 10, textAlign: "center", cursor: "pointer",
+                border: `2px solid ${form.salaryMode === opt.key ? VET_COLORS.accent : VET_COLORS.border}`,
+                background: form.salaryMode === opt.key ? "#f0fdf4" : "white",
+                transition: "all 0.15s",
+                gridColumn: opt.key === "none" ? "1 / -1" : "auto",
+              }}>
+              <div style={{ fontSize: 18, marginBottom: 3 }}>{opt.icon}</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: form.salaryMode === opt.key ? VET_COLORS.accent : "#334155" }}>{opt.label}</div>
+              <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>{opt.desc}</div>
+            </button>
+          ))}
+        </div>
+
+        {form.salaryMode === "create" && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <Field label="Tarifa por hora ($)" error={errors.tarifaHora}>
+              <input type="number" style={inputStyle(errors.tarifaHora)} value={form.tarifaHora}
+                onChange={(e) => onChange("tarifaHora", e.target.value)} placeholder="ej: 1500" />
+            </Field>
+            <Field label="Horas trabajadas" error={errors.horasTrabajadas}>
+              <input type="number" style={inputStyle(errors.horasTrabajadas)} value={form.horasTrabajadas}
+                onChange={(e) => onChange("horasTrabajadas", e.target.value)} placeholder="ej: 160" />
+            </Field>
+            <Field label="Fecha de liquidación" error={errors.fechaLiquidacion} colSpan="1 / -1">
+              <input type="date" style={inputStyle(errors.fechaLiquidacion)} value={form.fechaLiquidacion}
+                onChange={(e) => onChange("fechaLiquidacion", e.target.value)} />
+            </Field>
+          </div>
+        )}
+
+        {form.salaryMode === "existing" && (
+          <Field label="Seleccionar salario existente" error={errors.idSalarioExistente}>
+            {form.loadingSalaries
+              ? <p style={{ margin: 0, fontSize: 13, color: "#94a3b8" }}>Cargando...</p>
+              : <select style={inputStyle(errors.idSalarioExistente)} value={form.idSalarioExistente}
+                  onChange={(e) => onChange("idSalarioExistente", e.target.value)}>
+                  <option value="">— Elegir salario —</option>
+                  {(form.freeSalaries || []).map(s => (
+                    <option key={s.idSalario} value={s.idSalario}>
+                      ${s.tarifaHora}/h · {s.horasTrabajadas}hs · {s.fechaLiquidacion}
+                    </option>
+                  ))}
+                </select>
+            }
+          </Field>
+        )}
+      </div>
     </div>
   );
 }
@@ -249,7 +301,11 @@ export default function StaffCreateDrawer({ onClose, onSaved, localities }) {
     nombres: "", apellidos: "", dni: "", sexo: "",
     fechaNacimiento: "", telefono: "", direccion: "",
     correo: "", idLocalidad: "",
-    tarifaHora: "", horasTrabajadas: "", fechaLiquidacion: ""  
+    tarifaHora: "", horasTrabajadas: "", fechaLiquidacion: "",
+    salaryMode: "none",           
+    idSalarioExistente: "",       
+    freeSalaries: [],             
+    loadingSalaries: false,      
   });
   const [selectedRole, setSelectedRole] = useState(null);
   const [roleForm, setRoleForm] = useState({
@@ -274,6 +330,19 @@ export default function StaffCreateDrawer({ onClose, onSaved, localities }) {
         .finally(() => setLoadingUsers(false));
     }
   }, [step]);
+
+  useEffect(() => {
+    if (personal.salaryMode === "existing" && personal.freeSalaries.length === 0) {
+      setP("loadingSalaries", true);
+      axios.get("/salaries", { headers: authHeaders() })
+        .then(res => {
+          const free = (Array.isArray(res.data) ? res.data : []).filter(s => !s.idPersonal);
+          setP("freeSalaries", free);
+        })
+        .catch(() => setP("freeSalaries", []))
+        .finally(() => setP("loadingSalaries", false));
+    }
+  }, [personal.salaryMode]);
 
   const setP = (f, v) => setPersonal((p) => ({ ...p, [f]: v }));
   const setR = (f, v) => setRoleForm((p) => ({ ...p, [f]: v }));
@@ -324,8 +393,15 @@ export default function StaffCreateDrawer({ onClose, onSaved, localities }) {
       const idPersonal = staffRes.data.idPersonal;
 
       // Crear salario si se completó al menos un campo
-      if (tarifaHora || horasTrabajadas || fechaLiquidacion) {
-        await axios.post("/salary", { idPersonal, tarifaHora, horasTrabajadas, fechaLiquidacion }, { headers: authHeaders() });
+      if (personal.salaryMode === "create" && (personal.tarifaHora || personal.horasTrabajadas || personal.fechaLiquidacion)) {
+        await axios.post("/salary", {
+          idPersonal,
+          tarifaHora: personal.tarifaHora,
+          horasTrabajadas: personal.horasTrabajadas,
+          fechaLiquidacion: personal.fechaLiquidacion
+        }, { headers: authHeaders() });
+      } else if (personal.salaryMode === "existing" && personal.idSalarioExistente) {
+        await axios.patch(`/salary/${personal.idSalarioExistente}`, { idPersonal }, { headers: authHeaders() });
       }
 
       // 2. Crear datos del rol

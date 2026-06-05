@@ -305,6 +305,11 @@ function StaffTab({ localities, showToast }) {
                             {[
                               { label: "Estado cuenta", value: s.User?.estado !== undefined ? (s.User.estado ? "✅ Activo" : "❌ Inactivo") : "Sin usuario" },
                               { label: "Dirección",     value: s.direccion || "—" },
+                              ...(s.Salary ? [
+                                { label: "Tarifa/hora", value: s.Salary.tarifaHora ? `$${s.Salary.tarifaHora}` : "—" },
+                                { label: "Horas trabajadas", value: s.Salary.horasTrabajadas ?? "—" },
+                                { label: "Fecha liquidación", value: s.Salary.fechaLiquidacion || "—" },
+                              ] : []),
                               ...(s.Veterinarian ? [{ label: "Especialidad", value: s.Veterinarian.especialidad }, { label: "Matrícula ID", value: s.Veterinarian.idMatricula }] : []),
                               ...(s.Assistant    ? [{ label: "Certificados", value: s.Assistant.certificados || "—" }] : []),
                               ...(s.Admin        ? [{ label: "Área resp.",   value: s.Admin.areaResponsabilidad }] : []),
