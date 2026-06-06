@@ -550,14 +550,16 @@ export function StaffEditDrawer({ staff, localities, onClose, onSaved }) {
     finally { setSaving(false); }
   };
 
-  // Punto 5: usa helper centralizado
   const handleUnlink = async () => {
     setSaving(true); setGlobalErr("");
     try {
       await unlinkUser({ entityType: "staff", entityId: staff.idPersonal });
-      setConfirmUnlink(false); onSaved("Usuario desvinculado.");
-    } catch (err) { setGlobalErr(err?.response?.data?.msg || "Error al desvincular usuario."); }
-    finally { setSaving(false); }
+      await axios.delete(`/user/${staff.User.idUsuario}`, { headers: authHeaders() });
+      setConfirmUnlink(false);
+      onSaved("Acceso eliminado correctamente.");
+    } catch (err) {
+      setGlobalErr(err?.response?.data?.msg || "Error al eliminar el acceso.");
+    } finally { setSaving(false); }
   };
 
   const renderRolFields = () => {
@@ -629,10 +631,9 @@ export function StaffEditDrawer({ staff, localities, onClose, onSaved }) {
           <Field label="Nueva contraseña (vacío = no cambiar)" error={errors.newPassword}><input type="password" style={inputStyle(errors.newPassword)} value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Mínimo 6 caracteres" autoComplete="new-password" /></Field>
           <div style={{ padding: "14px 16px", background: "#fff5f5", border: "1px solid #fecaca", borderRadius: 10 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: "#c62828", marginBottom: 6 }}>⚠️ Zona peligrosa</div>
-            <p style={{ margin: "0 0 10px", fontSize: 12, color: "#64748b", lineHeight: 1.5 }}>Desvincular elimina la asociación. El usuario <strong>no se elimina</strong>, solo queda libre.</p>
-            <button type="button" onClick={() => setConfirmUnlink(true)} style={{ padding: "7px 16px", borderRadius: 7, fontSize: 12, fontWeight: 600, border: "1.5px solid #c62828", background: "white", color: "#c62828", cursor: "pointer" }}>🔓 Desvincular usuario</button>
+            <button type="button" onClick={() => setConfirmUnlink(true)} style={{ padding: "7px 16px", borderRadius: 7, fontSize: 12, fontWeight: 600, border: "1.5px solid #c62828", background: "white", color: "#c62828", cursor: "pointer" }}>🔓 Eliminar acceso del cliente</button>
           </div>
-          {confirmUnlink && <ConfirmModal title="¿Desvincular usuario?" message={`La cuenta "@${staff.User.usuario}" quedará libre y este personal no tendrá acceso hasta que se le asigne otra cuenta.`} onConfirm={handleUnlink} onCancel={() => setConfirmUnlink(false)} danger />}
+          {confirmUnlink && <ConfirmModal title="¿Eliminar acceso?" message={`Se desvinculará y eliminará permanentemente la cuenta "@${staff.User.usuario}". Esta acción no se puede deshacer.`} onConfirm={handleUnlink} onCancel={() => setConfirmUnlink(false)} danger />}
         </div>
       );
     }
