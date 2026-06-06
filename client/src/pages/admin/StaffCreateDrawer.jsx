@@ -242,50 +242,34 @@ function Step2Rol({ selectedRole, onRoleChange, roleForm, onRoleFormChange, erro
   );
 }
 
-function Step3Acceso({ selectedRole, accessMode, onModeChange, userForm, onUserFormChange, errors, existingUsers, loadingUsers }) {
+function Step3Acceso({ selectedRole, userForm, onUserFormChange, errors }) {
   const set = (f) => (e) => onUserFormChange(f, e.target.value);
   const m   = ROLE_META[selectedRole] || {};
-  const compatibleUsers = existingUsers.filter(u => u.idRol === selectedRole && !u.Staff && !u.Client);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "14px 16px" }}>
-        <p style={{ margin: 0, fontSize: 13, color: "#166534", lineHeight: 1.6 }}>
-          <strong>Paso opcional:</strong> podés crear una cuenta de acceso ahora o hacerlo más tarde desde la tabla de Personal. El rol se asignará automáticamente como <strong>{m.label} {m.label}</strong>.
+      <div style={{ background: "#e0f2fe", border: "1px solid #bae6fd", borderRadius: 10, padding: "14px 16px" }}>
+        <p style={{ margin: 0, fontSize: 13, color: "#0369a1", lineHeight: 1.6 }}>
+          Creá las credenciales de acceso para este personal. El rol se asignará automáticamente como <strong>{m.label}</strong>.
         </p>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-        {[
-          { key: "none",     icon: "⏭️", label: "Sin acceso",         desc: "Solo datos personales" },
-          { key: "create",   icon: "➕", label: "Crear usuario nuevo", desc: "Generar credenciales" },
-          { key: "existing", icon: "🔗", label: "Asociar existente",   desc: "Vincular cuenta libre" },
-        ].map((opt) => (
-          <button key={opt.key} type="button" onClick={() => onModeChange(opt.key)} style={{ padding: "12px 10px", borderRadius: 10, border: `2px solid ${accessMode === opt.key ? VET_COLORS.accent : VET_COLORS.border}`, background: accessMode === opt.key ? (VET_COLORS.accentLight || "#f0fdf4") : "white", cursor: "pointer", textAlign: "center", transition: "all 0.15s" }}>
-            <div style={{ fontSize: 20, marginBottom: 4 }}>{opt.icon}</div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: accessMode === opt.key ? VET_COLORS.accent : "#334155" }}>{opt.label}</div>
-            <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>{opt.desc}</div>
-          </button>
-        ))}
+      <div style={{ display: "flex", flexDirection: "column", gap: 14, padding: "16px", background: "#f8fafc", borderRadius: 10, border: `1px solid ${VET_COLORS.border}` }}>
+        <Field label="Nombre de usuario" required error={errors.usuario}>
+          <input style={inputStyle(errors.usuario)} value={userForm.usuario}
+            onChange={set("usuario")} placeholder="ej: jperez" autoComplete="off" />
+        </Field>
+        <Field label="Contraseña" required error={errors.contraseña}>
+          <input type="password" style={inputStyle(errors.contraseña)} value={userForm.contraseña}
+            onChange={set("contraseña")} placeholder="Mínimo 6 caracteres" autoComplete="new-password" />
+        </Field>
+        {m.label && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: m.bg, borderRadius: 8 }}>
+            <div>
+              <div style={{ fontSize: 11, color: "#64748b" }}>Rol asignado automáticamente</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: m.color }}>{m.label}</div>
+            </div>
+          </div>
+        )}
       </div>
-      {accessMode === "create" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 14, padding: "16px", background: "#f8fafc", borderRadius: 10, border: `1px solid ${VET_COLORS.border}` }}>
-          <Field label="Nombre de usuario" required error={errors.usuario}><input style={inputStyle(errors.usuario)} value={userForm.usuario} onChange={set("usuario")} placeholder="ej: jperez" autoComplete="off" /></Field>
-          <Field label="Contraseña" required error={errors.contraseña}><input type="password" style={inputStyle(errors.contraseña)} value={userForm.contraseña} onChange={set("contraseña")} placeholder="Mínimo 6 caracteres" autoComplete="new-password" /></Field>
-          {m.label && <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: m.bg, borderRadius: 8 }}><span style={{ fontSize: 18 }}>{m.icon}</span><div><div style={{ fontSize: 11, color: "#64748b" }}>Rol asignado automáticamente</div><div style={{ fontSize: 13, fontWeight: 700, color: m.color }}>{m.label}</div></div></div>}
-        </div>
-      )}
-      {accessMode === "existing" && (
-        <div style={{ padding: "16px", background: "#f8fafc", borderRadius: 10, border: `1px solid ${VET_COLORS.border}` }}>
-          {loadingUsers ? <p style={{ margin: 0, fontSize: 13, color: "#94a3b8", textAlign: "center", padding: "12px 0" }}>Cargando usuarios disponibles...</p>
-            : compatibleUsers.length === 0 ? <div style={{ textAlign: "center", padding: "16px 0" }}><div style={{ fontSize: 28, marginBottom: 8 }}>😔</div><p style={{ margin: 0, fontSize: 13, color: "#94a3b8" }}>No hay usuarios con rol <strong>{m.label}</strong> disponibles para asociar.</p><p style={{ margin: "6px 0 0", fontSize: 12, color: "#94a3b8" }}>Solo se muestran cuentas sin personal vinculado.</p></div>
-            : <Field label="Seleccionar usuario" required error={errors.idUsuarioExistente}><select style={inputStyle(errors.idUsuarioExistente)} value={userForm.idUsuarioExistente} onChange={set("idUsuarioExistente")}><option value="">— Elegir usuario —</option>{compatibleUsers.map((u) => <option key={u.idUsuario} value={u.idUsuario}>@{u.usuario} {u.estado ? "✅" : "❌"}</option>)}</select><p style={{ margin: "6px 0 0", fontSize: 11, color: "#64748b" }}>Solo usuarios con rol <strong>{m.icon} {m.label}</strong> sin personal asignado.</p></Field>}
-        </div>
-      )}
-      {accessMode === "none" && (
-        <div style={{ padding: "20px", textAlign: "center", background: "#f8fafc", borderRadius: 10, border: `1px dashed ${VET_COLORS.border}` }}>
-          <div style={{ fontSize: 32, marginBottom: 8 }}>📋</div>
-          <p style={{ margin: 0, fontSize: 13, color: "#64748b", lineHeight: 1.6 }}>El personal se creará <strong>sin cuenta de acceso</strong>.<br />Podés vincular un usuario más tarde desde la tabla de Personal.</p>
-        </div>
-      )}
     </div>
   );
 }
@@ -355,14 +339,12 @@ export default function StaffCreateDrawer({ onClose, onSaved, localities }) {
   };
   const validateStep3 = () => {
     const e = {};
-    if (accessMode === "create") {
-      if (!userForm.usuario.trim()) e.usuario = "Obligatorio";
-      else if (userForm.usuario.trim().length < 4) e.usuario = "Mínimo 4 caracteres";
-      if (!userForm.contraseña) e.contraseña = "Obligatorio";
-      else if (userForm.contraseña.length < 6) e.contraseña = "Mínimo 6 caracteres";
-    }
-    if (accessMode === "existing" && !userForm.idUsuarioExistente) e.idUsuarioExistente = "Seleccioná un usuario";
-    setErrors(e); return Object.keys(e).length === 0;
+    if (!userForm.usuario.trim()) e.usuario = "Obligatorio";
+    else if (userForm.usuario.trim().length < 4) e.usuario = "Mínimo 4 caracteres";
+    if (!userForm.contraseña) e.contraseña = "Obligatorio";
+    else if (userForm.contraseña.length < 6) e.contraseña = "Mínimo 6 caracteres";
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
   const handleNext = () => {
@@ -377,55 +359,54 @@ export default function StaffCreateDrawer({ onClose, onSaved, localities }) {
     if (!validateStep3()) return;
     setSaving(true); setGlobalError("");
     try {
-      // 1. Crear Staff sin idUsuario todavía
-      const { tarifaHora, horasTrabajadas, fechaLiquidacion, ...staffFields } = personal;
-      const staffPayload = { ...staffFields, idLocalidad: personal.idLocalidad ? parseInt(personal.idLocalidad) : null };
-
+      const { tarifaHora, horasTrabajadas, fechaLiquidacion, salaryMode,
+              idSalarioExistente, freeSalaries, loadingSalaries, ...staffFields } = personal;
+      const staffPayload = {
+        ...staffFields,
+        idLocalidad: personal.idLocalidad ? parseInt(personal.idLocalidad) : null
+      };
+  
       const staffRes = await axios.post("/staff", staffPayload, { headers: authHeaders() });
       const idPersonal = staffRes.data.idPersonal;
-
-      // Crear salario si se completó al menos un campo
-      if (personal.salaryMode === "create" && (personal.tarifaHora || personal.horasTrabajadas || personal.fechaLiquidacion)) {
+  
+      // Salario
+      if (salaryMode === "create" && (tarifaHora || horasTrabajadas || fechaLiquidacion)) {
         await axios.post("/salary", {
-          idPersonal,
-          tarifaHora: personal.tarifaHora,
-          horasTrabajadas: personal.horasTrabajadas,
-          fechaLiquidacion: personal.fechaLiquidacion
+          idPersonal, tarifaHora, horasTrabajadas, fechaLiquidacion
         }, { headers: authHeaders() });
-      } else if (personal.idSalarioExistente) {
-        await axios.patch(`/salary/${personal.idSalarioExistente}`, { idPersonal }, { headers: authHeaders() });
       }
-
-      // 2. Crear datos del rol
+  
+      // Rol
       if (selectedRole === 2) {
-        // 1. Crear la matrícula
-        const cardRes = await axios.post("/card", {
+        await axios.post("/card", {
           idMatricula:     parseInt(roleForm.matricula),
           fechaExpedicion:  roleForm.fechaExpedicion,
           fechaVencimiento: roleForm.fechaVencimiento,
         }, { headers: authHeaders() });
-      
-        // 2. Crear el veterinario con idMatricula
         await axios.post("/veterinarian", {
-          idPersonal:   idPersonal,
-          especialidad: roleForm.especialidad,
-          idMatricula:  parseInt(roleForm.matricula),
+          idPersonal, especialidad: roleForm.especialidad,
+          idMatricula: parseInt(roleForm.matricula),
         }, { headers: authHeaders() });
+      } else if (selectedRole === 3) {
+        await axios.post("/assistant", { idPersonal, certificados: roleForm.certificados || null }, { headers: authHeaders() });
+      } else if (selectedRole === 4) {
+        await axios.post("/seller", { idPersonal }, { headers: authHeaders() });
+      } else if (selectedRole === 1) {
+        await axios.post("/admin", { idPersonal, areaResponsabilidad: roleForm.areaResponsabilidad }, { headers: authHeaders() });
       }
-      else if (selectedRole === 3) await axios.post("/assistant", { idPersonal, certificados: roleForm.certificados || null }, { headers: authHeaders() });
-      else if (selectedRole === 4) await axios.post("/seller", { idPersonal }, { headers: authHeaders() });
-      else if (selectedRole === 1) await axios.post("/admin", { idPersonal, areaResponsabilidad: roleForm.areaResponsabilidad }, { headers: authHeaders() });
-
-      // 3. Vincular usuario usando helper centralizado (punto 5)
-      if (accessMode === "create") {
-        await createAndLinkUser({ usuario: userForm.usuario, contraseña: userForm.contraseña, idRol: selectedRole, entityType: "staff", entityId: idPersonal });
-      } else if (accessMode === "existing") {
-        await linkExistingUser({ idUsuario: userForm.idUsuarioExistente, entityType: "staff", entityId: idPersonal });
-      }
-
+  
+      // Usuario — siempre obligatorio
+      await createAndLinkUser({
+        usuario: userForm.usuario,
+        contraseña: userForm.contraseña,
+        idRol: selectedRole,
+        entityType: "staff",
+        entityId: idPersonal
+      });
+  
       onSaved("creado");
     } catch (err) {
-      const msg = err?.response?.data?.msg || err?.response?.data?.errors?.[0]?.msg || "Error al guardar. Revisá los datos e intentá de nuevo.";
+      const msg = err?.response?.data?.msg || err?.response?.data?.errors?.[0]?.msg || "Error al guardar.";
       setGlobalError(msg);
     } finally { setSaving(false); }
   };
@@ -451,7 +432,14 @@ export default function StaffCreateDrawer({ onClose, onSaved, localities }) {
           {globalError && <div style={{ background: "#fee2e2", border: "1px solid #fecaca", borderRadius: 8, padding: "12px 14px", marginBottom: 16 }}><p style={{ margin: 0, fontSize: 13, color: "#c62828", fontWeight: 600 }}>⚠️ {globalError}</p></div>}
           {step === 1 && <Step1Personal form={personal} errors={errors} onChange={setP} localities={localities} />}
           {step === 2 && <Step2Rol selectedRole={selectedRole} onRoleChange={(r) => { setSelectedRole(r); setErrors({}); }} roleForm={roleForm} onRoleFormChange={setR} errors={errors} />}
-          {step === 3 && <Step3Acceso selectedRole={selectedRole} accessMode={accessMode} onModeChange={(m) => { setAccessMode(m); setErrors({}); setUserForm({ usuario: "", contraseña: "", idUsuarioExistente: "" }); }} userForm={userForm} onUserFormChange={setU} errors={errors} existingUsers={existingUsers} loadingUsers={loadingUsers} />}
+          {step === 3 && (
+            <Step3Acceso
+              selectedRole={selectedRole}
+              userForm={userForm}
+              onUserFormChange={setU}
+              errors={errors}
+            />
+          )}
         </div>
         <div style={{ padding: "16px 24px", borderTop: `1px solid ${VET_COLORS.border}`, background: "#fafbfc", display: "flex", gap: 10, alignItems: "center", flexShrink: 0 }}>
           {step > 1 ? <button onClick={handleBack} style={{ padding: "10px 20px", borderRadius: 8, border: `1px solid ${VET_COLORS.border}`, background: "white", cursor: "pointer", fontWeight: 600, fontSize: 13, color: "#475569" }}>← Atrás</button>
@@ -572,21 +560,24 @@ export function StaffEditDrawer({ staff, localities, onClose, onSaved }) {
     setSaving(true); setGlobalErr("");
     try {
       const { tarifaHora, horasTrabajadas, fechaLiquidacion, ...staffFields } = form;
-
+  
       await axios.patch(`/staff/${staff.idPersonal}`, staffFields, { headers: authHeaders() });
-
-      // Salario: si ya existe lo actualizamos, si no lo creamos
-      const salaryPayload = { tarifaHora, horasTrabajadas, fechaLiquidacion, idPersonal: staff.idPersonal };
-      const ultimoSalario = staff.Salaries?.[staff.Salaries.length - 1];
-      if (ultimoSalario?.idSalario) {
-        await axios.patch(`/salary/${ultimoSalario.idSalario}`, salaryPayload, { headers: authHeaders() });
-      } else if (tarifaHora || horasTrabajadas || fechaLiquidacion) {
-        await axios.post("/salary", salaryPayload, { headers: authHeaders() });
+  
+      // Solo crear nueva liquidación si completó los 3 campos
+      if (tarifaHora && horasTrabajadas && fechaLiquidacion) {
+        await axios.post("/salary", {
+          idPersonal: staff.idPersonal,
+          tarifaHora,
+          horasTrabajadas,
+          fechaLiquidacion,
+        }, { headers: authHeaders() });
       }
-
-      flashSaved("personal"); onSaved("Datos personales actualizados.");
-    } catch (err) { setGlobalErr(err?.response?.data?.msg || "Error al guardar datos personales."); }
-    finally { setSaving(false); }
+  
+      flashSaved("personal");
+      onSaved("Datos personales actualizados.");
+    } catch (err) {
+      setGlobalErr(err?.response?.data?.msg || "Error al guardar datos personales.");
+    } finally { setSaving(false); }
   };
 
   const handleSaveRol = async () => {
@@ -806,22 +797,60 @@ export function StaffEditDrawer({ staff, localities, onClose, onSaved }) {
               <Field label="Correo electrónico" error={errors.correo}><input type="email" style={inputStyle(errors.correo)} value={form.correo} onChange={e => set("correo", e.target.value)} /></Field>
               <Field label="Dirección" required error={errors.direccion}><input style={inputStyle(errors.direccion)} value={form.direccion} onChange={e => set("direccion", e.target.value)} /></Field>
               <Field label="Localidad"><select style={inputStyle(false)} value={form.idLocalidad} onChange={e => set("idLocalidad", e.target.value)}><option value="">— Seleccionar localidad —</option>{localities.map(l => <option key={l.idLocalidad} value={l.idLocalidad}>{l.nombre}</option>)}</select></Field>
-              <div style={{ borderTop: `1px dashed ${VET_COLORS.border}`, paddingTop: 14, marginTop: 4 }}>
+              <div style={{ gridColumn: "1 / -1", borderTop: `1px dashed ${VET_COLORS.border}`, paddingTop: 16, marginTop: 8 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
-                  Salario
+                  💰 Nueva liquidación de salario
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <p style={{ margin: "0 0 10px", fontSize: 11, color: "#94a3b8" }}>
+                  Completá los tres campos para registrar una nueva liquidación. Las anteriores quedan guardadas en el historial.
+                </p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 10 }}>
                   <Field label="Tarifa por hora ($)" error={errors.tarifaHora}>
-                    <input type="number" style={inputStyle(errors.tarifaHora)} value={form.tarifaHora} onChange={e => set("tarifaHora", e.target.value)} placeholder="ej: 1500" />
+                    <input type="number" style={inputStyle(errors.tarifaHora)} value={form.tarifaHora} onChange={e => set("tarifaHora", e.target.value)} placeholder="ej: 1800" />
                   </Field>
                   <Field label="Horas trabajadas" error={errors.horasTrabajadas}>
-                    <input type="number" style={inputStyle(errors.horasTrabajadas)} value={form.horasTrabajadas} onChange={e => set("horasTrabajadas", e.target.value)} placeholder="ej: 160" />
+                    <input type="number" style={inputStyle(errors.horasTrabajadas)} value={form.horasTrabajadas} onChange={e => set("horasTrabajadas", e.target.value)} placeholder="ej: 140" />
                   </Field>
-                  <Field label="Fecha de liquidación" error={errors.fechaLiquidacion}>
+                  <Field label="Fecha de liquidación" error={errors.fechaLiquidacion} colSpan="1 / -1">
                     <input type="date" style={inputStyle(errors.fechaLiquidacion)} value={form.fechaLiquidacion} onChange={e => set("fechaLiquidacion", e.target.value)} />
                   </Field>
                 </div>
               </div>
+              {/* HISTORIAL DE SALARIOS — debajo del formulario de salario */}
+              {staff.Salaries?.length > 1 && (
+                <div style={{ borderTop: `1px dashed ${VET_COLORS.border}`, paddingTop: 14, marginTop: 4 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
+                    📋 Historial de liquidaciones
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {[...staff.Salaries].reverse().map((sal, i) => (
+                      <div key={sal.idSalario} style={{
+                        display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
+                        gap: 8, padding: "10px 12px", borderRadius: 8,
+                        background: i === 0 ? "#f0fdf4" : "#f8fafc",
+                        border: `1px solid ${i === 0 ? "#bbf7d0" : VET_COLORS.border}`,
+                        fontSize: 12,
+                      }}>
+                        <div>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", marginBottom: 2 }}>Fecha</div>
+                          <div style={{ color: "#1a202c", fontWeight: i === 0 ? 700 : 500 }}>{sal.fechaLiquidacion || "—"}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", marginBottom: 2 }}>Tarifa/hora</div>
+                          <div style={{ color: "#1a202c" }}>${sal.tarifaHora ?? "—"}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", marginBottom: 2 }}>Horas</div>
+                          <div style={{ color: "#1a202c" }}>{sal.horasTrabajadas ?? "—"}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <p style={{ margin: "8px 0 0", fontSize: 11, color: "#94a3b8" }}>
+                    El registro más reciente se muestra primero y es el que editás arriba.
+                  </p>
+                </div>
+              )}
             </div>
           )}
           {activeTab === "rol" && renderRolFields()}
