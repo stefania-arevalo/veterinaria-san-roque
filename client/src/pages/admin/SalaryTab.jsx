@@ -288,6 +288,7 @@ export default function SalaryTab({ showToast }) {
   // PDF
   const [generatingPdf, setGeneratingPdf] = useState(null);
   const reciboRef = useRef(null);
+  const [pdfPendiente, setPdfPendiente] = useState(null);
 
   // ── Fetch ──────────────────────────────────────────────────────────────
   const fetchAll = useCallback(async () => {
@@ -356,22 +357,27 @@ export default function SalaryTab({ showToast }) {
   const empleadosCon = new Set(salariesFiltradas.map(s => s.idPersonal)).size;
   const empleadosSin = staffList.length - empleadosCon;
 
+  useEffect(() => {
+    if (!pdfPendiente || !reciboRef.current) return;
+  
+    const { salary, staff } = pdfPendiente;
+    html2canvas(reciboRef.current, { scale: 2, useCORS: true, backgroundColor: "#ffffff" })
+      .then(canvas => {
+        const imgData = canvas.toDataURL("image/png");
+        const pdf     = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+        const pdfW    = pdf.internal.pageSize.getWidth();
+        const pdfH    = (canvas.height * pdfW) / canvas.width;
+        pdf.addImage(imgData, "PNG", 0, 0, pdfW, pdfH);
+        pdf.save(`recibo_${staff.apellidos}_${salary.fechaLiquidacion}.pdf`);
+      })
+      .catch(() => showToast("Error al generar el PDF.", "error"))
+      .finally(() => { setPdfPendiente(null); setGeneratingPdf(null); });
+  }, [pdfPendiente]);
+
   // ── Exportar PDF ──────────────────────────────────────────────────────
-  const exportarPDF = async (salary, staff) => {
+  const exportarPDF = (salary, staff) => {
     setGeneratingPdf(salary.idSalario);
-    try {
-      const el = reciboRef.current;
-      if (!el) return;
-      const canvas  = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
-      const imgData = canvas.toDataURL("image/png");
-      const pdf     = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
-      const pdfW    = pdf.internal.pageSize.getWidth();
-      const pdfH    = (canvas.height * pdfW) / canvas.width;
-      pdf.addImage(imgData, "PNG", 0, 0, pdfW, pdfH);
-      pdf.save(`recibo_${staff.apellidos}_${salary.fechaLiquidacion}.pdf`);
-    } catch {
-      showToast("Error al generar el PDF.", "error");
-    } finally { setGeneratingPdf(null); }
+    setPdfPendiente({ salary, staff }); // esto dispara el useEffect cuando el DOM esté listo
   };
 
   // ── Render ─────────────────────────────────────────────────────────────
@@ -405,18 +411,17 @@ export default function SalaryTab({ showToast }) {
       )}
 
       {/* Recibo oculto para html2canvas */}
-      {generatingPdf !== null && (() => {
-        const sal   = salaries.find(s => s.idSalario === generatingPdf);
-        const staff = sal ? staffById(sal.idPersonal) : null;
-        const rolM  = staff ? rolMetaDeStaff(staff) : null;
-        return sal && staff ? (
-          <div style={{ position: "absolute", left: -9999, top: 0 }}>
+      {pdfPendiente !== null && (() => {
+        const { salary: sal, staff } = pdfPendiente;
+        const rolM = rolMetaDeStaff(staff);
+        return (
+            <div style={{ position: "absolute", left: -9999, top: 0 }}>
             <div ref={reciboRef}>
-              <ReciboTemplate salary={sal} staff={staff} rolMeta={rolM} />
+                <ReciboTemplate salary={sal} staff={staff} rolMeta={rolM} />
             </div>
-          </div>
-        ) : null;
-      })()}
+            </div>
+        );
+        })()}
 
       {/* ── Dashboard ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
