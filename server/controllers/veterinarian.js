@@ -4,17 +4,18 @@ const User = require("../models/user");
 const ProfessionalCard = require("../models/professionalCard");
 
 async function createVeterinarian(req, res, next) {
-    const { idPersonal, especialidad, idMatricula } = req.body;
-    try {
-        const staffMember = await Staff.findByPk(idPersonal, { include: User });
-        if (!staffMember || staffMember.User.idRol !== 2) {
-            return res.status(403).send({ msg: "Solo el personal con Rol de Veterinario puede tener este perfil." });
-        }
-        const vet = await Veterinarian.create({ idPersonal, especialidad, idMatricula });
-        return res.status(201).send(vet);
-    } catch (error) {
-        next(error);
+  const { idPersonal, especialidad, idMatricula } = req.body;
+  try {
+    const staffMember = await Staff.findByPk(idPersonal);
+    if (!staffMember) {
+      return res.status(404).send({ msg: "Personal no encontrado." });
     }
+   
+    const vet = await Veterinarian.create({ idPersonal, especialidad, idMatricula });
+    return res.status(201).send(vet);
+  } catch (error) {
+    next(error);
+  }
 }
 
 async function getVeterinarians(req, res, next) {

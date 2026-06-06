@@ -31,10 +31,18 @@ const Salary = sequelize.define("Salary", {
             isDecimal: { msg: "La tarifa debe ser un número decimal." },
             min: { args: [0.01], msg: "La tarifa debe ser mayor a 0." }
         }
+    },
+    idPersonal: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
     }
 }, {
     tableName: "SALARIOS",
     timestamps: false
 });
+
+Salary.associate = (models) => {
+  Salary.belongsTo(models.Staff, { foreignKey: "idPersonal" });
+};
 
 module.exports = Salary;

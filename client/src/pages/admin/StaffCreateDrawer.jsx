@@ -93,10 +93,11 @@ function RoleSelector({ value, onChange, error }) {
       </label>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         {STAFF_ROLES.map((idRol) => {
-          const m = ROLE_META[idRol], selected = parseInt(value) === idRol;
+          const m        = ROLE_META[idRol] || {};   
+          const selected = parseInt(value) === idRol; 
           return (
-            <button key={idRol} type="button" onClick={() => onChange(idRol)} style={{ padding: "12px 14px", borderRadius: 10, border: `2px solid ${selected ? m.color : VET_COLORS.border}`, background: selected ? m.bg : "white", cursor: "pointer", display: "flex", alignItems: "center", gap: 10, transition: "all 0.15s", textAlign: "left" }}>
-              <span style={{ fontSize: 20 }}>{m.icon}</span>
+            <button key={idRol} type="button" onClick={() => onChange(idRol)}
+              style={{ padding: "12px 14px", borderRadius: 10, border: `2px solid ${selected ? m.color : VET_COLORS.border}`, background: selected ? m.bg : "white", cursor: "pointer", display: "flex", alignItems: "center", gap: 10, transition: "all 0.15s", textAlign: "left" }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: selected ? m.color : "#334155" }}>{m.label}</div>
               {selected && <span style={{ marginLeft: "auto", fontSize: 14, color: m.color, fontWeight: 700 }}>✓</span>}
             </button>
@@ -140,7 +141,6 @@ function Step1Personal({ form, errors, onChange, localities }) {
           {[
             { key: "none",     icon: "⏭️", label: "Sin salario",         desc: "Asignar después" },
             { key: "create",   icon: "➕", label: "Crear nuevo",          desc: "Ingresar tarifa nueva" },
-            { key: "existing", icon: "🔗", label: "Asociar existente",    desc: "Vincular salario libre" },
           ].map((opt) => (
             <button key={opt.key} type="button"
               onClick={() => onChange("salaryMode", opt.key)}
@@ -175,22 +175,6 @@ function Step1Personal({ form, errors, onChange, localities }) {
           </div>
         )}
 
-        {form.salaryMode === "existing" && (
-          <Field label="Seleccionar salario existente" error={errors.idSalarioExistente}>
-            {form.loadingSalaries
-              ? <p style={{ margin: 0, fontSize: 13, color: "#94a3b8" }}>Cargando...</p>
-              : <select style={inputStyle(errors.idSalarioExistente)} value={form.idSalarioExistente}
-                  onChange={(e) => onChange("idSalarioExistente", e.target.value)}>
-                  <option value="">— Elegir salario —</option>
-                  {(form.freeSalaries || []).map(s => (
-                    <option key={s.idSalario} value={s.idSalario}>
-                      ${s.tarifaHora}/h · {s.horasTrabajadas}hs · {s.fechaLiquidacion}
-                    </option>
-                  ))}
-                </select>
-            }
-          </Field>
-        )}
       </div>
     </div>
   );
@@ -266,7 +250,7 @@ function Step3Acceso({ selectedRole, accessMode, onModeChange, userForm, onUserF
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "14px 16px" }}>
         <p style={{ margin: 0, fontSize: 13, color: "#166534", lineHeight: 1.6 }}>
-          <strong>Paso opcional:</strong> podés crear una cuenta de acceso ahora o hacerlo más tarde desde la tabla de Personal. El rol se asignará automáticamente como <strong>{m.icon} {m.label}</strong>.
+          <strong>Paso opcional:</strong> podés crear una cuenta de acceso ahora o hacerlo más tarde desde la tabla de Personal. El rol se asignará automáticamente como <strong>{m.label} {m.label}</strong>.
         </p>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
@@ -346,18 +330,6 @@ export default function StaffCreateDrawer({ onClose, onSaved, localities }) {
     }
   }, [step]);
 
-  useEffect(() => {
-    if (personal.salaryMode === "existing" && personal.freeSalaries.length === 0) {
-      setP("loadingSalaries", true);
-      axios.get("/salaries", { headers: authHeaders() })
-        .then(res => {
-          const free = (Array.isArray(res.data) ? res.data : []).filter(s => !s.idPersonal);
-          setP("freeSalaries", free);
-        })
-        .catch(() => setP("freeSalaries", []))
-        .finally(() => setP("loadingSalaries", false));
-    }
-  }, [personal.salaryMode]);
 
   const setP = (f, v) => setPersonal((p) => ({ ...p, [f]: v }));
   const setR = (f, v) => setRoleForm((p) => ({ ...p, [f]: v }));
@@ -420,7 +392,7 @@ export default function StaffCreateDrawer({ onClose, onSaved, localities }) {
           horasTrabajadas: personal.horasTrabajadas,
           fechaLiquidacion: personal.fechaLiquidacion
         }, { headers: authHeaders() });
-      } else if (personal.salaryMode === "existing" && personal.idSalarioExistente) {
+      } else if (personal.idSalarioExistente) {
         await axios.patch(`/salary/${personal.idSalarioExistente}`, { idPersonal }, { headers: authHeaders() });
       }
 

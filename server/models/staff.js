@@ -62,9 +62,6 @@ const Staff = sequelize.define("Staff", {
         type: DataTypes.INTEGER,
         unique: { msg: "Este usuario ya está vinculado a otro miembro del personal." }
     },
-    idSalario: {
-        type: DataTypes.INTEGER
-    }
 }, {
     tableName: "PERSONAL",
     timestamps: false
@@ -81,7 +78,8 @@ Staff.associate = (models) => {
     // Tablas maestras / Relaciones directas
     Staff.belongsTo(models.Locality, { foreignKey: "idLocalidad" });
     Staff.belongsTo(models.User, { foreignKey: "idUsuario" });
-    Staff.belongsTo(models.Salary, { foreignKey: "idSalario" });
+    
+    Staff.hasMany(models.Salary, { foreignKey: "idPersonal" });
 };
 
 module.exports = Staff;
