@@ -636,13 +636,13 @@ export function StaffEditDrawer({ staff, localities, onClose, onSaved }) {
         <div style={{ background: "#e0f2fe", border: "1px solid #bae6fd", borderRadius: 10, padding: "12px 16px", display: "flex", alignItems: "center", gap: 10 }}><div><div style={{ fontWeight: 700, fontSize: 13, color: "#0369a1" }}>Datos de Veterinario</div></div></div>
         <Field label="Especialidad" required error={errors.especialidad}><input style={inputStyle(errors.especialidad)} value={vetForm.especialidad} onChange={e => setVet("especialidad", e.target.value)} placeholder="Clínica General, Cirugía..." /></Field>
         <Field label="N° de matrícula" required error={errors.matricula}>
-          <input type="number" style={inputStyle(errors.matricula)} value={roleForm.matricula} onChange={set("matricula")} placeholder="12345" />
+          <input type="number" style={inputStyle(errors.idMatricula)} value={vetForm.idMatricula} onChange={e => setVet("idMatricula", e.target.value)} placeholder="12345" />
         </Field>
         <Field label="Fecha de expedición" required error={errors.fechaExpedicion}>
-          <input type="date" style={inputStyle(errors.fechaExpedicion)} value={roleForm.fechaExpedicion} onChange={set("fechaExpedicion")} />
+          <input type="date" style={inputStyle(errors.fechaExpedicion)} value={vetForm.fechaExpedicion} onChange={e => setVet("fechaExpedicion", e.target.value)} />
         </Field>
         <Field label="Fecha de vencimiento" error={errors.fechaVencimiento}>
-          <input type="date" style={inputStyle(errors.fechaVencimiento)} value={roleForm.fechaVencimiento} onChange={set("fechaVencimiento")} />
+          <input type="date" style={inputStyle(errors.fechaVencimiento)} value={vetForm.fechaVencimiento} onChange={e => setVet("fechaVencimiento", e.target.value)} />
         </Field>
         {staff.Veterinarian?.Horarios?.length > 0 && (
           <div style={{ background: "#f8fafc", border: `1px solid ${VET_COLORS.border}`, borderRadius: 10, padding: "12px 14px" }}>
