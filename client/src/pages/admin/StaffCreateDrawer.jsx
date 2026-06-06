@@ -308,25 +308,40 @@ export default function StaffCreateDrawer({ onClose, onSaved, localities }) {
 
   const handleSubmit = async () => {
     if (!validateStep3()) return;
-    setSaving(true); setGlobalError("");
+    setSaving(true);
+    setGlobalError("");
+    let idPersonal = null;
+  
     try {
+      // PASO 1: crear personal
       const staffPayload = {
         ...personal,
-        idLocalidad: personal.idLocalidad ? parseInt(personal.idLocalidad) : null
+        idLocalidad: personal.idLocalidad ? parseInt(personal.idLocalidad) : null,
       };
       const staffRes = await axios.post("/staff", staffPayload, { headers: authHeaders() });
-      const idPersonal = staffRes.data.idPersonal;
+      idPersonal = staffRes.data.idPersonal;
   
+      // PASO 2: datos de rol
       if (selectedRole === 2) {
-        await axios.post("/card", {
-          idMatricula: parseInt(roleForm.matricula),
-          fechaExpedicion: roleForm.fechaExpedicion,
-          fechaVencimiento: roleForm.fechaVencimiento,
-        }, { headers: authHeaders() });
-        await axios.post("/veterinarian", {
-          idPersonal, especialidad: roleForm.especialidad,
-          idMatricula: parseInt(roleForm.matricula),
-        }, { headers: authHeaders() });
+        // Primero la matrícula, luego el veterinario
+        await axios.post(
+          "/card",
+          {
+            idMatricula:      parseInt(roleForm.matricula),
+            fechaExpedicion:  roleForm.fechaExpedicion,
+            fechaVencimiento: roleForm.fechaVencimiento,
+          },
+          { headers: authHeaders() }
+        );
+        await axios.post(
+          "/veterinarian",
+          {
+            idPersonal,
+            especialidad: roleForm.especialidad,
+            idMatricula:  parseInt(roleForm.matricula),
+          },
+          { headers: authHeaders() }
+        );
       } else if (selectedRole === 3) {
         await axios.post("/assistant", { idPersonal, certificados: roleForm.certificados || null }, { headers: authHeaders() });
       } else if (selectedRole === 4) {
@@ -335,19 +350,33 @@ export default function StaffCreateDrawer({ onClose, onSaved, localities }) {
         await axios.post("/admin", { idPersonal, areaResponsabilidad: roleForm.areaResponsabilidad }, { headers: authHeaders() });
       }
   
+      // PASO 3: crear usuario y vincularlo
       await createAndLinkUser({
-        usuario: userForm.usuario,
+        usuario:    userForm.usuario,
         contraseña: userForm.contraseña,
-        idRol: selectedRole,
+        idRol:      selectedRole,
         entityType: "staff",
-        entityId: idPersonal
+        entityId:   idPersonal,
       });
   
       onSaved("creado");
     } catch (err) {
-      const msg = err?.response?.data?.msg || err?.response?.data?.errors?.[0]?.msg || "Error al guardar.";
+      // Rollback: si el staff fue creado pero algo falló después, lo eliminamos
+      if (idPersonal) {
+        try {
+          await axios.delete(`/staff/${idPersonal}`, { headers: authHeaders() });
+        } catch (_) {
+          // ignorar error del rollback
+        }
+      }
+      const msg =
+        err?.response?.data?.errors?.[0]?.msg ||
+        err?.response?.data?.msg ||
+        "Error al guardar. Revisá los datos e intentá de nuevo.";
       setGlobalError(msg);
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   };
 
   const roleMeta = ROLE_META[selectedRole];

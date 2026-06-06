@@ -148,8 +148,17 @@ async function updateStaff(req, res, next) {
 async function deleteStaff(req, res, next) {
     const { id } = req.params;
     try {
+        // Si es veterinario, guardamos el idMatricula antes de que se borre en cascade
+        const vet = await Veterinarian.findOne({ where: { idPersonal: id } });
+
         const deleted = await Staff.destroy({ where: { idPersonal: id } });
         if (deleted === 0) return res.status(404).send({ msg: "Registro no encontrado." });
+
+        // Eliminar la matrícula huérfana (el registro Veterinarian ya fue borrado por cascade)
+        if (vet) {
+            await ProfessionalCard.destroy({ where: { idMatricula: vet.idMatricula } });
+        }
+
         return res.status(200).send({ msg: "Registro de personal eliminado correctamente." });
     } catch (error) {
         next(error);
