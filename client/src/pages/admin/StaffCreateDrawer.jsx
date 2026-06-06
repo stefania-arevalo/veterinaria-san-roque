@@ -132,50 +132,6 @@ function Step1Personal({ form, errors, onChange, localities }) {
           {localities.map((l) => <option key={l.idLocalidad} value={l.idLocalidad}>{l.nombre}</option>)}
         </select>
       </Field>
-      {/* SECCIÓN SALARIO */}
-      <div style={{ gridColumn: "1 / -1", borderTop: `1px dashed ${VET_COLORS.border}`, paddingTop: 14, marginTop: 4 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
-          💰 Salario
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
-          {[
-            { key: "none",     icon: "⏭️", label: "Sin salario",         desc: "Asignar después" },
-            { key: "create",   icon: "➕", label: "Crear nuevo",          desc: "Ingresar tarifa nueva" },
-          ].map((opt) => (
-            <button key={opt.key} type="button"
-              onClick={() => onChange("salaryMode", opt.key)}
-              style={{
-                padding: "10px 8px", borderRadius: 10, textAlign: "center", cursor: "pointer",
-                border: `2px solid ${form.salaryMode === opt.key ? VET_COLORS.accent : VET_COLORS.border}`,
-                background: form.salaryMode === opt.key ? "#f0fdf4" : "white",
-                transition: "all 0.15s",
-                gridColumn: opt.key === "none" ? "1 / -1" : "auto",
-              }}>
-              <div style={{ fontSize: 18, marginBottom: 3 }}>{opt.icon}</div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: form.salaryMode === opt.key ? VET_COLORS.accent : "#334155" }}>{opt.label}</div>
-              <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>{opt.desc}</div>
-            </button>
-          ))}
-        </div>
-
-        {form.salaryMode === "create" && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <Field label="Tarifa por hora ($)" error={errors.tarifaHora}>
-              <input type="number" style={inputStyle(errors.tarifaHora)} value={form.tarifaHora}
-                onChange={(e) => onChange("tarifaHora", e.target.value)} placeholder="ej: 1500" />
-            </Field>
-            <Field label="Horas trabajadas" error={errors.horasTrabajadas}>
-              <input type="number" style={inputStyle(errors.horasTrabajadas)} value={form.horasTrabajadas}
-                onChange={(e) => onChange("horasTrabajadas", e.target.value)} placeholder="ej: 160" />
-            </Field>
-            <Field label="Fecha de liquidación" error={errors.fechaLiquidacion} colSpan="1 / -1">
-              <input type="date" style={inputStyle(errors.fechaLiquidacion)} value={form.fechaLiquidacion}
-                onChange={(e) => onChange("fechaLiquidacion", e.target.value)} />
-            </Field>
-          </div>
-        )}
-
-      </div>
     </div>
   );
 }
@@ -284,11 +240,6 @@ export default function StaffCreateDrawer({ onClose, onSaved, localities }) {
     nombres: "", apellidos: "", dni: "", sexo: "",
     fechaNacimiento: "", telefono: "", direccion: "",
     correo: "", idLocalidad: "",
-    tarifaHora: "", horasTrabajadas: "", fechaLiquidacion: "",
-    salaryMode: "none",           
-    idSalarioExistente: "",       
-    freeSalaries: [],             
-    loadingSalaries: false,      
   });
   const [selectedRole, setSelectedRole] = useState(null);
   const [roleForm, setRoleForm] = useState({
@@ -359,28 +310,17 @@ export default function StaffCreateDrawer({ onClose, onSaved, localities }) {
     if (!validateStep3()) return;
     setSaving(true); setGlobalError("");
     try {
-      const { tarifaHora, horasTrabajadas, fechaLiquidacion, salaryMode,
-              idSalarioExistente, freeSalaries, loadingSalaries, ...staffFields } = personal;
       const staffPayload = {
-        ...staffFields,
+        ...personal,
         idLocalidad: personal.idLocalidad ? parseInt(personal.idLocalidad) : null
       };
-  
       const staffRes = await axios.post("/staff", staffPayload, { headers: authHeaders() });
       const idPersonal = staffRes.data.idPersonal;
   
-      // Salario
-      if (salaryMode === "create" && (tarifaHora || horasTrabajadas || fechaLiquidacion)) {
-        await axios.post("/salary", {
-          idPersonal, tarifaHora, horasTrabajadas, fechaLiquidacion
-        }, { headers: authHeaders() });
-      }
-  
-      // Rol
       if (selectedRole === 2) {
         await axios.post("/card", {
-          idMatricula:     parseInt(roleForm.matricula),
-          fechaExpedicion:  roleForm.fechaExpedicion,
+          idMatricula: parseInt(roleForm.matricula),
+          fechaExpedicion: roleForm.fechaExpedicion,
           fechaVencimiento: roleForm.fechaVencimiento,
         }, { headers: authHeaders() });
         await axios.post("/veterinarian", {
@@ -395,7 +335,6 @@ export default function StaffCreateDrawer({ onClose, onSaved, localities }) {
         await axios.post("/admin", { idPersonal, areaResponsabilidad: roleForm.areaResponsabilidad }, { headers: authHeaders() });
       }
   
-      // Usuario — siempre obligatorio
       await createAndLinkUser({
         usuario: userForm.usuario,
         contraseña: userForm.contraseña,
@@ -473,9 +412,6 @@ export function StaffEditDrawer({ staff, localities, onClose, onSaved }) {
     fechaNacimiento: staff.fechaNacimiento || "",
     telefono: staff.telefono || "", direccion: staff.direccion || "",
     correo: staff.correo || "", idLocalidad: staff.idLocalidad || "",
-    tarifaHora:       staff.Salaries?.[staff.Salaries.length - 1]?.tarifaHora ?? "",
-    horasTrabajadas:  staff.Salaries?.[staff.Salaries.length - 1]?.horasTrabajadas ?? "",
-    fechaLiquidacion: staff.Salaries?.[staff.Salaries.length - 1]?.fechaLiquidacion ?? "",
   });
 
   const vet  = staff.Veterinarian || null;
@@ -559,20 +495,7 @@ export function StaffEditDrawer({ staff, localities, onClose, onSaved }) {
     if (!validatePersonal()) return;
     setSaving(true); setGlobalErr("");
     try {
-      const { tarifaHora, horasTrabajadas, fechaLiquidacion, ...staffFields } = form;
-  
-      await axios.patch(`/staff/${staff.idPersonal}`, staffFields, { headers: authHeaders() });
-  
-      // Solo crear nueva liquidación si completó los 3 campos
-      if (tarifaHora && horasTrabajadas && fechaLiquidacion) {
-        await axios.post("/salary", {
-          idPersonal: staff.idPersonal,
-          tarifaHora,
-          horasTrabajadas,
-          fechaLiquidacion,
-        }, { headers: authHeaders() });
-      }
-  
+      await axios.patch(`/staff/${staff.idPersonal}`, form, { headers: authHeaders() });
       flashSaved("personal");
       onSaved("Datos personales actualizados.");
     } catch (err) {
@@ -797,60 +720,6 @@ export function StaffEditDrawer({ staff, localities, onClose, onSaved }) {
               <Field label="Correo electrónico" error={errors.correo}><input type="email" style={inputStyle(errors.correo)} value={form.correo} onChange={e => set("correo", e.target.value)} /></Field>
               <Field label="Dirección" required error={errors.direccion}><input style={inputStyle(errors.direccion)} value={form.direccion} onChange={e => set("direccion", e.target.value)} /></Field>
               <Field label="Localidad"><select style={inputStyle(false)} value={form.idLocalidad} onChange={e => set("idLocalidad", e.target.value)}><option value="">— Seleccionar localidad —</option>{localities.map(l => <option key={l.idLocalidad} value={l.idLocalidad}>{l.nombre}</option>)}</select></Field>
-              <div style={{ gridColumn: "1 / -1", borderTop: `1px dashed ${VET_COLORS.border}`, paddingTop: 16, marginTop: 8 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
-                  💰 Nueva liquidación de salario
-                </div>
-                <p style={{ margin: "0 0 10px", fontSize: 11, color: "#94a3b8" }}>
-                  Completá los tres campos para registrar una nueva liquidación. Las anteriores quedan guardadas en el historial.
-                </p>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 10 }}>
-                  <Field label="Tarifa por hora ($)" error={errors.tarifaHora}>
-                    <input type="number" style={inputStyle(errors.tarifaHora)} value={form.tarifaHora} onChange={e => set("tarifaHora", e.target.value)} placeholder="ej: 1800" />
-                  </Field>
-                  <Field label="Horas trabajadas" error={errors.horasTrabajadas}>
-                    <input type="number" style={inputStyle(errors.horasTrabajadas)} value={form.horasTrabajadas} onChange={e => set("horasTrabajadas", e.target.value)} placeholder="ej: 140" />
-                  </Field>
-                  <Field label="Fecha de liquidación" error={errors.fechaLiquidacion} colSpan="1 / -1">
-                    <input type="date" style={inputStyle(errors.fechaLiquidacion)} value={form.fechaLiquidacion} onChange={e => set("fechaLiquidacion", e.target.value)} />
-                  </Field>
-                </div>
-              </div>
-              {/* HISTORIAL DE SALARIOS — debajo del formulario de salario */}
-              {staff.Salaries?.length > 1 && (
-                <div style={{ borderTop: `1px dashed ${VET_COLORS.border}`, paddingTop: 14, marginTop: 4 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
-                    📋 Historial de liquidaciones
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    {[...staff.Salaries].reverse().map((sal, i) => (
-                      <div key={sal.idSalario} style={{
-                        display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
-                        gap: 8, padding: "10px 12px", borderRadius: 8,
-                        background: i === 0 ? "#f0fdf4" : "#f8fafc",
-                        border: `1px solid ${i === 0 ? "#bbf7d0" : VET_COLORS.border}`,
-                        fontSize: 12,
-                      }}>
-                        <div>
-                          <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", marginBottom: 2 }}>Fecha</div>
-                          <div style={{ color: "#1a202c", fontWeight: i === 0 ? 700 : 500 }}>{sal.fechaLiquidacion || "—"}</div>
-                        </div>
-                        <div>
-                          <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", marginBottom: 2 }}>Tarifa/hora</div>
-                          <div style={{ color: "#1a202c" }}>${sal.tarifaHora ?? "—"}</div>
-                        </div>
-                        <div>
-                          <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", marginBottom: 2 }}>Horas</div>
-                          <div style={{ color: "#1a202c" }}>{sal.horasTrabajadas ?? "—"}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <p style={{ margin: "8px 0 0", fontSize: 11, color: "#94a3b8" }}>
-                    El registro más reciente se muestra primero y es el que editás arriba.
-                  </p>
-                </div>
-              )}
             </div>
           )}
           {activeTab === "rol" && renderRolFields()}
