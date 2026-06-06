@@ -35,12 +35,12 @@ async function getSalaries(req, res, next) {
     try {
         const salaries = await Salary.findAll({ 
             where: whereClause,
-            order: [['fechaLiquidacion', 'DESC']] // Ver primero los más recientes
+            include: [{
+                model: Staff,
+                attributes: ["idPersonal", "nombres", "apellidos", "dni"],
+            }],
+            order: [['fechaLiquidacion', 'DESC']]
         });
-
-        if (salaries.length === 0) {
-            return res.status(404).send({ msg: "No se encontraron registros salariales con esos criterios." });
-        }
 
         return res.status(200).send(salaries);
     } catch (error) {
@@ -55,15 +55,25 @@ async function updateSalary(req, res, next) {
         if (!salaryToUpdate) {
             return res.status(404).send({ msg: "El registro salarial no existe." });
         }
-
-        // El Administrador es el único que llega aquí (validado en el Router)
-        await salaryToUpdate.update(req.body);
-
+ 
+        // CORRECCIÓN: solo permitir editar tarifa y horas — nunca período ni empleado
+        const { tarifaHora, horasTrabajadas } = req.body;
+        const payload = {};
+        if (tarifaHora      !== undefined) payload.tarifaHora      = tarifaHora;
+        if (horasTrabajadas !== undefined) payload.horasTrabajadas  = horasTrabajadas;
+ 
+        if (Object.keys(payload).length === 0) {
+            return res.status(400).send({ msg: "No se enviaron campos válidos para actualizar." });
+        }
+ 
+        await salaryToUpdate.update(payload);
         return res.status(200).send({ msg: "Salario actualizado correctamente." });
+ 
     } catch (error) {
         next(error);
     }
 }
+ 
 
 async function deleteSalary(req, res, next) {
     const { id } = req.params;

@@ -22,21 +22,20 @@ const validateCreateSalary = [
 ];
 
 const validateUpdateSalary = [
-  body("fechaLiquidacion").optional().isDate().withMessage("Formato de fecha inválido."),
-  body("horasTrabajadas").optional().isInt({ min: 0 }).withMessage("Las horas deben ser positivas."),
-  body("tarifaHora").optional().isFloat({ min: 0.01 }).withMessage("La tarifa debe ser mayor a 0."),
+  body("tarifaHora")
+      .optional()
+      .isFloat({ min: 0.01 })
+      .withMessage("La tarifa debe ser mayor a 0."),
+  body("horasTrabajadas")
+      .optional()
+      .isInt({ min: 0 })
+      .withMessage("Las horas deben ser un entero no negativo."),
   body("idPersonal")
-    .optional()
-    .isInt().withMessage("El idPersonal debe ser un entero.")
-    .custom(async (value) => {
-      const exists = await Staff.findByPk(value);
-      if (!exists) throw new Error("El personal seleccionado no existe.");
-      return true;
-    }),
-];
-
-const validateId = [
-  param("id").isInt().withMessage("El ID debe ser un número entero.")
+      .not().exists()
+      .withMessage("No se puede cambiar el empleado de una liquidación existente."),
+  body("fechaLiquidacion")
+      .not().exists()
+      .withMessage("No se puede cambiar el período de una liquidación existente."),
 ];
 
 module.exports = { validateCreateSalary, validateUpdateSalary, validateId };
