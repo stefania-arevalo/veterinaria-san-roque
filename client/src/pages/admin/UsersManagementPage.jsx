@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
+import SalaryTab from "./SalaryTab";
 import axios from "../../api/axios";
 import { VET_COLORS } from "../../layouts/AdminLayout";
 import StaffCreateDrawer, { StaffEditDrawer, ROLE_META, inputStyle, Field, ConfirmModal } from "./StaffCreateDrawer";
-import SalaryTab from "./SalaryTab";
+
 
 // ─── API helpers ───────────────────────────────────────────────────────────
 const token = () => localStorage.getItem("accessToken");
