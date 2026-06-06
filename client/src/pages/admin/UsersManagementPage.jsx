@@ -305,14 +305,6 @@ function StaffTab({ localities, showToast }) {
                             {[
                               { label: "Estado cuenta", value: s.User?.estado !== undefined ? (s.User.estado ? "✅ Activo" : "❌ Inactivo") : "Sin usuario" },
                               { label: "Dirección",     value: s.direccion || "—" },
-                              ...(s.Salaries?.length > 0 ? (() => {
-                                const sal = s.Salaries[s.Salaries.length - 1];
-                                return [
-                                  { label: "Tarifa/hora",       value: sal.tarifaHora       ? `$${sal.tarifaHora}` : "—" },
-                                  { label: "Horas trabajadas",  value: sal.horasTrabajadas  ?? "—" },
-                                  { label: "Fecha liquidación", value: sal.fechaLiquidacion || "—" },
-                                ];
-                              })() : []),
                               ...(s.Veterinarian ? [{ label: "Especialidad", value: s.Veterinarian.especialidad }, { label: "Matrícula ID", value: s.Veterinarian.idMatricula }] : []),
                               ...(s.Assistant    ? [{ label: "Certificados", value: s.Assistant.certificados || "—" }] : []),
                               ...(s.Admin        ? [{ label: "Área resp.",   value: s.Admin.areaResponsabilidad }] : []),
