@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { createAndLinkUser, linkExistingUser, unlinkUser, authHeaders } from "../../hooks/userLinkHelpers";
+import { createAndLinkUser, unlinkUser } from "../../hooks/userLinkHelpers";
 
 const token = () => localStorage.getItem("accessToken");
 const headers = () => ({ Authorization: `Bearer ${token()}` });
@@ -345,24 +345,8 @@ function ClientModal({ client, localities, onClose, onSave, mode }) {
   const [showConfirm,       setShowConfirm]       = useState(false);
   const [showPassword,      setShowPassword]       = useState(false);
   const [accessMode,        setAccessMode]        = useState("none");
-  const [existingUsers,     setExistingUsers]     = useState([]);
-  const [loadingUsers,      setLoadingUsers]      = useState(false);
-  const [selectedUserId,    setSelectedUserId]    = useState("");
   const [confirmUnlink,     setConfirmUnlink]     = useState(false);
   const [unlinking,         setUnlinking]         = useState(false);
-
-  useEffect(() => {
-    if (!hasUser && !isView && (isEdit || mode === "new")) {
-      setLoadingUsers(true);
-      axios.get("/users", { headers: authHeaders() })
-        .then(res => {
-          const data = Array.isArray(res.data) ? res.data : [];
-          setExistingUsers(data.filter(u => u.idRol === 5 && !u.Client && !u.Staff));
-        })
-        .catch(() => setExistingUsers([]))
-        .finally(() => setLoadingUsers(false));
-    }
-  }, [hasUser, isView, isEdit, mode]);
 
   const hc = (e) => {
     const { name, value, type, checked } = e.target;
@@ -378,8 +362,6 @@ function ClientModal({ client, localities, onClose, onSave, mode }) {
       if (!form.usuario || form.usuario.length < 3) return "El usuario debe tener al menos 3 caracteres.";
       if (!form.password || form.password.length < 6) return "La contraseña debe tener al menos 6 caracteres.";
     }
-    if (!hasUser && accessMode === "existing" && !selectedUserId)
-      return "Seleccioná un usuario para asociar.";
     if (hasUser && form.estado && form.password && form.password.length < 6)
       return "La nueva contraseña debe tener al menos 6 caracteres.";
     return null;
@@ -417,14 +399,6 @@ function ClientModal({ client, localities, onClose, onSave, mode }) {
           usuario:    form.usuario,
           contraseña: form.password,
           idRol:      5,
-          entityType: "client",
-          entityId:   clienteId,
-        });
-      }
-
-      if (!hasUser && accessMode === "existing" && selectedUserId) {
-        await linkExistingUser({
-          idUsuario:  selectedUserId,
           entityType: "client",
           entityId:   clienteId,
         });
@@ -574,17 +548,15 @@ function ClientModal({ client, localities, onClose, onSave, mode }) {
 
                 ) : !isView ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                       {[
                         { key: "none",     icon: "⏭️", label: "Sin acceso",         desc: "Solo datos personales" },
                         { key: "create",   icon: "➕", label: "Crear usuario nuevo", desc: "Generar credenciales" },
-                        // 🌟 Solo se incluye si es Administrador
-                        ...(isAdmin ? [{ key: "existing", icon: "🔗", label: "Asociar existente", desc: "Vincular cuenta libre" }] : []),
                       ].map(opt => (
                         <button
                           key={opt.key}
                           type="button"
-                          onClick={() => { setAccessMode(opt.key); setSelectedUserId(""); setError(""); }}
+                          onClick={() => { setAccessMode(opt.key); setError(""); }}
                           style={{
                             padding: "10px 8px", borderRadius: 9, textAlign: "center",
                             border: `2px solid ${accessMode === opt.key ? C.green700 : C.border}`,
@@ -621,33 +593,6 @@ function ClientModal({ client, localities, onClose, onSave, mode }) {
                             <div style={{ fontSize: 12, fontWeight: 700, color: "#be185d" }}>Cliente</div>
                           </div>
                         </div>
-                      </div>
-                    )}
-
-                    {accessMode === "existing" && (
-                      <div style={{ padding: "14px", background: C.white, borderRadius: 9, border: `1px solid ${C.border}` }}>
-                        {loadingUsers ? (
-                          <p style={{ margin: 0, fontSize: 13, color: C.muted, textAlign: "center", padding: "8px 0" }}>Cargando usuarios disponibles...</p>
-                        ) : existingUsers.length === 0 ? (
-                          <div style={{ textAlign: "center", padding: "12px 0" }}>
-                            <div style={{ fontSize: 26, marginBottom: 6 }}>😔</div>
-                            <p style={{ margin: 0, fontSize: 13, color: C.muted }}>No hay usuarios con rol <strong>Cliente</strong> disponibles para asociar.</p>
-                            <p style={{ margin: "4px 0 0", fontSize: 11, color: C.muted }}>Solo se muestran cuentas sin cliente vinculado.</p>
-                          </div>
-                        ) : (
-                          <div>
-                            <label style={lbl}>Seleccionar usuario</label>
-                            <select value={selectedUserId} onChange={e => setSelectedUserId(e.target.value)} style={{ ...inp, cursor: "pointer" }}>
-                              <option value="">— Elegir usuario —</option>
-                              {existingUsers.map(u => (
-                                <option key={u.idUsuario} value={u.idUsuario}>
-                                  @{u.usuario} {u.estado ? "✅" : "❌"}
-                                </option>
-                              ))}
-                            </select>
-                            <p style={{ margin: "6px 0 0", fontSize: 11, color: C.muted }}>Solo usuarios con rol 🐾 Cliente sin persona asignada.</p>
-                          </div>
-                        )}
                       </div>
                     )}
 
