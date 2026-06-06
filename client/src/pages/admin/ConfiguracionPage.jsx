@@ -180,19 +180,6 @@ const SECCIONES = [
           { field: "horaFin",    label: "Hora de fin",    type: "time", required: true },
         ],
       },
-      {
-        title: "Salarios / Tarifas",
-        endpoint: "/salary",
-        getEndpoint: "/salaries",
-        idField: "idSalario",
-        labelField: "idSalario",
-        searchField: "fechaLiquidacion",
-        columns: [
-          { field: "fechaLiquidacion", label: "Fecha de liquidación", required: true, type: "date" },
-          { field: "horasTrabajadas",  label: "Horas trabajadas",     required: true, type: "number", placeholder: "ej: 160" },
-          { field: "tarifaHora",       label: "Tarifa por hora ($)",  required: true, type: "number", placeholder: "ej: 500.00" },
-        ],
-      },
     ],
   },
 

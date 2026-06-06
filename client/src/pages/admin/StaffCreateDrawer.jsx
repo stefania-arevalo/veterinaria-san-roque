@@ -485,9 +485,9 @@ export function StaffEditDrawer({ staff, localities, onClose, onSaved }) {
     fechaNacimiento: staff.fechaNacimiento || "",
     telefono: staff.telefono || "", direccion: staff.direccion || "",
     correo: staff.correo || "", idLocalidad: staff.idLocalidad || "",
-    tarifaHora: staff.Salary?.tarifaHora ?? "",
-    horasTrabajadas: staff.Salary?.horasTrabajadas ?? "",
-    fechaLiquidacion: staff.Salary?.fechaLiquidacion ?? "",
+    tarifaHora:       staff.Salaries?.[staff.Salaries.length - 1]?.tarifaHora ?? "",
+    horasTrabajadas:  staff.Salaries?.[staff.Salaries.length - 1]?.horasTrabajadas ?? "",
+    fechaLiquidacion: staff.Salaries?.[staff.Salaries.length - 1]?.fechaLiquidacion ?? "",
   });
 
   const vet  = staff.Veterinarian || null;
@@ -577,8 +577,9 @@ export function StaffEditDrawer({ staff, localities, onClose, onSaved }) {
 
       // Salario: si ya existe lo actualizamos, si no lo creamos
       const salaryPayload = { tarifaHora, horasTrabajadas, fechaLiquidacion, idPersonal: staff.idPersonal };
-      if (staff.Salary?.idSalario) {
-        await axios.patch(`/salary/${staff.Salary.idSalario}`, salaryPayload, { headers: authHeaders() });
+      const ultimoSalario = staff.Salaries?.[staff.Salaries.length - 1];
+      if (ultimoSalario?.idSalario) {
+        await axios.patch(`/salary/${ultimoSalario.idSalario}`, salaryPayload, { headers: authHeaders() });
       } else if (tarifaHora || horasTrabajadas || fechaLiquidacion) {
         await axios.post("/salary", salaryPayload, { headers: authHeaders() });
       }
