@@ -203,12 +203,27 @@ function Step2Rol({ selectedRole, onRoleChange, roleForm, onRoleFormChange, erro
       <RoleSelector value={selectedRole} onChange={onRoleChange} error={errors.idRol} />
       {selectedRole === 2 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <div style={{ background: "#e0f2fe", border: "1px solid #bae6fd", borderRadius: 10, padding: "12px 16px", display: "flex", alignItems: "center", gap: 10 }}>
-            <div><div style={{ fontWeight: 700, fontSize: 13, color: "#0369a1" }}>Datos de Veterinario</div><div style={{ fontSize: 11, color: "#0369a1", opacity: 0.8 }}>Especialidad y matrícula profesional</div></div>
+          <div style={{ background: "#e0f2fe", border: "1px solid #bae6fd", borderRadius: 10, padding: "12px 16px" }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: "#0369a1" }}>Datos de Veterinario</div>
+            <div style={{ fontSize: 11, color: "#0369a1", opacity: 0.8 }}>Especialidad y matrícula profesional</div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-            <Field label="Especialidad" required error={errors.especialidad}><input style={inputStyle(errors.especialidad)} value={roleForm.especialidad} onChange={set("especialidad")} placeholder="Clínica General, Cirugía..." /></Field>
-            <Field label="N° de matrícula" required error={errors.matricula}><input type="number" style={inputStyle(errors.matricula)} value={roleForm.matricula} onChange={set("matricula")} placeholder="12345" /></Field>
+            <Field label="Especialidad" required error={errors.especialidad}>
+              <input style={inputStyle(errors.especialidad)} value={roleForm.especialidad}
+                onChange={e => onRoleFormChange("especialidad", e.target.value)} placeholder="Clínica General, Cirugía..." />
+            </Field>
+            <Field label="N° de matrícula" required error={errors.matricula}>
+              <input type="number" style={inputStyle(errors.matricula)} value={roleForm.matricula}
+                onChange={e => onRoleFormChange("matricula", e.target.value)} placeholder="12345" />
+            </Field>
+            <Field label="Fecha de expedición" required error={errors.fechaExpedicion}>
+              <input type="date" style={inputStyle(errors.fechaExpedicion)} value={roleForm.fechaExpedicion}
+                onChange={e => onRoleFormChange("fechaExpedicion", e.target.value)} />
+            </Field>
+            <Field label="Fecha de vencimiento" required error={errors.fechaVencimiento}>
+              <input type="date" style={inputStyle(errors.fechaVencimiento)} value={roleForm.fechaVencimiento}
+                onChange={e => onRoleFormChange("fechaVencimiento", e.target.value)} />
+            </Field>
           </div>
         </div>
       )}
@@ -310,7 +325,7 @@ export default function StaffCreateDrawer({ onClose, onSaved, localities }) {
   const [selectedRole, setSelectedRole] = useState(null);
   const [roleForm, setRoleForm] = useState({
     especialidad: "", matricula: "",
-    fechaExpedicion: "", fechaVencimiento: "",  // ← agregar
+    fechaExpedicion: "", fechaVencimiento: "",  
     certificados: "", areaResponsabilidad: ""
   });
   const [accessMode, setAccessMode]   = useState("none");
@@ -357,7 +372,12 @@ export default function StaffCreateDrawer({ onClose, onSaved, localities }) {
   const validateStep2 = () => {
     const e = {};
     if (!selectedRole) e.idRol = "Seleccioná un tipo de rol";
-    if (selectedRole === 2) { if (!roleForm.especialidad.trim()) e.especialidad = "Obligatorio"; if (!roleForm.matricula.toString().trim()) e.matricula = "Obligatorio"; if (!roleForm.fechaExpedicion) e.fechaExpedicion = "Obligatorio";}
+    if (selectedRole === 2) {
+      if (!roleForm.especialidad.trim()) e.especialidad = "Obligatorio";
+      if (!roleForm.matricula.toString().trim()) e.matricula = "Obligatorio";
+      if (!roleForm.fechaExpedicion) e.fechaExpedicion = "Obligatorio";
+      if (!roleForm.fechaVencimiento) e.fechaVencimiento = "Obligatorio";
+    }
     if (selectedRole === 1 && !roleForm.areaResponsabilidad.trim()) e.areaResponsabilidad = "Obligatorio";
     setErrors(e); return Object.keys(e).length === 0;
   };
@@ -405,7 +425,21 @@ export default function StaffCreateDrawer({ onClose, onSaved, localities }) {
       }
 
       // 2. Crear datos del rol
-      if (selectedRole === 2) await axios.post("/veterinarian", { idPersonal, especialidad: roleForm.especialidad, idMatricula: parseInt(roleForm.matricula) }, { headers: authHeaders() });
+      if (selectedRole === 2) {
+        // 1. Crear la matrícula
+        const cardRes = await axios.post("/card", {
+          idMatricula:     parseInt(roleForm.matricula),
+          fechaExpedicion:  roleForm.fechaExpedicion,
+          fechaVencimiento: roleForm.fechaVencimiento,
+        }, { headers: authHeaders() });
+      
+        // 2. Crear el veterinario con idMatricula
+        await axios.post("/veterinarian", {
+          idPersonal:   idPersonal,
+          especialidad: roleForm.especialidad,
+          idMatricula:  parseInt(roleForm.matricula),
+        }, { headers: authHeaders() });
+      }
       else if (selectedRole === 3) await axios.post("/assistant", { idPersonal, certificados: roleForm.certificados || null }, { headers: authHeaders() });
       else if (selectedRole === 4) await axios.post("/seller", { idPersonal }, { headers: authHeaders() });
       else if (selectedRole === 1) await axios.post("/admin", { idPersonal, areaResponsabilidad: roleForm.areaResponsabilidad }, { headers: authHeaders() });
@@ -490,9 +524,9 @@ export function StaffEditDrawer({ staff, localities, onClose, onSaved }) {
 
   const [vetForm, setVetFormS] = useState({
     especialidad: vet?.especialidad || "",
-    idMatricula: vet?.idMatricula != null ? String(vet.idMatricula) : "",
-    fechaExpedicion: vet?.fechaExpedicion || "",   
-    fechaVencimiento: vet?.fechaVencimiento || "",  
+    idMatricula:  vet?.idMatricula != null ? String(vet.idMatricula) : "",
+    fechaExpedicion:  vet?.ProfessionalCard?.fechaExpedicion  || vet?.fechaExpedicion  || "",
+    fechaVencimiento: vet?.ProfessionalCard?.fechaVencimiento || vet?.fechaVencimiento || "",
   });
   const [asstForm, setAsstFormS] = useState({ certificados: asst?.certificados || "" });
   const [admForm,  setAdmFormS]  = useState({ areaResponsabilidad: adm?.areaResponsabilidad || "" });
@@ -586,12 +620,21 @@ export function StaffEditDrawer({ staff, localities, onClose, onSaved }) {
     if (!validateRol()) return;
     setSaving(true); setGlobalErr("");
     try {
-      if (idRol === 2 && vet) await axios.patch(`/veterinarian/${staff.idPersonal}`, {
-        especialidad: vetForm.especialidad,
-        idMatricula: parseInt(vetForm.idMatricula),
-        fechaExpedicion: vetForm.fechaExpedicion || null,   
-        fechaVencimiento: vetForm.fechaVencimiento || null,  
-      }, { headers: authHeaders() });
+      if (idRol === 2 && vet) {
+        // Actualizar matrícula si existe
+        await axios.patch(`/card/${vetForm.idMatricula}`, {
+          fechaExpedicion:  vetForm.fechaExpedicion  || null,
+          fechaVencimiento: vetForm.fechaVencimiento || null,
+        }, { headers: authHeaders() });
+      
+        // Actualizar veterinario
+        await axios.patch(`/veterinarian/${staff.idPersonal}`, {
+          especialidad: vetForm.especialidad,
+          idMatricula:  parseInt(vetForm.idMatricula),
+          fechaExpedicion:  vetForm.fechaExpedicion  || null,
+          fechaVencimiento: vetForm.fechaVencimiento || null,
+        }, { headers: authHeaders() });
+      }
       else if (idRol === 3 && asst) await axios.patch(`/assistant/${staff.idPersonal}`, { certificados: asstForm.certificados || null }, { headers: authHeaders() });
       else if (idRol === 1 && adm) await axios.patch(`/admin/${staff.idPersonal}`, { areaResponsabilidad: admForm.areaResponsabilidad }, { headers: authHeaders() });
       flashSaved("rol"); onSaved("Datos del rol actualizados.");
@@ -633,21 +676,34 @@ export function StaffEditDrawer({ staff, localities, onClose, onSaved }) {
   const renderRolFields = () => {
     if (idRol === 2) return (
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        <div style={{ background: "#e0f2fe", border: "1px solid #bae6fd", borderRadius: 10, padding: "12px 16px", display: "flex", alignItems: "center", gap: 10 }}><div><div style={{ fontWeight: 700, fontSize: 13, color: "#0369a1" }}>Datos de Veterinario</div></div></div>
-        <Field label="Especialidad" required error={errors.especialidad}><input style={inputStyle(errors.especialidad)} value={vetForm.especialidad} onChange={e => setVet("especialidad", e.target.value)} placeholder="Clínica General, Cirugía..." /></Field>
-        <Field label="N° de matrícula" required error={errors.matricula}>
-          <input type="number" style={inputStyle(errors.idMatricula)} value={vetForm.idMatricula} onChange={e => setVet("idMatricula", e.target.value)} placeholder="12345" />
+        <div style={{ background: "#e0f2fe", border: "1px solid #bae6fd", borderRadius: 10, padding: "12px 16px" }}>
+          <div style={{ fontWeight: 700, fontSize: 13, color: "#0369a1" }}>Datos de Veterinario</div>
+        </div>
+        <Field label="Especialidad" required error={errors.especialidad}>
+          <input style={inputStyle(errors.especialidad)} value={vetForm.especialidad}
+            onChange={e => setVet("especialidad", e.target.value)} placeholder="Clínica General, Cirugía..." />
+        </Field>
+        <Field label="N° de matrícula" required error={errors.idMatricula}>
+          <input type="number" style={inputStyle(errors.idMatricula)} value={vetForm.idMatricula}
+            onChange={e => setVet("idMatricula", e.target.value)} placeholder="12345" />
         </Field>
         <Field label="Fecha de expedición" required error={errors.fechaExpedicion}>
-          <input type="date" style={inputStyle(errors.fechaExpedicion)} value={vetForm.fechaExpedicion} onChange={e => setVet("fechaExpedicion", e.target.value)} />
+          <input type="date" style={inputStyle(errors.fechaExpedicion)} value={vetForm.fechaExpedicion}
+            onChange={e => setVet("fechaExpedicion", e.target.value)} />
         </Field>
         <Field label="Fecha de vencimiento" error={errors.fechaVencimiento}>
-          <input type="date" style={inputStyle(errors.fechaVencimiento)} value={vetForm.fechaVencimiento} onChange={e => setVet("fechaVencimiento", e.target.value)} />
+          <input type="date" style={inputStyle(errors.fechaVencimiento)} value={vetForm.fechaVencimiento}
+            onChange={e => setVet("fechaVencimiento", e.target.value)} />
         </Field>
         {staff.Veterinarian?.Horarios?.length > 0 && (
           <div style={{ background: "#f8fafc", border: `1px solid ${VET_COLORS.border}`, borderRadius: 10, padding: "12px 14px" }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Horarios registrados</div>
-            {staff.Veterinarian.Horarios.map((h, i) => (<div key={i} style={{ fontSize: 12, color: "#475569", display: "flex", gap: 8, marginBottom: 4 }}><span style={{ fontWeight: 600, minWidth: 90 }}>{h.diaSemana || h.dia || `Horario ${i+1}`}</span><span>{h.horaInicio} – {h.horaFin}</span></div>))}
+            {staff.Veterinarian.Horarios.map((h, i) => (
+              <div key={i} style={{ fontSize: 12, color: "#475569", display: "flex", gap: 8, marginBottom: 4 }}>
+                <span style={{ fontWeight: 600, minWidth: 90 }}>{h.diaSemana || h.dia || `Horario ${i+1}`}</span>
+                <span>{h.horaInicio} – {h.horaFin}</span>
+              </div>
+            ))}
             <p style={{ margin: "8px 0 0", fontSize: 11, color: "#94a3b8" }}>Los horarios se gestionan desde la sección de Turnos.</p>
           </div>
         )}

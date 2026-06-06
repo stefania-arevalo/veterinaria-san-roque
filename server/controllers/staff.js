@@ -5,6 +5,7 @@ const User = require("../models/user");
 const Salary = require("../models/salary");
 const Role = require ("../models/role");
 const Veterinarian = require("../models/veterinarian");
+const ProfessionalCard = require("../models/professionalCard")
 const Assistant = require("../models/assistant");
 const Seller = require("../models/seller");
 const Admin = require("../models/admin");
@@ -58,7 +59,7 @@ async function getStaffs(req, res, next) {
                 { model: Locality },
                 { model: User, include: { model: Role }, attributes: { exclude: ["contraseña"] } },
                 { model: Salary },
-                { model: Veterinarian },
+                { model: Veterinarian, include: [{ model: ProfessionalCard }] },
                 { model: Assistant },
                 { model: Admin },
                 { model: Seller }

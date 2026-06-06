@@ -193,20 +193,6 @@ const SECCIONES = [
           { field: "tarifaHora",       label: "Tarifa por hora ($)",  required: true, type: "number", placeholder: "ej: 500.00" },
         ],
       },
-      // ── MATRÍCULAS — con columnas de veterinario asignado + badge libre/ocupada
-      {
-        title: "Matrículas Profesionales",
-        endpoint: "/card",
-        getEndpoint: "/cards",
-        idField: "idMatricula",
-        labelField: "idMatricula",
-        searchField: "idMatricula",
-        columns: [
-          { field: "idMatricula",      label: "N° Matrícula",         required: true, type: "number" },
-          { field: "fechaExpedicion",  label: "Fecha de expedición",  required: true, type: "date"   },
-          { field: "fechaVencimiento", label: "Fecha de vencimiento", required: true, type: "date"   },
-        ],
-      },
     ],
   },
 
