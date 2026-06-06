@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import SalaryTab from "./SalaryTab";
+import SalaryTab from "./Salarytab";
 import axios from "../../api/axios";
 import { VET_COLORS } from "../../layouts/AdminLayout";
 import StaffCreateDrawer, { StaffEditDrawer, ROLE_META, inputStyle, Field, ConfirmModal } from "./StaffCreateDrawer";
