@@ -631,7 +631,7 @@ export function StaffEditDrawer({ staff, localities, onClose, onSaved }) {
           <Field label="Nueva contraseña (vacío = no cambiar)" error={errors.newPassword}><input type="password" style={inputStyle(errors.newPassword)} value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Mínimo 6 caracteres" autoComplete="new-password" /></Field>
           <div style={{ padding: "14px 16px", background: "#fff5f5", border: "1px solid #fecaca", borderRadius: 10 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: "#c62828", marginBottom: 6 }}>⚠️ Zona peligrosa</div>
-            <button type="button" onClick={() => setConfirmUnlink(true)} style={{ padding: "7px 16px", borderRadius: 7, fontSize: 12, fontWeight: 600, border: "1.5px solid #c62828", background: "white", color: "#c62828", cursor: "pointer" }}>🔓 Eliminar acceso del cliente</button>
+            <button type="button" onClick={() => setConfirmUnlink(true)} style={{ padding: "7px 16px", borderRadius: 7, fontSize: 12, fontWeight: 600, border: "1.5px solid #c62828", background: "white", color: "#c62828", cursor: "pointer" }}>🔓 Eliminar acceso del empleado</button>
           </div>
           {confirmUnlink && <ConfirmModal title="¿Eliminar acceso?" message={`Se desvinculará y eliminará permanentemente la cuenta "@${staff.User.usuario}". Esta acción no se puede deshacer.`} onConfirm={handleUnlink} onCancel={() => setConfirmUnlink(false)} danger />}
         </div>

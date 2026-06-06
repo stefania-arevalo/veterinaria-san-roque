@@ -678,8 +678,6 @@ export default function ClientsPage() {
   // Contar mascotas por cliente con los datos ya cargados
   const petCountFor = (idCliente) =>
     allPets.filter(p => p.idCliente === idCliente).length;
-  
-  const esSistema = c.dni === "00000000";
 
   return (
     <div style={{ maxWidth: 1280, margin: "0 auto", padding: "20px 24px" }}>
@@ -715,6 +713,7 @@ export default function ClientsPage() {
                 <tr><td colSpan={9} style={{ padding: 48, textAlign: "center", color: C.muted, fontSize: 13 }}>No se encontraron clientes.</td></tr>
               ) : filtered.map((c, i) => {
                 const count = petCountFor(c.idCliente);
+                const esSistema = c.dni === "00000000";
                 return (
                   <tr
                     key={c.idCliente}
@@ -759,8 +758,8 @@ export default function ClientsPage() {
                     <td style={{ padding: "12px 16px" }}>{c.User ? <UserStateBadge estado={c.User.estado} /> : <span style={{ fontSize: 11, color: C.muted }}>Sin acceso</span>}</td>
                     <td style={{ padding: "12px 16px", textAlign: "right" }}>
                       <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
-                        {!esSistema && <button onClick={() => setModal({ type: "view", data: c })} style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.white, color: C.text, fontSize: 12, cursor: "pointer" }}>Ver</button>}
-                        <button onClick={() => setModal({ type: "edit", data: c })} style={{ padding: "6px 12px", borderRadius: 8, border: `1.5px solid ${C.green700}`, background: C.white, color: C.green700, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Editar</button>
+                        <button onClick={() => setModal({ type: "view", data: c })} style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.white, color: C.text, fontSize: 12, cursor: "pointer" }}>Ver</button>
+                        {!esSistema && <button onClick={() => setModal({ type: "edit", data: c })} style={{ padding: "6px 12px", borderRadius: 8, border: `1.5px solid ${C.green700}`, background: C.white, color: C.green700, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Editar</button>}
                         {!esSistema && user?.idRol === 1 && (
                           <button onClick={() => setModal({ type: "delete", data: c })} style={{ padding: "6px 12px", borderRadius: 8, border: `1.5px solid ${C.red}`, background: C.white, color: C.red, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Eliminar</button>
                         )}
