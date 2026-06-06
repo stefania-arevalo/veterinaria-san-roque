@@ -553,6 +553,10 @@ export default function UsersManagementPage() {
           <StaffTab localities={localities} showToast={showToast} />
         )}
 
+        {activeTab === "salarios" && (
+          <SalaryTab showToast={showToast} />
+        )}
+
       </div>
     </div>
   );
