@@ -157,18 +157,13 @@ async function deleteStaff(req, res, next) {
         if (!staff) return res.status(404).send({ msg: "Registro no encontrado." });
 
         // ── Verificar dependencias ────────────────────────────────────────────
-        // ClinicalHistory e VetSchedule usan idVeterinario (PK de VETERINARIOS = idPersonal)
-        // Appointment usa idVeterinario e idRegistradoPor (ambos apuntan a PERSONAL)
-        // AppointmentDetail usa idPersonalRealiza
-        // Sale y Salary usan idPersonal
-
         const [ventas, turnosComoVet, turnosComoRegistrador, detallesTurno, historiales, horarios, salarios] = await Promise.all([
             Sale.count({ where: { idPersonal: id } }),
-            Appointment.count({ where: { idVeterinario:   id } }),
+            Appointment.count({ where: { idVeterinario: id } }),
             Appointment.count({ where: { idRegistradoPor: id } }),
             AppointmentDetail.count({ where: { idPersonalRealiza: id } }),
-            ClinicalHistory.count({ where: { idVeterinario: id } }),  // idVeterinario = idPersonal del vet
-            VetSchedule.count({ where: { idVeterinario: id } }),       // ídem
+            ClinicalHistory.count({ where: { idVeterinario: id } }),
+            VetSchedule.count({ where: { idVeterinario: id } }),
             Salary.count({ where: { idPersonal: id } }),
         ]);
 
@@ -176,12 +171,12 @@ async function deleteStaff(req, res, next) {
 
         if (total > 0) {
             const detalle = [
-                ventas                > 0 && `${ventas} venta(s)`,
+                ventas > 0 && `${ventas} venta(s)`,
                 (turnosComoVet + turnosComoRegistrador) > 0 && `${turnosComoVet + turnosComoRegistrador} turno(s)`,
-                detallesTurno         > 0 && `${detallesTurno} detalle(s) de turno`,
-                historiales           > 0 && `${historiales} historial(es) clínico(s)`,
-                horarios              > 0 && `${horarios} horario(s) de atención`,
-                salarios              > 0 && `${salarios} liquidación(es) salarial(es)`,
+                detallesTurno > 0 && `${detallesTurno} detalle(s) de turno`,
+                historiales > 0 && `${historiales} historial(es) clínico(s)`,
+                horarios > 0 && `${horarios} horario(s) de atención`,
+                salarios > 0 && `${salarios} liquidación(es) salarial(es)`,
             ].filter(Boolean).join(", ");
 
             return res.status(400).send({
@@ -189,17 +184,26 @@ async function deleteStaff(req, res, next) {
             });
         }
 
-        // ── Sin dependencias: borrar en orden correcto ────────────────────────
+        // ── Sin dependencias: borrar en el orden correcto ─────────────────────
         const vet         = await Veterinarian.findOne({ where: { idPersonal: id } });
         const idMatricula = vet?.idMatricula || null;
         const idUsuario   = staff.idUsuario  || null;
 
+        // 1. Borrar Veterinarian (libera FK de VETERINARIOS → MATRICULAS)
         if (vet) await Veterinarian.destroy({ where: { idPersonal: id } });
 
+        // 2. Desvincular usuario del staff (rompe FK PERSONAL.idUsuario → USUARIOS)
+        //    Usamos update directo en DB para evitar validadores de Sequelize
+        await Staff.update({ idUsuario: null }, { where: { idPersonal: id }, validate: false });
+
+        // 3. Borrar Staff (ya no tiene FK hacia USUARIOS)
         await Staff.destroy({ where: { idPersonal: id } });
 
+        // 4. Borrar matrícula huérfana
         if (idMatricula) await ProfessionalCard.destroy({ where: { idMatricula: idMatricula } });
-        if (idUsuario)   await User.destroy({ where: { idUsuario: idUsuario } });
+
+        // 5. Borrar usuario (ya no hay nadie que lo referencie)
+        if (idUsuario) await User.destroy({ where: { idUsuario: idUsuario } });
 
         return res.status(200).send({ msg: "Registro de personal eliminado correctamente." });
 
