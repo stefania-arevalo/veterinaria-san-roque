@@ -354,19 +354,34 @@ export function CarnetVacunal({ mascota, vacunas = [], aplicadas = [] }) {
                   {/* Próximo refuerzo o próxima dosis */}
                   <div style={{ flex: "0 0 130px" }}>
                     <div style={{ fontSize: 10, color: C.muted, textTransform: "uppercase", fontWeight: 700, marginBottom: 4 }}>
-                      {fila.dosisAplicadas < fila.cantidadDosisEsquema ? "Próxima dosis" : "Próximo refuerzo"}
+                      {fila.dosisAplicadas === 0
+                        ? "Coordinación"
+                        : fila.dosisAplicadas < fila.cantidadDosisEsquema
+                          ? "Próxima dosis"
+                          : "Próximo refuerzo"
+                      }
                     </div>
-                    {fila.proximoRefuerzo ? (
+                    {fila.dosisAplicadas === 0 ? (
+                      // Nunca se aplicó — no hay fecha que mostrar, solo orientación
+                      <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.4 }}>
+                        Consultá con la clínica para iniciar el esquema
+                      </div>
+                    ) : fila.proximoRefuerzo ? (
                       <div style={{ fontSize: 13, fontWeight: 600, color: est.color }}>
                         {fmtFecha(fila.proximoRefuerzo)}
                       </div>
                     ) : fila.proximaDosisEsquema ? (
-                      <div style={{ fontSize: 13, fontWeight: 600, color: C.blue }}>
-                        ~{fmtFecha(fila.proximaDosisEsquema)}
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: C.blue }}>
+                          ~{fmtFecha(fila.proximaDosisEsquema)}
+                        </div>
+                        <div style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>
+                          Fecha orientativa · coordiná con la clínica
+                        </div>
                       </div>
                     ) : (
                       <div style={{ fontSize: 13, color: C.muted }}>
-                        {fila.dosisAplicadas === 0 ? "Pendiente" : `c/${fila.intervalo} meses`}
+                        c/{fila.intervalo} meses
                       </div>
                     )}
                   </div>

@@ -85,7 +85,7 @@ export default function ClientDashboard() {
                   background: C.green100, display: "flex", alignItems: "center",
                   justifyContent: "center", fontSize: 22, flexShrink: 0,
                 }}>
-                  {getIcon(nextApp.Mascota?.Breed?.Species?.nombre)}
+                  {getIcon(nextApp.Mascota?.Raza?.Especie?.nombre || nextApp.Mascota?.Breed?.Species?.nombre)}
                 </div>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 16, color: C.text }}>{nextApp.Mascota?.nombre}</div>
@@ -160,11 +160,11 @@ export default function ClientDashboard() {
                     justifyContent: "center", fontSize: 20, flexShrink: 0,
                     border: `1px solid ${C.green200}`,
                   }}>
-                    {getIcon(pet.Breed?.Species?.nombre)}
+                    {getIcon(pet.Raza?.Especie?.nombre || pet.Breed?.Species?.nombre)}
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{pet.nombre}</div>
-                    <div style={{ fontSize: 12, color: C.muted }}>{pet.Breed?.nombre || "Raza mixta"} · {pet.sexo === "M" ? "Macho" : "Hembra"}</div>
+                    <div style={{ fontSize: 12, color: C.muted }}>{pet.Raza?.nombre || pet.Breed?.nombre || "Raza mixta"} · {pet.sexo === "M" ? "Macho" : "Hembra"}</div>
                   </div>
                   <span style={{ fontSize: 11, color: C.muted }}>→</span>
                 </div>
