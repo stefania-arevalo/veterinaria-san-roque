@@ -38,4 +38,8 @@ const validateUpdateSalary = [
       .withMessage("No se puede cambiar el período de una liquidación existente."),
 ];
 
+const validateId = [
+  param("id").isInt().withMessage("El ID debe ser un número entero.")
+];
+
 module.exports = { validateCreateSalary, validateUpdateSalary, validateId };
