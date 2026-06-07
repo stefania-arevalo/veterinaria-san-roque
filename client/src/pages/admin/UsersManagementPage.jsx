@@ -352,7 +352,6 @@ export default function UsersManagementPage() {
   const [orphanFilter,  setOrphanFilter]  = useState(false);
 
   const [editUser,      setEditUser]      = useState(null);
-  const [confirmDelete, setConfirmDelete] = useState(null); // { user }
   const [toast,         setToast]         = useState(null);
 
   const showToast = (msg, type = "success") => {
@@ -383,17 +382,6 @@ export default function UsersManagementPage() {
   useEffect(() => { fetchUsers(); },     [fetchUsers]);
   useEffect(() => { fetchLocalities(); }, [fetchLocalities]);
 
-  const handleDeleteUser = async () => {
-    const u = confirmDelete.user;
-    try {
-      await axios.delete(`/user/${u.idUsuario}`, { headers: auth() });
-      showToast("Usuario eliminado.");
-      fetchUsers();
-    } catch (e) {
-      showToast(e?.response?.data?.msg || "No se pudo eliminar.", "error");
-    } finally { setConfirmDelete(null); }
-  };
-
   // Filtro client-side de huérfanos (usuarios sin Staff ni Client)
   const displayedUsers = orphanFilter
     ? users.filter(u => !u.Staff && !u.Client)
@@ -414,17 +402,6 @@ export default function UsersManagementPage() {
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto" }}>
       <Toast toast={toast} />
-
-      {/* Confirmación eliminar usuario */}
-      {confirmDelete && (
-        <ConfirmModal
-          title="¿Eliminar cuenta de usuario?"
-          message={`Se eliminará permanentemente la cuenta "${confirmDelete.user.usuario}". Esta acción no se puede deshacer.`}
-          onConfirm={handleDeleteUser}
-          onCancel={() => setConfirmDelete(null)}
-          danger
-        />
-      )}
 
       {/* Modal gestión de cuenta */}
       {editUser && (
@@ -538,7 +515,6 @@ export default function UsersManagementPage() {
                       <td style={{ padding: "13px 16px", textAlign: "right" }}>
                         <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
                           <button onClick={() => setEditUser(u)} style={{ padding: "5px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, border: `1px solid ${VET_COLORS.border}`, background: "white", color: VET_COLORS.accent, cursor: "pointer" }}>Gestionar</button>
-                          <button onClick={() => setConfirmDelete({ user: u })} style={{ padding: "5px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, border: "1px solid #fecaca", background: "#fff5f5", color: "#c62828", cursor: "pointer" }}>Eliminar</button>
                         </div>
                       </td>
                     </tr>
@@ -548,7 +524,7 @@ export default function UsersManagementPage() {
             </div>
 
             <p style={{ margin: "12px 0 0", fontSize: 11, color: "#94a3b8" }}>
-              💡 Las cuentas se crean desde las pestañas <strong>Personal</strong> y <strong>Clientes</strong>. Acá solo gestionás estado y contraseña.
+              💡 Las cuentas se crean y eliminan desde las pestañas <strong>Personal</strong> y <strong>Clientes</strong>. Acá solo gestionás estado y contraseña.
             </p>
           </>
         )}
