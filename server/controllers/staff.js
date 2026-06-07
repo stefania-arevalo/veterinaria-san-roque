@@ -9,6 +9,11 @@ const ProfessionalCard = require("../models/professionalCard")
 const Assistant = require("../models/assistant");
 const Seller = require("../models/seller");
 const Admin = require("../models/admin");
+const Sale              = require("../models/sale");
+const Appointment       = require("../models/appointment");
+const AppointmentDetail = require("../models/appointmentDetail");
+const ClinicalHistory   = require("../models/clinicalHistory");
+const VetSchedule       = require("../models/vetSchedule");
 const { Op } = require("sequelize");
 
 async function createStaff(req, res, next) {
@@ -151,65 +156,52 @@ async function deleteStaff(req, res, next) {
         const staff = await Staff.findByPk(id);
         if (!staff) return res.status(404).send({ msg: "Registro no encontrado." });
 
-        // ── Verificar dependencias antes de borrar ─────────────────────────────
-        const Sale            = require("../models/sale");
-        const Appointment     = require("../models/appointment");
-        const AppointmentDetail = require("../models/appointmentDetail");
-        const ClinicalHistory = require("../models/clinicalHistory");
-        const VetSchedule     = require("../models/vetSchedule");
+        // ── Verificar dependencias ────────────────────────────────────────────
+        // ClinicalHistory e VetSchedule usan idVeterinario (PK de VETERINARIOS = idPersonal)
+        // Appointment usa idVeterinario e idRegistradoPor (ambos apuntan a PERSONAL)
+        // AppointmentDetail usa idPersonalRealiza
+        // Sale y Salary usan idPersonal
 
-        const checks = await Promise.all([
+        const [ventas, turnosComoVet, turnosComoRegistrador, detallesTurno, historiales, horarios, salarios] = await Promise.all([
             Sale.count({ where: { idPersonal: id } }),
-            Appointment.count({
-                where: {
-                    [Op.or]: [
-                        { idVeterinario:   id },
-                        { idRegistradoPor: id },
-                    ]
-                }
-            }),
+            Appointment.count({ where: { idVeterinario:   id } }),
+            Appointment.count({ where: { idRegistradoPor: id } }),
             AppointmentDetail.count({ where: { idPersonalRealiza: id } }),
-            ClinicalHistory.count({ where: { idVeterinario: id } }),
-            VetSchedule.count({ where: { idVeterinario: id } }),
+            ClinicalHistory.count({ where: { idVeterinario: id } }),  // idVeterinario = idPersonal del vet
+            VetSchedule.count({ where: { idVeterinario: id } }),       // ídem
             Salary.count({ where: { idPersonal: id } }),
         ]);
 
-        const [ventas, turnos, detallesTurno, historiales, horarios, salarios] = checks;
-        const total = ventas + turnos + detallesTurno + historiales + horarios + salarios;
+        const total = ventas + turnosComoVet + turnosComoRegistrador + detallesTurno + historiales + horarios + salarios;
 
         if (total > 0) {
             const detalle = [
-                ventas        > 0 && `${ventas} venta(s)`,
-                turnos        > 0 && `${turnos} turno(s)`,
-                detallesTurno > 0 && `${detallesTurno} detalle(s) de turno`,
-                historiales   > 0 && `${historiales} historial(es) clínico(s)`,
-                horarios      > 0 && `${horarios} horario(s) de atención`,
-                salarios      > 0 && `${salarios} liquidación(es) salarial(es)`,
+                ventas                > 0 && `${ventas} venta(s)`,
+                (turnosComoVet + turnosComoRegistrador) > 0 && `${turnosComoVet + turnosComoRegistrador} turno(s)`,
+                detallesTurno         > 0 && `${detallesTurno} detalle(s) de turno`,
+                historiales           > 0 && `${historiales} historial(es) clínico(s)`,
+                horarios              > 0 && `${horarios} horario(s) de atención`,
+                salarios              > 0 && `${salarios} liquidación(es) salarial(es)`,
             ].filter(Boolean).join(", ");
 
             return res.status(400).send({
-                msg: `No se puede eliminar este registro porque tiene datos asociados: ${detalle}. Desactivá la cuenta de acceso en lugar de eliminar el registro.`
+                msg: `No se puede eliminar porque tiene registros asociados: ${detalle}. Desactivá la cuenta de acceso en su lugar.`
             });
         }
 
-        // ── Sin dependencias: proceder con el borrado ──────────────────────────
-        const vet = await Veterinarian.findOne({ where: { idPersonal: id } });
+        // ── Sin dependencias: borrar en orden correcto ────────────────────────
+        const vet         = await Veterinarian.findOne({ where: { idPersonal: id } });
         const idMatricula = vet?.idMatricula || null;
         const idUsuario   = staff.idUsuario  || null;
 
-        // Borrar Veterinarian primero (libera FK hacia MATRICULAS)
         if (vet) await Veterinarian.destroy({ where: { idPersonal: id } });
 
-        // Borrar Staff (cascade borra Assistant/Admin/Seller si tienen ON DELETE CASCADE en DB)
         await Staff.destroy({ where: { idPersonal: id } });
 
-        // Borrar matrícula huérfana
         if (idMatricula) await ProfessionalCard.destroy({ where: { idMatricula: idMatricula } });
+        if (idUsuario)   await User.destroy({ where: { idUsuario: idUsuario } });
 
-        // Borrar usuario vinculado
-        if (idUsuario) await User.destroy({ where: { idUsuario: idUsuario } });
-
-        return res.status(200).send({ msg: "Registro de personal y usuario eliminados correctamente." });
+        return res.status(200).send({ msg: "Registro de personal eliminado correctamente." });
 
     } catch (error) {
         next(error);
