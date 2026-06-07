@@ -510,50 +510,52 @@ export default function SalaryTab({ showToast }) {
                 </div>
 
                 {/* Tabla */}
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                  <thead>
-                    <tr style={{ background: "#fafafa" }}>
-                      {["Período", "Tarifa/hora", "Horas", "Total bruto", "Acciones"].map((h, i) => (
-                        <th key={i} style={{ padding: "9px 16px", textAlign: i === 4 ? "right" : "left", fontWeight: 700, fontSize: 11, textTransform: "uppercase", color: VET_COLORS.textMuted, letterSpacing: "0.04em", borderBottom: `1px solid ${VET_COLORS.border}` }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sals.map((sal, idx) => {
-                      const bruto = parseFloat(sal.tarifaHora) * parseInt(sal.horasTrabajadas);
-                      const p     = parsePeriodo(sal.fechaLiquidacion);
-                      const isPdf = generatingPdf === sal.idSalario;
-                      return (
-                        <tr key={sal.idSalario} style={{ borderBottom: idx < sals.length - 1 ? `1px solid ${VET_COLORS.border}` : "none", background: idx === 0 ? "#f0fdf4" : "white" }}>
-                          <td style={{ padding: "11px 16px", fontWeight: idx === 0 ? 700 : 400 }}>
-                            {p.label}
-                            {idx === 0 && <span style={{ marginLeft: 8, fontSize: 10, background: "#16a34a", color: "white", padding: "1px 6px", borderRadius: 99, fontWeight: 700 }}>ÚLTIMO</span>}
-                          </td>
-                          <td style={{ padding: "11px 16px", color: "#475569", fontFamily: "monospace" }}>${fmt(sal.tarifaHora)}/h</td>
-                          <td style={{ padding: "11px 16px", color: "#475569" }}>{sal.horasTrabajadas} hs</td>
-                          <td style={{ padding: "11px 16px", fontWeight: 600, color: "#166534" }}>${fmt(bruto)}</td>
-                          <td style={{ padding: "11px 16px", textAlign: "right" }}>
-                            <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
-                              <button
-                                onClick={() => setEditSalary(sal)}
-                                style={{ padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600, border: `1px solid ${VET_COLORS.border}`, background: "white", color: "#0369a1", cursor: "pointer" }}
-                              >
-                                ✏️ Editar
-                              </button>
-                              <button
-                                onClick={() => exportarPDF(sal, s)}
-                                disabled={isPdf}
-                                style={{ padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600, border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", cursor: isPdf ? "not-allowed" : "pointer", opacity: isPdf ? 0.6 : 1 }}
-                              >
-                                {isPdf ? "Generando..." : "📄 Recibo PDF"}
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                <div style={{ overflowX: "auto", width: "100%" }}>
+                  <table style={{ width: "100%", minWidth: 550, borderCollapse: "collapse", fontSize: 13 }}>
+                    <thead>
+                      <tr style={{ background: "#fafafa" }}>
+                        {["Período", "Tarifa/hora", "Horas", "Total bruto", "Acciones"].map((h, i) => (
+                          <th key={i} style={{ padding: "9px 16px", textAlign: i === 4 ? "right" : "left", fontWeight: 700, fontSize: 11, textTransform: "uppercase", color: VET_COLORS.textMuted, letterSpacing: "0.04em", borderBottom: `1px solid ${VET_COLORS.border}` }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sals.map((sal, idx) => {
+                        const bruto = parseFloat(sal.tarifaHora) * parseInt(sal.horasTrabajadas);
+                        const p     = parsePeriodo(sal.fechaLiquidacion);
+                        const isPdf = generatingPdf === sal.idSalario;
+                        return (
+                          <tr key={sal.idSalario} style={{ borderBottom: idx < sals.length - 1 ? `1px solid ${VET_COLORS.border}` : "none", background: idx === 0 ? "#f0fdf4" : "white" }}>
+                            <td style={{ padding: "11px 16px", fontWeight: idx === 0 ? 700 : 400 }}>
+                              {p.label}
+                              {idx === 0 && <span style={{ marginLeft: 8, fontSize: 10, background: "#16a34a", color: "white", padding: "1px 6px", borderRadius: 99, fontWeight: 700 }}>ÚLTIMO</span>}
+                            </td>
+                            <td style={{ padding: "11px 16px", color: "#475569", fontFamily: "monospace" }}>${fmt(sal.tarifaHora)}/h</td>
+                            <td style={{ padding: "11px 16px", color: "#475569" }}>{sal.horasTrabajadas} hs</td>
+                            <td style={{ padding: "11px 16px", fontWeight: 600, color: "#166534" }}>${fmt(bruto)}</td>
+                            <td style={{ padding: "11px 16px", textAlign: "right" }}>
+                              <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                                <button
+                                  onClick={() => setEditSalary(sal)}
+                                  style={{ padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600, border: `1px solid ${VET_COLORS.border}`, background: "white", color: "#0369a1", cursor: "pointer" }}
+                                >
+                                  ✏️ Editar
+                                </button>
+                                <button
+                                  onClick={() => exportarPDF(sal, s)}
+                                  disabled={isPdf}
+                                  style={{ padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600, border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#166534", cursor: isPdf ? "not-allowed" : "pointer", opacity: isPdf ? 0.6 : 1 }}
+                                >
+                                  {isPdf ? "Generando..." : "📄 Recibo PDF"}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             );
           })}
