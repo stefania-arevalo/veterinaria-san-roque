@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { usePets } from "../../hooks/usePets";
 import { useAppointments } from "../../hooks/useAppointments";
+import { useWindowSize } from "../../hooks/useWindowSize";
 
 const C = {
   green900: "#1a3d28", green800: "#1f5c38", green700: "#276b42",
@@ -36,7 +37,7 @@ export default function ClientDashboard() {
     { weekday: "long", day: "numeric", month: "long" });
 
   const nombre = user?.nombres || user?.usuario || "Cliente";
-
+  const { isMobile } = useWindowSize();
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
 
@@ -180,25 +181,34 @@ export default function ClientDashboard() {
       </div>
 
       {/* ── Accesos rápidos ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 14 }}>
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)",
+        gap: 14,
+      }}>
         {[
-          { icon: "🐾", label: "Mis mascotas",   sub: "Fichas e historiales", path: "/cliente/mascotas", color: C.green100,  accent: C.green800 },
-          { icon: "📅", label: "Mis turnos",     sub: "Próximas y pasadas",   path: "/cliente/turnos",  color: C.blueBg,   accent: C.blue },
-          { icon: "🧾", label: "Mis comprobantes", sub: "Historial de pagos", path: "/cliente/comprobantes", color: C.green100, accent: C.green800 },
-          { icon: "👤", label: "Mi perfil",      sub: "Datos personales",     path: "/cliente/perfil",  color: C.amberBg,  accent: C.amber },
+          { icon: isMobile ? "🐾" : "🐾", label: "Mis mascotas",    sub: "Fichas e historiales", path: "/cliente/mascotas",     color: C.green100, accent: C.green800 },
+          { icon: isMobile ? "📅" : "📅", label: "Mis turnos",      sub: "Próximas y pasadas",   path: "/cliente/turnos",       color: C.blueBg,   accent: C.blue },
+          { icon: isMobile ? "🧾" : "💰", label: "Mis comprobantes", sub: "Historial de pagos",   path: "/cliente/comprobantes", color: C.green100, accent: C.green800 },
+          { icon: isMobile ? "👤" : "👤", label: "Mi perfil",        sub: "Datos personales",     path: "/cliente/perfil",       color: C.amberBg,  accent: C.amber },
         ].map(item => (
           <button
             key={item.path}
             onClick={() => navigate(item.path)}
             style={{
               background: C.white, border: `1px solid ${C.border}`, borderRadius: 14,
-              padding: "20px", cursor: "pointer", textAlign: "left",
+              padding: isMobile ? "16px 14px" : "20px",
+              cursor: "pointer", textAlign: "left",
               transition: "all 0.15s", boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
             }}
             onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)"; e.currentTarget.style.borderColor = C.green200; }}
             onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.03)"; e.currentTarget.style.borderColor = C.border; }}
           >
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: item.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, marginBottom: 12 }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: 12, background: item.color,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 22, marginBottom: 12,
+            }}>
               {item.icon}
             </div>
             <div style={{ fontWeight: 700, fontSize: 14, color: item.accent, marginBottom: 2 }}>{item.label}</div>
