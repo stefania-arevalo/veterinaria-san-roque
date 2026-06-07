@@ -152,6 +152,8 @@ async function updateStaff(req, res, next) {
 
 async function deleteStaff(req, res, next) {
     const { id } = req.params;
+    const sequelize = require("../db");
+
     try {
         const staff = await Staff.findByPk(id);
         if (!staff) return res.status(404).send({ msg: "Registro no encontrado." });
@@ -184,26 +186,37 @@ async function deleteStaff(req, res, next) {
             });
         }
 
-        // ── Sin dependencias: borrar en el orden correcto ─────────────────────
-        const vet         = await Veterinarian.findOne({ where: { idPersonal: id } });
-        const idMatricula = vet?.idMatricula || null;
-        const idUsuario   = staff.idUsuario  || null;
+        // ── Sin dependencias: borrar con transacción ──────────────────────────
+        const idUsuario = staff.idUsuario || null;
 
-        // 1. Borrar Veterinarian (libera FK de VETERINARIOS → MATRICULAS)
-        if (vet) await Veterinarian.destroy({ where: { idPersonal: id } });
+        await sequelize.transaction(async (t) => {
+            // 1. Buscar matrícula antes de borrar vet
+            const vet = await Veterinarian.findOne({ where: { idPersonal: id }, transaction: t });
+            const idMatricula = vet?.idMatricula || null;
 
-        // 2. Desvincular usuario del staff (rompe FK PERSONAL.idUsuario → USUARIOS)
-        //    Usamos update directo en DB para evitar validadores de Sequelize
-        await Staff.update({ idUsuario: null }, { where: { idPersonal: id }, validate: false });
+            // 2. Borrar tablas hijas de PERSONAL primero (en orden)
+            await sequelize.query(`DELETE FROM VETERINARIOS WHERE idPersonal = :id`, { replacements: { id }, transaction: t });
+            await sequelize.query(`DELETE FROM ASISTENTES  WHERE idPersonal = :id`, { replacements: { id }, transaction: t });
+            await sequelize.query(`DELETE FROM ADMINISTRADORES WHERE idPersonal = :id`, { replacements: { id }, transaction: t });
+            await sequelize.query(`DELETE FROM VENDEDORES   WHERE idPersonal = :id`, { replacements: { id }, transaction: t });
+            await sequelize.query(`DELETE FROM SALARIOS     WHERE idPersonal = :id`, { replacements: { id }, transaction: t });
 
-        // 3. Borrar Staff (ya no tiene FK hacia USUARIOS)
-        await Staff.destroy({ where: { idPersonal: id } });
+            // 3. Desvincular usuario (rompe FK antes de borrar PERSONAL)
+            await sequelize.query(`UPDATE PERSONAL SET idUsuario = NULL WHERE idPersonal = :id`, { replacements: { id }, transaction: t });
 
-        // 4. Borrar matrícula huérfana
-        if (idMatricula) await ProfessionalCard.destroy({ where: { idMatricula: idMatricula } });
+            // 4. Borrar PERSONAL
+            await sequelize.query(`DELETE FROM PERSONAL WHERE idPersonal = :id`, { replacements: { id }, transaction: t });
 
-        // 5. Borrar usuario (ya no hay nadie que lo referencie)
-        if (idUsuario) await User.destroy({ where: { idUsuario: idUsuario } });
+            // 5. Borrar matrícula huérfana
+            if (idMatricula) {
+                await sequelize.query(`DELETE FROM MATRICULAS WHERE idMatricula = :idMatricula`, { replacements: { idMatricula }, transaction: t });
+            }
+
+            // 6. Borrar usuario
+            if (idUsuario) {
+                await sequelize.query(`DELETE FROM USUARIOS WHERE idUsuario = :idUsuario`, { replacements: { idUsuario }, transaction: t });
+            }
+        });
 
         return res.status(200).send({ msg: "Registro de personal eliminado correctamente." });
 
