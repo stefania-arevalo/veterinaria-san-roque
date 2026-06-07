@@ -183,6 +183,7 @@ function StaffTab({ localities, showToast }) {
     try {
       await axios.delete(`/staff/${confirmDelete.idPersonal}`, { headers: auth() });
       showToast("Registro de personal eliminado.");
+      setConfirmDelete(null); 
       fetchStaff();
     } catch (err) {
       const msg = err?.response?.data?.msg || "No se pudo eliminar.";
