@@ -764,6 +764,10 @@ function HistorialVentas({ onBack, user, canAnular }) {
                       background: C.blueBg, color: C.blue, border: `0.5px solid #b5d4f4`,
                       padding: "6px 12px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 500,
                     }}>Ver detalle</button>
+                    <button onClick={() => { setVentaDetalle(v); setTimeout(() => window.print(), 300); }} style={{
+                      background: C.surface, color: C.muted, border: `0.5px solid ${C.border}`,
+                      padding: "6px 12px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 500,
+                    }}>🖨️ Imprimir</button>
                     <button onClick={() => setVentaParaEmail(v)} style={{
                       background: "#eaf3de", color: "#1f5c38", border: "0.5px solid #c0dd97",
                       padding: "6px 12px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 500,
@@ -870,6 +874,20 @@ function HistorialVentas({ onBack, user, canAnular }) {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, paddingTop: 10, borderTop: `0.5px solid ${C.border}` }}>
                 <span style={{ fontSize: 13, fontWeight: 500, color: C.text, textTransform: "uppercase", letterSpacing: "0.3px" }}>Total pagado</span>
                 <span style={{ fontSize: 22, fontWeight: 500, color: C.green800 }}>${fmt(ventaDetalle.total)}</span>
+              </div>
+              {/* Botón imprimir dentro del modal */}
+              <div style={{ padding: "12px 20px", borderTop: `0.5px solid ${C.border}`, flexShrink: 0 }}>
+                <button
+                  onClick={() => window.print()}
+                  style={{
+                    width: "100%", padding: "11px", border: "none", borderRadius: 8,
+                    background: C.green800, color: "white",
+                    fontWeight: 500, fontSize: 13, cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                  }}
+                >
+                  🖨️ Imprimir comprobante
+                </button>
               </div>
             </div>
           </div>
