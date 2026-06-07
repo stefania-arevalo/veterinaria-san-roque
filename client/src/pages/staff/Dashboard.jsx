@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "../../api/axios";
+import { useWindowSize } from "../../hooks/useWindowSize";
 
 const fmt = (n) =>
   parseFloat(n || 0).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -252,6 +253,8 @@ export default function Dashboard() {
   const [stockVenc,        setStockVenc]        = useState([]);
   const [cobrosPendientes, setCobrosPendientes] = useState([]);
   const [loading,          setLoading]          = useState(true);
+  const { isMobile, isTablet } = useWindowSize();
+  const isCompact = isMobile || isTablet;
 
   const token   = localStorage.getItem("accessToken");
   const headers = { Authorization: `Bearer ${token}` };
@@ -352,7 +355,7 @@ export default function Dashboard() {
           </button>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, height: "calc(100vh - 160px)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: isCompact ? "1fr" : "1fr 1fr", gap: 16, height: "calc(100vh - 160px)" }}>
           <Panel
             title="Mi agenda de hoy"
             icon="📅"
@@ -458,9 +461,9 @@ export default function Dashboard() {
       <style>{GLOBAL_CSS}</style>
       <div style={{
         display: "grid",
-        gridTemplateColumns: "1fr 1fr",
+        gridTemplateColumns: isCompact ? "1fr" : "1fr 1fr",
         gap: 16,
-        height: cobrosPendientes.length > 0 ? "calc(100vh - 190px)" : "calc(100vh - 110px)",
+        height: isCompact ? "auto" : cobrosPendientes.length > 0 ? "calc(100vh - 190px)" : "calc(100vh - 110px)"
       }}>
 
         {rolLogueado !== 4 && (
