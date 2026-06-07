@@ -262,73 +262,75 @@ function StaffTab({ localities, showToast }) {
         ) : staffList.length === 0 ? (
           <div style={{ padding: 48, textAlign: "center", color: VET_COLORS.textMuted }}>No se encontraron registros de personal.</div>
         ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-            <thead>
-              <tr style={{ background: "#f8fafc" }}>
-                {["", "Nombre completo", "DNI", "Rol / Usuario", "Teléfono", "Correo", "Localidad", "Acciones"].map((h, i) => (
-                  <th key={i} style={{ padding: "11px 14px", textAlign: i >= 7 ? "right" : "left", fontWeight: 700, fontSize: 11, textTransform: "uppercase", color: VET_COLORS.textMuted, letterSpacing: "0.04em", borderBottom: `1px solid ${VET_COLORS.border}`, whiteSpace: "nowrap" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {staffList.map((s, i) => {
-                const isExpanded   = expandedRow === s.idPersonal;
-                const localityName = localities.find(l => l.idLocalidad === s.idLocalidad)?.nombre || "—";
-                return (
-                  <React.Fragment key={s.idPersonal}>
-                    <tr
-                      style={{ borderBottom: `1px solid ${VET_COLORS.border}`, background: isExpanded ? "#f0fdf4" : i % 2 === 0 ? "white" : "#fafafa", cursor: "pointer" }}
-                      onMouseEnter={e => { if (!isExpanded) e.currentTarget.style.background = "#f8fafc"; }}
-                      onMouseLeave={e => { if (!isExpanded) e.currentTarget.style.background = i % 2 === 0 ? "white" : "#fafafa"; }}
-                      onClick={() => setExpandedRow(isExpanded ? null : s.idPersonal)}
-                    >
-                      <td style={{ padding: "12px 8px 12px 14px", width: 24 }}>
-                        <span style={{ fontSize: 10, color: "#94a3b8", display: "inline-block", transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▶</span>
-                      </td>
-                      <td style={{ padding: "12px 14px" }}>
-                        <div style={{ fontWeight: 600, color: "#1a202c" }}>{s.nombres} {s.apellidos}</div>
-                        <div style={{ fontSize: 11, color: VET_COLORS.textMuted }}>{SEXO_MAP[s.sexo] || "—"} · {s.fechaNacimiento || "—"}</div>
-                      </td>
-                      <td style={{ padding: "12px 14px", fontFamily: "monospace", color: "#475569" }}>{s.dni}</td>
-                      <td style={{ padding: "12px 14px" }}>
-                        <div style={{ marginBottom: 4 }}><RoleBadge idRol={s.User?.idRol} /></div>
-                        <div style={{ fontSize: 11, color: VET_COLORS.textMuted, fontFamily: "monospace" }}>{s.User?.usuario || "Sin usuario"}</div>
-                      </td>
-                      <td style={{ padding: "12px 14px", color: "#475569" }}>{s.telefono || "—"}</td>
-                      <td style={{ padding: "12px 14px", color: "#475569" }}>{s.correo || "—"}</td>
-                      <td style={{ padding: "12px 14px", color: "#475569" }}>{localityName}</td>
-                      <td style={{ padding: "12px 14px", textAlign: "right" }} onClick={e => e.stopPropagation()}>
-                        <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
-                          <button onClick={() => setEditStaff(s)} style={{ padding: "5px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, border: `1px solid ${VET_COLORS.border}`, background: "white", color: VET_COLORS.accent, cursor: "pointer" }}>Editar</button>
-                          <button onClick={() => setConfirmDelete(s)} style={{ padding: "5px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, border: "1px solid #fecaca", background: "#fff5f5", color: "#c62828", cursor: "pointer" }}>Eliminar</button>
-                        </div>
-                      </td>
-                    </tr>
-                    {isExpanded && (
-                      <tr style={{ background: "#f0fdf4", borderBottom: `1px solid ${VET_COLORS.border}` }}>
-                        <td colSpan={8} style={{ padding: "0 14px 16px 42px" }}>
-                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "10px 24px", paddingTop: 12 }}>
-                            {[
-                              { label: "Estado cuenta", value: s.User?.estado !== undefined ? (s.User.estado ? "✅ Activo" : "❌ Inactivo") : "Sin usuario" },
-                              { label: "Dirección",     value: s.direccion || "—" },
-                              ...(s.Veterinarian ? [{ label: "Especialidad", value: s.Veterinarian.especialidad }, { label: "Matrícula ID", value: s.Veterinarian.idMatricula }] : []),
-                              ...(s.Assistant    ? [{ label: "Certificados", value: s.Assistant.certificados || "—" }] : []),
-                              ...(s.Admin        ? [{ label: "Área resp.",   value: s.Admin.areaResponsabilidad }] : []),
-                            ].map(item => (
-                              <div key={item.label}>
-                                <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>{item.label}</div>
-                                <div style={{ fontSize: 13, color: "#1a202c", fontWeight: 500 }}>{item.value}</div>
-                              </div>
-                            ))}
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: "#f8fafc" }}>
+                  {["", "Nombre completo", "DNI", "Rol / Usuario", "Teléfono", "Correo", "Localidad", "Acciones"].map((h, i) => (
+                    <th key={i} style={{ padding: "11px 14px", textAlign: i >= 7 ? "right" : "left", fontWeight: 700, fontSize: 11, textTransform: "uppercase", color: VET_COLORS.textMuted, letterSpacing: "0.04em", borderBottom: `1px solid ${VET_COLORS.border}`, whiteSpace: "nowrap" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {staffList.map((s, i) => {
+                  const isExpanded   = expandedRow === s.idPersonal;
+                  const localityName = localities.find(l => l.idLocalidad === s.idLocalidad)?.nombre || "—";
+                  return (
+                    <React.Fragment key={s.idPersonal}>
+                      <tr
+                        style={{ borderBottom: `1px solid ${VET_COLORS.border}`, background: isExpanded ? "#f0fdf4" : i % 2 === 0 ? "white" : "#fafafa", cursor: "pointer" }}
+                        onMouseEnter={e => { if (!isExpanded) e.currentTarget.style.background = "#f8fafc"; }}
+                        onMouseLeave={e => { if (!isExpanded) e.currentTarget.style.background = i % 2 === 0 ? "white" : "#fafafa"; }}
+                        onClick={() => setExpandedRow(isExpanded ? null : s.idPersonal)}
+                      >
+                        <td style={{ padding: "12px 8px 12px 14px", width: 24 }}>
+                          <span style={{ fontSize: 10, color: "#94a3b8", display: "inline-block", transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▶</span>
+                        </td>
+                        <td style={{ padding: "12px 14px" }}>
+                          <div style={{ fontWeight: 600, color: "#1a202c" }}>{s.nombres} {s.apellidos}</div>
+                          <div style={{ fontSize: 11, color: VET_COLORS.textMuted }}>{SEXO_MAP[s.sexo] || "—"} · {s.fechaNacimiento || "—"}</div>
+                        </td>
+                        <td style={{ padding: "12px 14px", fontFamily: "monospace", color: "#475569" }}>{s.dni}</td>
+                        <td style={{ padding: "12px 14px" }}>
+                          <div style={{ marginBottom: 4 }}><RoleBadge idRol={s.User?.idRol} /></div>
+                          <div style={{ fontSize: 11, color: VET_COLORS.textMuted, fontFamily: "monospace" }}>{s.User?.usuario || "Sin usuario"}</div>
+                        </td>
+                        <td style={{ padding: "12px 14px", color: "#475569" }}>{s.telefono || "—"}</td>
+                        <td style={{ padding: "12px 14px", color: "#475569" }}>{s.correo || "—"}</td>
+                        <td style={{ padding: "12px 14px", color: "#475569" }}>{localityName}</td>
+                        <td style={{ padding: "12px 14px", textAlign: "right" }} onClick={e => e.stopPropagation()}>
+                          <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                            <button onClick={() => setEditStaff(s)} style={{ padding: "5px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, border: `1px solid ${VET_COLORS.border}`, background: "white", color: VET_COLORS.accent, cursor: "pointer" }}>Editar</button>
+                            <button onClick={() => setConfirmDelete(s)} style={{ padding: "5px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, border: "1px solid #fecaca", background: "#fff5f5", color: "#c62828", cursor: "pointer" }}>Eliminar</button>
                           </div>
                         </td>
                       </tr>
-                    )}
-                  </React.Fragment>
-                );
-              })}
-            </tbody>
-          </table>
+                      {isExpanded && (
+                        <tr style={{ background: "#f0fdf4", borderBottom: `1px solid ${VET_COLORS.border}` }}>
+                          <td colSpan={8} style={{ padding: "0 14px 16px 42px" }}>
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "10px 24px", paddingTop: 12 }}>
+                              {[
+                                { label: "Estado cuenta", value: s.User?.estado !== undefined ? (s.User.estado ? "✅ Activo" : "❌ Inactivo") : "Sin usuario" },
+                                { label: "Dirección",     value: s.direccion || "—" },
+                                ...(s.Veterinarian ? [{ label: "Especialidad", value: s.Veterinarian.especialidad }, { label: "Matrícula ID", value: s.Veterinarian.idMatricula }] : []),
+                                ...(s.Assistant    ? [{ label: "Certificados", value: s.Assistant.certificados || "—" }] : []),
+                                ...(s.Admin        ? [{ label: "Área resp.",   value: s.Admin.areaResponsabilidad }] : []),
+                              ].map(item => (
+                                <div key={item.label}>
+                                  <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>{item.label}</div>
+                                  <div style={{ fontSize: 13, color: "#1a202c", fontWeight: 500 }}>{item.value}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
       <p style={{ margin: "10px 0 0", fontSize: 11, color: "#94a3b8" }}>
