@@ -18,21 +18,23 @@ const G = {
   gray600: "#4b5563",
 };
 
-const NAV = [
-  { label: "Inicio",       path: "/cliente",          icon: "🏠" },
-  { label: "Mis mascotas", path: "/cliente/mascotas", icon: "🐾" },
-  { label: "Mis citas",    path: "/cliente/turnos",   icon: "📅" },
-  { label: "Comprobantes",    path: "/cliente/comprobantes",  icon: "🧾" }, 
-  { label: "Mi perfil",    path: "/cliente/perfil",   icon: "👤" },
-];
-
 export default function ClientLayout() {
   const { user, logout } = useAuth();
   const navigate  = useNavigate();
   const location  = useLocation();
   const { isMobile, isTablet } = useWindowSize();
+  
   const [showLogout, setShowLogout] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const isCompact = isMobile || isTablet;
+
+  const NAV = [
+    { label: "Inicio",       path: "/cliente",               icon: "🏠" },
+    { label: "Mis mascotas", path: "/cliente/mascotas",      icon: "🐾" },
+    { label: "Mis citas",    path: "/cliente/turnos",        icon: "📅" },
+    { label: "Comprobantes", path: "/cliente/comprobantes",  icon: isCompact ? "🧾" : "💰" },
+    { label: "Mi perfil",    path: "/cliente/perfil",        icon: "👤" },
+  ];
 
   useEffect(() => {
     const t = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -44,7 +46,6 @@ export default function ClientLayout() {
   const isActive = (path) =>
     path === "/cliente" ? location.pathname === "/cliente" : location.pathname.startsWith(path);
 
-  const isCompact = isMobile || isTablet;
 
   return (
     <div style={{
