@@ -363,10 +363,49 @@ async function deleteSale(req, res, next) {
     }
 }
 
+async function getMySales(req, res, next) {
+    try {
+        // Buscar el cliente vinculado al usuario autenticado
+        const client = await Client.findOne({ where: { idUsuario: req.user.user_id } });
+        if (!client) return res.status(200).send([]);
+
+        const sales = await Sale.findAll({
+            where: {
+                idCliente: client.idCliente,
+                idEstadoVenta: { [Op.ne]: 3 } // excluir anuladas
+            },
+            include: [
+                { model: PaymentType,  as: "FormaPago" },
+                { model: ReceiptType,  as: "TipoComprobante" },
+                { model: SaleState,    as: "EstadoVenta" },
+                {
+                    model: SaleDetail, as: "detalles",
+                    include: [
+                        { model: Product, as: "Producto", attributes: ["nombre"] },
+                        {
+                            model: AppointmentDetail, as: "DetalleCita",
+                            include: [{
+                                model: ServicePrice, as: "PrecioServicio",
+                                include: [{ model: Service, as: "Service", attributes: ["descripcion"] }]
+                            }]
+                        }
+                    ]
+                }
+            ],
+            order: [["fecha", "DESC"], ["hora", "DESC"]]
+        });
+
+        return res.status(200).send(sales);
+    } catch (error) {
+        next(error);
+    }
+}
+
 module.exports = { 
     createSale, 
     getAllSales, 
     getSale, 
     updateSale, 
-    deleteSale 
+    deleteSale,
+    getMySales
 };

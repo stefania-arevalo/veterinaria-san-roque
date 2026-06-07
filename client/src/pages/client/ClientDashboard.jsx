@@ -180,10 +180,11 @@ export default function ClientDashboard() {
       </div>
 
       {/* ── Accesos rápidos ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 14 }}>
         {[
           { icon: "🐾", label: "Mis mascotas",   sub: "Fichas e historiales", path: "/cliente/mascotas", color: C.green100,  accent: C.green800 },
           { icon: "📅", label: "Mis turnos",     sub: "Próximas y pasadas",   path: "/cliente/turnos",  color: C.blueBg,   accent: C.blue },
+          { icon: "🧾", label: "Mis comprobantes", sub: "Historial de pagos", path: "/cliente/comprobantes", color: C.green100, accent: C.green800 },
           { icon: "👤", label: "Mi perfil",      sub: "Datos personales",     path: "/cliente/perfil",  color: C.amberBg,  accent: C.amber },
         ].map(item => (
           <button

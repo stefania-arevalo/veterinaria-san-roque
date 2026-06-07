@@ -22,6 +22,7 @@ const NAV = [
   { label: "Inicio",       path: "/cliente",          icon: "🏠" },
   { label: "Mis mascotas", path: "/cliente/mascotas", icon: "🐾" },
   { label: "Mis citas",    path: "/cliente/turnos",   icon: "📅" },
+  { label: "Comprobantes",    path: "/cliente/comprobantes",  icon: "🧾" }, 
   { label: "Mi perfil",    path: "/cliente/perfil",   icon: "👤" },
 ];
 

@@ -29,6 +29,7 @@ import ClientDashboard  from "./pages/client/ClientDashboard";
 import MyPets           from "./pages/client/MyPet";
 import MyAppointments   from "./pages/client/MyAppoiment";
 import MyProfile        from "./pages/client/MyProfile";
+import MyReceipts from "./pages/client/MyReceipts";
 
 // ── Sin permiso ──────────────────────────────────────────────────
 function SinPermiso() {
@@ -206,6 +207,7 @@ function App() {
             <Route path="mascotas" element={<MyPets />} />
             <Route path="turnos"   element={<MyAppointments />} />
             <Route path="perfil"   element={<MyProfile />} />
+            <Route path="comprobantes" element={<MyReceipts />} />
           </Route>
 
           {/* ── Fallbacks ── */}

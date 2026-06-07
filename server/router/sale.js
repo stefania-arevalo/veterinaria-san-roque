@@ -11,5 +11,6 @@ api.get("/sales",       [md_auth.asureAuth, md_auth.hasRole([1,2,3,4])],        
 api.get("/sale/:id",    [md_auth.asureAuth, md_auth.hasRole([1,2,3,4]), validateId,           validate], SaleController.getSale);
 api.patch("/sale/:id",  [md_auth.asureAuth, md_auth.hasRole([1,3,4]), validateUpdateSale,   validate], SaleController.updateSale);
 api.delete("/sale/:id", [md_auth.asureAuth, md_auth.hasRole([1]),      validateId,           validate], SaleController.deleteSale);
+api.get("/my-sales", [md_auth.asureAuth, md_auth.hasRole([5])], SaleController.getMySales);
 
 module.exports = api;
