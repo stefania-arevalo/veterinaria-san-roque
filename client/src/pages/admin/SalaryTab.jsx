@@ -4,6 +4,7 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { VET_COLORS } from "../../layouts/AdminLayout";
 import { ROLE_META, inputStyle, Field, ConfirmModal } from "./StaffCreateDrawer";
+import { useWindowSize } from "../../hooks/useWindowSize";
 
 const token = () => localStorage.getItem("accessToken");
 const auth  = () => ({ Authorization: `Bearer ${token()}` });
@@ -276,6 +277,8 @@ export default function SalaryTab({ showToast }) {
   const [salaries,     setSalaries]     = useState([]);
   const [loading,      setLoading]      = useState(true);
 
+  const { isMobile } = useWindowSize();
+
   // Filtros
   const [staffFilter,  setStaffFilter]  = useState("");
   const [mesFilter,    setMesFilter]    = useState("");
@@ -424,7 +427,7 @@ export default function SalaryTab({ showToast }) {
         })()}
 
       {/* ── Dashboard ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
         {[
           { label: "Masa salarial", value: `$${fmtShort(totalMasa)}`, icon: "💰", color: "#166534", bg: "#f0fdf4" },
           { label: "Total horas",   value: `${fmtShort(totalHoras)} hs`, icon: "🕐", color: "#0369a1", bg: "#eff6ff" },
