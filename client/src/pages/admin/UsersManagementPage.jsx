@@ -185,8 +185,11 @@ function StaffTab({ localities, showToast }) {
       showToast("Registro de personal eliminado.");
       fetchStaff();
     } catch (err) {
-      showToast(err?.response?.data?.msg || "No se pudo eliminar. Puede tener datos asociados.", "error");
-    } finally { setConfirmDelete(null); }
+      const msg = err?.response?.data?.msg || "No se pudo eliminar.";
+      showToast(msg, "error");  // el toast ya muestra el detalle del backend
+    } finally {
+      setConfirmDelete(null);
+    }
   };
 
   const STAFF_ROLES = [1, 2, 3, 4];
@@ -196,7 +199,7 @@ function StaffTab({ localities, showToast }) {
       {confirmDelete && (
         <ConfirmModal
           title="¿Eliminar registro de personal?"
-          message={`Se eliminará el registro de "${confirmDelete.nombres} ${confirmDelete.apellidos}". El usuario vinculado NO se elimina, solo los datos personales.`}
+          message={`Se eliminará permanentemente el registro de "${confirmDelete.nombres} ${confirmDelete.apellidos}", su cuenta de usuario y, si es veterinario, su matrícula. Solo es posible si no tiene ventas, turnos ni historiales asociados.`}
           onConfirm={handleDelete}
           onCancel={() => setConfirmDelete(null)}
           danger

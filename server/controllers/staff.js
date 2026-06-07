@@ -148,18 +148,69 @@ async function updateStaff(req, res, next) {
 async function deleteStaff(req, res, next) {
     const { id } = req.params;
     try {
-        // Si es veterinario, guardamos el idMatricula antes de que se borre en cascade
-        const vet = await Veterinarian.findOne({ where: { idPersonal: id } });
+        const staff = await Staff.findByPk(id);
+        if (!staff) return res.status(404).send({ msg: "Registro no encontrado." });
 
-        const deleted = await Staff.destroy({ where: { idPersonal: id } });
-        if (deleted === 0) return res.status(404).send({ msg: "Registro no encontrado." });
+        // ── Verificar dependencias antes de borrar ─────────────────────────────
+        const Sale            = require("../models/sale");
+        const Appointment     = require("../models/appointment");
+        const AppointmentDetail = require("../models/appointmentDetail");
+        const ClinicalHistory = require("../models/clinicalHistory");
+        const VetSchedule     = require("../models/vetSchedule");
 
-        // Eliminar la matrícula huérfana (el registro Veterinarian ya fue borrado por cascade)
-        if (vet) {
-            await ProfessionalCard.destroy({ where: { idMatricula: vet.idMatricula } });
+        const checks = await Promise.all([
+            Sale.count({ where: { idPersonal: id } }),
+            Appointment.count({
+                where: {
+                    [Op.or]: [
+                        { idVeterinario:   id },
+                        { idRegistradoPor: id },
+                    ]
+                }
+            }),
+            AppointmentDetail.count({ where: { idPersonalRealiza: id } }),
+            ClinicalHistory.count({ where: { idVeterinario: id } }),
+            VetSchedule.count({ where: { idVeterinario: id } }),
+            Salary.count({ where: { idPersonal: id } }),
+        ]);
+
+        const [ventas, turnos, detallesTurno, historiales, horarios, salarios] = checks;
+        const total = ventas + turnos + detallesTurno + historiales + horarios + salarios;
+
+        if (total > 0) {
+            const detalle = [
+                ventas        > 0 && `${ventas} venta(s)`,
+                turnos        > 0 && `${turnos} turno(s)`,
+                detallesTurno > 0 && `${detallesTurno} detalle(s) de turno`,
+                historiales   > 0 && `${historiales} historial(es) clínico(s)`,
+                horarios      > 0 && `${horarios} horario(s) de atención`,
+                salarios      > 0 && `${salarios} liquidación(es) salarial(es)`,
+            ].filter(Boolean).join(", ");
+
+            return res.status(400).send({
+                msg: `No se puede eliminar este registro porque tiene datos asociados: ${detalle}. Desactivá la cuenta de acceso en lugar de eliminar el registro.`
+            });
         }
 
-        return res.status(200).send({ msg: "Registro de personal eliminado correctamente." });
+        // ── Sin dependencias: proceder con el borrado ──────────────────────────
+        const vet = await Veterinarian.findOne({ where: { idPersonal: id } });
+        const idMatricula = vet?.idMatricula || null;
+        const idUsuario   = staff.idUsuario  || null;
+
+        // Borrar Veterinarian primero (libera FK hacia MATRICULAS)
+        if (vet) await Veterinarian.destroy({ where: { idPersonal: id } });
+
+        // Borrar Staff (cascade borra Assistant/Admin/Seller si tienen ON DELETE CASCADE en DB)
+        await Staff.destroy({ where: { idPersonal: id } });
+
+        // Borrar matrícula huérfana
+        if (idMatricula) await ProfessionalCard.destroy({ where: { idMatricula: idMatricula } });
+
+        // Borrar usuario vinculado
+        if (idUsuario) await User.destroy({ where: { idUsuario: idUsuario } });
+
+        return res.status(200).send({ msg: "Registro de personal y usuario eliminados correctamente." });
+
     } catch (error) {
         next(error);
     }
