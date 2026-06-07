@@ -84,7 +84,7 @@ export default function MyPets() {
     return (h.Cita?.fecha || h.fecha || "") === filterDate;
   });
 
-  const icon = selectedPet ? getIcon(selectedPet.Breed?.Species?.nombre) : "🐾";
+  const icon = selectedPet ? getIcon(selectedPet.Raza?.Especie?.nombre || selectedPet.Breed?.Species?.nombre) : "🐾";
 
   return (
     <div className="mypets-container">
@@ -201,11 +201,11 @@ export default function MyPets() {
                   border: `1px solid ${active ? C.green200 : C.borderLight}`,
                   display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18,
                 }}>
-                  {getIcon(p.Breed?.Species?.nombre)}
+                  {getIcon(p.Raza?.Especie?.nombre || p.Breed?.Species?.nombre)}
                 </div>
                 <div style={{ overflow: "hidden", minWidth: 0, flex: 1 }}>
                   <div style={{ fontWeight: 700, fontSize: 13, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.nombre}</div>
-                  <div style={{ fontSize: 11, color: C.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.Breed?.nombre || "Raza mixta"}</div>
+                  <div style={{ fontSize: 11, color: C.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.Raza?.nombre || p.Breed?.nombre || "Raza mixta"}</div>
                 </div>
               </button>
             );
@@ -241,7 +241,7 @@ export default function MyPets() {
                   {selectedPet.nombre}
                 </h2>
                 <div style={{ fontSize: 13, opacity: 0.8, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {selectedPet.Breed?.Species?.nombre || "Especie"} · {selectedPet.Breed?.nombre || "Raza mixta"}
+                {selectedPet.Raza?.Especie?.nombre || selectedPet.Breed?.Species?.nombre || "Especie"} · {selectedPet.Raza?.nombre || selectedPet.Breed?.nombre || "Raza mixta"}
                 </div>
               </div>
             </div>
