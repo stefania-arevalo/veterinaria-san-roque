@@ -127,6 +127,7 @@ export default function PermissionsPage() {
   const [filterRol, setFilterRol] = useState("all");
 
   const { isMobile } = useWindowSize();
+  const px = isMobile ? 14 : 24;
 
   useEffect(() => {
     axios.get("/users", { headers: headers() })
@@ -187,7 +188,7 @@ export default function PermissionsPage() {
   const enabledCount = paginasDelRol.filter(p => permisos[p.key]).length;
 
   return (
-    <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+    <div style={{ maxWidth: 1100, margin: "0 auto", overflowX: "hidden" }}>
       {/* ── Header ── */}
       <div style={{ marginBottom: 24 }}>
         <h2 style={{ margin: "0 0 4px", fontSize: 20, fontWeight: 700, color: "#1a202c" }}>
@@ -199,7 +200,7 @@ export default function PermissionsPage() {
         </p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: 20, alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "300px 1fr", gap:  isMobile ? 12 : 20, alignItems: "start" }}>
 
         {/* ── Panel izquierdo: lista de usuarios ── */}
         <div style={{
@@ -304,7 +305,7 @@ export default function PermissionsPage() {
             <>
               {/* Header del panel */}
               <div style={{
-                padding: "16px 24px", borderBottom: `0.5px solid ${VET_COLORS.border}`,
+                padding: `16px ${px}px`, borderBottom: `0.5px solid ${VET_COLORS.border}`,
                 background: "#fafbfc", display: "flex", alignItems: "center", justifyContent: "space-between",
               }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -341,7 +342,7 @@ export default function PermissionsPage() {
               ) : (
                 <>
                   {/* ── Páginas aplicables al rol ── */}
-                  <div style={{ padding: "12px 24px 4px" }}>
+                  <div style={{ padding: `12px ${px}px 4px` }}>
                     <p style={{ margin: "0 0 10px", fontSize: 11, fontWeight: 700, color: VET_COLORS.textMuted, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                       Accesos configurables para {ROLE_LABELS[selected.idRol]}
                     </p>
@@ -355,7 +356,7 @@ export default function PermissionsPage() {
                         key={page.key}
                         style={{
                           display: "flex", alignItems: "center", justifyContent: "space-between",
-                          padding: "14px 24px",
+                          padding: `14px ${px}px`,
                           borderTop: idx === 0 ? `0.5px solid ${VET_COLORS.border}` : "none",
                           borderBottom: `0.5px solid ${VET_COLORS.border}`,
                           background: enabled ? "#f8fbf9" : "white",
@@ -372,7 +373,7 @@ export default function PermissionsPage() {
                           }}>
                             {page.icon}
                           </div>
-                          <div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 14, fontWeight: 600, color: "#1a202c" }}>{page.label}</div>
                             <div style={{ fontSize: 12, color: VET_COLORS.textMuted, marginTop: 1 }}>{page.desc}</div>
                           </div>
@@ -397,7 +398,7 @@ export default function PermissionsPage() {
                   {/* ── Páginas no aplicables al rol ── */}
                   {paginasNoAplicables.length > 0 && (
                     <>
-                      <div style={{ padding: "16px 24px 8px" }}>
+                      <div style={{ padding: `16px ${px}px 8px` }}>
                         <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                           No aplicables a este rol
                         </p>
@@ -407,7 +408,7 @@ export default function PermissionsPage() {
                           key={page.key}
                           style={{
                             display: "flex", alignItems: "center", justifyContent: "space-between",
-                            padding: "12px 24px",
+                            padding: `12px ${px}px`,
                             borderBottom: idx < paginasNoAplicables.length - 1 ? `0.5px solid ${VET_COLORS.border}` : "none",
                             opacity: 0.45,
                           }}
@@ -440,7 +441,7 @@ export default function PermissionsPage() {
                   )}
 
                   {/* Footer informativo */}
-                  <div style={{ padding: "14px 24px", background: "#fafbfc", borderTop: `0.5px solid ${VET_COLORS.border}` }}>
+                  <div style={{ padding: `14px ${px}px`, background: "#fafbfc", borderTop: `0.5px solid ${VET_COLORS.border}` }}>
                     <p style={{ margin: 0, fontSize: 12, color: VET_COLORS.textMuted, lineHeight: 1.5 }}>
                       Los cambios se aplican de inmediato. El empleado verá las secciones habilitadas la próxima vez que inicie sesión o recargue la página.
                     </p>
