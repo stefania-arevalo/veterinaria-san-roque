@@ -4,6 +4,7 @@ import axios from "../../api/axios";
 import { VET_COLORS } from "../../layouts/AdminLayout";
 import { useNavigate, useLocation } from "react-router-dom";
 import { verificarYEnviarRecordatorios } from '../../services/recordatorioTurnos';
+import { useWindowSize } from "../../hooks/useWindowSize";
 
 const token    = () => localStorage.getItem("accessToken");
 const headers  = () => ({ Authorization: `Bearer ${token()}` });
@@ -588,7 +589,7 @@ function VaccineModal({ isOpen, onClose, onSelectVaccine, vacunasDisponibles, es
           <button onClick={handleClose} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "white", width: "40px", height: "40px", borderRadius: "10px", cursor: "pointer", fontSize: "20px" }}>✕</button>
         </div>
         
-        <div style={{ padding: "20px 28px", background: "white", borderBottom: "1px solid #e8edf3" }}>
+        <div style={{ padding: isMobile ? "16px 14px" : "20px 28px", background: "white", borderBottom: "1px solid #e8edf3" }}>
           <div style={{ position: "relative" }}>
             <span style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", fontSize: "18px", opacity: 0.5 }}>🔍</span>
             <input 
@@ -1034,7 +1035,7 @@ function AttendServiceModal({ cita, staff, onClose, onSave }) {
           <button onClick={onClose} style={{ background: "#f1f5f9", border: "none", width: 36, height: 36, borderRadius: "50%", cursor: "pointer", color: "#64748b" }}>✕</button>
         </div>
  
-        <div style={{ flex: 1, overflowY: "auto", padding: "20px 28px" }}>
+        <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "16px 14px" : "20px 28px" }}>
           
           {/* 📋  FICHA CLÍNICA */}
           {tieneServicioMedico && Number(userLogueado?.idRol) === 2 && (
@@ -1623,7 +1624,7 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
   const today  = new Date().toLocaleDateString("en-CA");
   // Viene de reagendar: cita tiene _origenReprogram con el id de la cita original
   const esReprogram = !!(cita?._origenReprogram);
-  
+  const { isMobile } = useWindowSize();
 
   const [servicePrices,      setServicePrices]  = useState([]);
   const [detalles,           setDetalles]       = useState([]);
@@ -2047,7 +2048,7 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
 
       <div style={{ position: "relative", background: "white", borderRadius: 24, width: "min(95vw,860px)", maxHeight: "90vh", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 25px 60px rgba(0,0,0,0.25)" }}>
 
-        <div style={{ padding: "20px 28px", borderBottom: "1.5px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fafbfc", flexShrink: 0 }}>
+        <div style={{ padding: isMobile ? "16px 14px" : "20px 28px", borderBottom: "1.5px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fafbfc", flexShrink: 0 }}>
           <div>
             <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#166534" }}>
               {isEdit ? "Editar turno" : "📅 Nuevo turno"}
@@ -2057,7 +2058,7 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
           <button onClick={onClose} style={{ background: "#f1f5f9", border: "none", width: 36, height: 36, borderRadius: "50%", cursor: "pointer", fontSize: 16, color: "#64748b" }}>✕</button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ flex: 1, overflowY: "auto", padding: "24px 28px" }}>
+        <form onSubmit={handleSubmit} style={{ flex: 1, overflowY: "auto", padding: isMobile ? "16px 14px" : "24px 28px" }}>
 
           {successMsg && (
             <div style={{ marginBottom: 16, padding: "12px 16px", background: "#f0fdf4", border: "1.5px solid #86efac", borderRadius: 10, color: "#16a34a", fontSize: 14, fontWeight: 700 }}>
@@ -2077,7 +2078,7 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
           )}
 
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12, marginBottom: 20 }}>
             <div>
               <label style={lbl}>Fecha *</label>
               <input type="date" name="fecha" value={form.fecha} onChange={handle} required min={isEdit ? undefined : today} style={inp} />
@@ -2277,7 +2278,75 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
               <div style={{ textAlign: "center", padding: "24px 0", color: "#94a3b8", border: "2px dashed #e2e8f0", borderRadius: 12 }}>
                 <p style={{ margin: 0, fontSize: 13 }}>Sin servicios. Hacé clic en "+ Buscar servicio".</p>
               </div>
+            ) : isMobile ? (
+              // ── Tarjetas en mobile ──
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {detalles.map((servicio, idx) => {
+                  const tipoSrvFila = Number(servicio._idTipoServicio || 0);
+                  const esServicioMedico = [1, 3, 4].includes(tipoSrvFila);
+                  const responsablesPermitidos = esServicioMedico
+                    ? vets
+                    : [...vets, ...staff.filter(s => !vets.find(v => v.idPersonal === s.idPersonal))];
+                  const obtenerNombreCompleto = (p) => p.Staff ? `${p.Staff.nombres} ${p.Staff.apellidos}` : `${p.nombres || ""} ${p.apellidos || ""}`.trim();
+                  const esReprogramadoSrv = servicio.idEstadoServicio === 7;
+
+                  return (
+                    <div key={idx} style={{
+                      padding: "12px 14px", borderRadius: 12,
+                      border: "1.5px solid #e2e8f0",
+                      background: esReprogramadoSrv ? "#f8fafc" : "#fafffe",
+                      opacity: esReprogramadoSrv ? 0.6 : 1,
+                    }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 700, color: "#166534", fontSize: 14, textDecoration: esReprogramadoSrv ? "line-through" : "none" }}>
+                            {servicio._descripcion}
+                          </div>
+                          <div style={{ fontSize: 12, color: "#16a34a", fontWeight: 700, marginTop: 2 }}>
+                            ${servicio._precio ?? "—"}
+                            {servicio._tamaño && <span style={{ marginLeft: 8, background: "#f0fdf4", color: "#166534", padding: "1px 6px", borderRadius: 4, fontSize: 11 }}>{servicio._tamaño}</span>}
+                          </div>
+                        </div>
+                        {!servicio._bloqueado && !esReprogramadoSrv && (
+                          <button type="button" onClick={() => setDetalles(detalles.filter((_, i) => i !== idx))}
+                            style={{ color: "#ef4444", background: "rgba(239,68,68,0.1)", border: "none", cursor: "pointer", borderRadius: 6, width: 28, height: 28, fontSize: 14, fontWeight: 700, flexShrink: 0 }}>
+                            ✕
+                          </button>
+                        )}
+                        {servicio._bloqueado && <span title="Servicio de reagenda" style={{ fontSize: 16 }}>🔒</span>}
+                      </div>
+
+                      {!esReprogramadoSrv && (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                          <div>
+                            <label style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", display: "block", marginBottom: 3 }}>Responsable</label>
+                            {esServicioMedico ? (
+                              <select value={servicio.idPersonalRealiza || ""} onChange={e => { const nd = [...detalles]; nd[idx].idPersonalRealiza = e.target.value; setDetalles(nd); }}
+                                style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none" }}>
+                                <option value="">Sin asignar</option>
+                                {responsablesPermitidos.map(p => <option key={p.idPersonal} value={p.idPersonal}>{obtenerNombreCompleto(p)}</option>)}
+                              </select>
+                            ) : (
+                              <button type="button" onClick={() => setStaffPickerFor({ idx, servicioNombre: servicio._descripcion })}
+                                style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: servicio.idPersonalRealiza ? "1.5px solid #86efac" : "1.5px dashed #f97316", background: servicio.idPersonalRealiza ? "#f0fdf4" : "#fff7ed", color: servicio.idPersonalRealiza ? "#166534" : "#c2410c", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                                {servicio.idPersonalRealiza ? (() => { const p = responsablesPermitidos.find(x => String(x.idPersonal) === String(servicio.idPersonalRealiza)); return p ? `✓ ${obtenerNombreCompleto(p).split(" ")[0]}` : "✓ Asignado"; })() : "⚠️ Asignar responsable"}
+                              </button>
+                            )}
+                          </div>
+                          <div>
+                            <label style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", display: "block", marginBottom: 3 }}>Observaciones</label>
+                            <input placeholder="Opcional" value={servicio.observaciones || ""}
+                              onChange={e => { const nd = [...detalles]; nd[idx].observaciones = e.target.value; setDetalles(nd); }}
+                              style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: 8, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none" }} />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             ) : (
+              // ── Tabla normal en desktop ── (toda la tabla existente sin cambios)
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead>
                   <tr style={{ borderBottom: "1.5px solid #e2e8f0", background: "#f8fafc" }}>
@@ -2429,7 +2498,7 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
             </div>
           )}
 
-          <div style={{ marginTop: 24, display: "flex", gap: 12 }}>
+          <div style={{ marginTop: 24, display: "flex", flexDirection: isMobile ? "column" : "row", gap: 12 }}>
             <button type="button" onClick={onClose}
               style={{ flex: 1, padding: 13, borderRadius: 12, border: "1.5px solid #e2e8f0", background: "white", cursor: "pointer", fontWeight: 600, fontSize: 14 }}>Cancelar</button>
             <button type="submit" disabled={loading}
