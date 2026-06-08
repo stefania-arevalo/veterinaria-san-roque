@@ -291,8 +291,6 @@ function HistorialCompras({ onBack, canEliminar }) {
   const [msgOk,    setMsgOk]    = useState("");
   const [msgErr,   setMsgErr]   = useState("");
 
-  const { isMobile } = useWindowSize();
-
   // ── Filtros ──
   const [filtFechaDesde, setFiltFechaDesde] = useState("");
   const [filtFechaHasta, setFiltFechaHasta] = useState("");
@@ -614,6 +612,7 @@ export default function ComprasPage() {
   const { user } = useAuth();
   const canEliminar = [1].includes(user?.idRol);  // Admin, asistente y vendedor pueden eliminar compras
   const [showHistory, setShowHistory] = useState(false);
+  const { isMobile } = useWindowSize();
 
   // Listas lookup
   const [providers, setProviders] = useState([]);

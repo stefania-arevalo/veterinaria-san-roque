@@ -724,67 +724,69 @@ function HistorialVentas({ onBack, user, canAnular }) {
 
       {/* Tabla */}
       <Card>
-        <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
-          <thead>
-            <tr style={{ background: C.surface, borderBottom: `0.5px solid ${C.border}` }}>
-              {["ID", "Cliente", "Fecha y hora", "Total", "Estado", "Acciones"].map((h, i) => (
-                <th key={h} style={{
-                  padding: "12px 16px", fontSize: 11, fontWeight: 500,
-                  color: C.muted, textTransform: "uppercase", letterSpacing: "0.4px",
-                  textAlign: i === 5 ? "right" : "left",
-                }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan="6" style={{ padding: 40, textAlign: "center", color: C.muted, fontSize: 13 }}>Cargando ventas...</td></tr>
-            ) : ventasFiltradas.length === 0 ? (
-              <tr>
-                <td colSpan="6" style={{ padding: 40, textAlign: "center", color: C.muted, fontSize: 13 }}>
-                  {hayFiltros ? "Sin resultados para los filtros aplicados." : "No hay ventas registradas."}
-                </td>
+        <div style={{ overflowX: "auto", width: "100%" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+            <thead>
+              <tr style={{ background: C.surface, borderBottom: `0.5px solid ${C.border}` }}>
+                {["ID", "Cliente", "Fecha y hora", "Total", "Estado", "Acciones"].map((h, i) => (
+                  <th key={h} style={{
+                    padding: "12px 16px", fontSize: 11, fontWeight: 500,
+                    color: C.muted, textTransform: "uppercase", letterSpacing: "0.4px",
+                    textAlign: i === 5 ? "right" : "left",
+                  }}>{h}</th>
+                ))}
               </tr>
-            ) : ventasFiltradas.map((v, idx) => (
-              <tr key={v.idVenta} style={{ borderBottom: idx < ventasFiltradas.length - 1 ? `0.5px solid ${C.borderLight}` : "none" }}>
-                <td style={{ padding: "12px 16px", fontWeight: 500, color: C.text, fontSize: 13 }}>#{v.idVenta}</td>
-                <td style={{ padding: "12px 16px", fontSize: 13, color: C.text }}>{v.Cliente?.nombres} {v.Cliente?.apellidos}</td>
-                <td style={{ padding: "12px 16px", fontSize: 13, color: C.text }}>
-                  {new Date(v.fecha + "T00:00:00").toLocaleDateString()}
-                  <span style={{ color: C.muted, fontSize: 11, marginLeft: 6 }}>{v.hora}</span>
-                </td>
-                <td style={{ padding: "12px 16px", fontSize: 14, fontWeight: 500, color: C.green800 }}>${fmt(v.total)}</td>
-                <td style={{ padding: "12px 16px" }}>
-                  <span style={statusStyle(v.EstadoVenta?.descripcion)}>
-                    {v.EstadoVenta?.descripcion || "Completada"}
-                  </span>
-                </td>
-                <td style={{ padding: "12px 16px", textAlign: "right", minWidth: 280 }}>
-                  <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, flexWrap: "wrap" }}>
-                    <button onClick={() => setVentaDetalle(v)} style={{
-                      background: C.blueBg, color: C.blue, border: `0.5px solid #b5d4f4`,
-                      padding: "6px 12px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 500,
-                    }}>Ver detalle</button>
-                    <button onClick={() => { setVentaDetalle(v); setTimeout(() => window.print(), 300); }} style={{
-                      background: C.surface, color: C.muted, border: `0.5px solid ${C.border}`,
-                      padding: "6px 12px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 500,
-                    }}>🖨️ Imprimir</button>
-                    <button onClick={() => setVentaParaEmail(v)} style={{
-                      background: "#eaf3de", color: "#1f5c38", border: "0.5px solid #c0dd97",
-                      padding: "6px 12px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 500,
-                    }}>📧 Enviar</button>
-                    {canAnular && v.EstadoVenta?.descripcion?.toLowerCase() !== "anulada" && (
-                      <button onClick={() => setConfirmAnular(v.idVenta)} style={{
-                        background: C.redBg, color: C.red, border: `0.5px solid #f7c1c1`,
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan="6" style={{ padding: 40, textAlign: "center", color: C.muted, fontSize: 13 }}>Cargando ventas...</td></tr>
+              ) : ventasFiltradas.length === 0 ? (
+                <tr>
+                  <td colSpan="6" style={{ padding: 40, textAlign: "center", color: C.muted, fontSize: 13 }}>
+                    {hayFiltros ? "Sin resultados para los filtros aplicados." : "No hay ventas registradas."}
+                  </td>
+                </tr>
+              ) : ventasFiltradas.map((v, idx) => (
+                <tr key={v.idVenta} style={{ borderBottom: idx < ventasFiltradas.length - 1 ? `0.5px solid ${C.borderLight}` : "none" }}>
+                  <td style={{ padding: "12px 16px", fontWeight: 500, color: C.text, fontSize: 13 }}>#{v.idVenta}</td>
+                  <td style={{ padding: "12px 16px", fontSize: 13, color: C.text }}>{v.Cliente?.nombres} {v.Cliente?.apellidos}</td>
+                  <td style={{ padding: "12px 16px", fontSize: 13, color: C.text }}>
+                    {new Date(v.fecha + "T00:00:00").toLocaleDateString()}
+                    <span style={{ color: C.muted, fontSize: 11, marginLeft: 6 }}>{v.hora}</span>
+                  </td>
+                  <td style={{ padding: "12px 16px", fontSize: 14, fontWeight: 500, color: C.green800 }}>${fmt(v.total)}</td>
+                  <td style={{ padding: "12px 16px" }}>
+                    <span style={statusStyle(v.EstadoVenta?.descripcion)}>
+                      {v.EstadoVenta?.descripcion || "Completada"}
+                    </span>
+                  </td>
+                  <td style={{ padding: "12px 16px", textAlign: "right", minWidth: 280 }}>
+                    <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, flexWrap: "wrap" }}>
+                      <button onClick={() => setVentaDetalle(v)} style={{
+                        background: C.blueBg, color: C.blue, border: `0.5px solid #b5d4f4`,
                         padding: "6px 12px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 500,
-                      }}>Anular</button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                      }}>Ver detalle</button>
+                      <button onClick={() => { setVentaDetalle(v); setTimeout(() => window.print(), 300); }} style={{
+                        background: C.surface, color: C.muted, border: `0.5px solid ${C.border}`,
+                        padding: "6px 12px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 500,
+                      }}>🖨️ Imprimir</button>
+                      <button onClick={() => setVentaParaEmail(v)} style={{
+                        background: "#eaf3de", color: "#1f5c38", border: "0.5px solid #c0dd97",
+                        padding: "6px 12px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 500,
+                      }}>📧 Enviar</button>
+                      {canAnular && v.EstadoVenta?.descripcion?.toLowerCase() !== "anulada" && (
+                        <button onClick={() => setConfirmAnular(v.idVenta)} style={{
+                          background: C.redBg, color: C.red, border: `0.5px solid #f7c1c1`,
+                          padding: "6px 12px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 500,
+                        }}>Anular</button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </Card>
 
       {/* Modal email y detalle — sin cambios, copiá los tuyos tal cual */}
