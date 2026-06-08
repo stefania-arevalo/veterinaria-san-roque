@@ -1745,7 +1745,9 @@ export default function VentasPage() {
               {attendedServices.length > 0 ? (
                 <div style={{
                   display: "grid",
-                  gridTemplateColumns: serviciosPendientes.length > 0 && (vacunasPendientes.length > 0 || medicamentosPendientes.length > 0) ? "1fr 1fr" : "1fr",
+                  gridTemplateColumns: !isMobile && serviciosPendientes.length > 0 && (vacunasPendientes.length > 0 || medicamentosPendientes.length > 0)
+                    ? "1fr 1fr"
+                    : "1fr",
                   gap: 14,
                 }}>
                   {serviciosPendientes.length > 0 && (

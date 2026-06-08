@@ -110,8 +110,8 @@ function ConfirmModal({ msg, onConfirm, onCancel }) {
         <div style={{ fontSize: 36, marginBottom: 10 }}>🗑️</div>
         <p style={{ margin: "0 0 20px", fontSize: 14, color: C.text, lineHeight: 1.5 }}>{msg}</p>
         <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={onCancel} style={{ flex: 1, padding: "9px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.white, cursor: "pointer", fontWeight: 600, fontSize: 13 }}>Cancelar</button>
-          <button onClick={onConfirm} style={{ flex: 1, padding: "9px", borderRadius: 8, border: "none", background: C.red, color: "white", cursor: "pointer", fontWeight: 600, fontSize: 13 }}>Eliminar</button>
+          <button type="button" onClick={onCancel} style={{ flex: 1, padding: "9px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.white, cursor: "pointer", fontWeight: 600, fontSize: 13 }}>Cancelar</button>
+          <button type="button" onClick={onConfirm} style={{ flex: 1, padding: "9px", borderRadius: 8, border: "none", background: C.red, color: "white", cursor: "pointer", fontWeight: 600, fontSize: 13 }}>Eliminar</button>
         </div>
       </div>
     </div>
@@ -188,7 +188,7 @@ function MedicationPickerModal({ isOpen, prodPres, onSelect, onClose }) {
               <p style={{ margin: 0, fontSize: 12, color: "rgba(255,255,255,0.6)", marginTop: 2 }}>{filtered.length} productos disponibles</p>
             </div>
           </div>
-          <button onClick={onClose} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "white", width: 34, height: 34, borderRadius: 7, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <button type="button" onClick={onClose} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "white", width: 34, height: 34, borderRadius: 7, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
             {Ic.x}
           </button>
         </div>
@@ -205,7 +205,7 @@ function MedicationPickerModal({ isOpen, prodPres, onSelect, onClose }) {
               style={{ width: "100%", padding: "10px 14px 10px 38px", borderRadius: 8, border: `0.5px solid ${C.border}`, fontSize: 13, outline: "none", background: C.surface, boxSizing: "border-box" }}
             />
             {search && (
-              <button onClick={() => setSearch("")} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: C.muted, display: "flex" }}>{Ic.x}</button>
+              <button type="button" onClick={() => setSearch("")} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: C.muted, display: "flex" }}>{Ic.x}</button>
             )}
           </div>
         </div>
@@ -258,17 +258,18 @@ function MedicationPickerModal({ isOpen, prodPres, onSelect, onClose }) {
                 <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
                   {!sinStock && (
                     <div style={{ display: "flex", alignItems: "center", background: C.surface, borderRadius: 7, border: `0.5px solid ${C.border}`, overflow: "hidden" }}>
-                      <button onClick={() => handleDelta(id, -1, stock)} style={{ border: "none", background: "none", width: 30, height: 34, cursor: "pointer", fontSize: 18, color: C.text }}>−</button>
+                      <button type="button" onClick={() => handleDelta(id, -1, stock)} style={{ border: "none", background: "none", width: 30, height: 34, cursor: "pointer", fontSize: 18, color: C.text }}>−</button>
                       <input
                         type="text" value={q}
                         onChange={(e) => handleQtyInput(id, e.target.value, stock)}
                         onBlur={() => { if (q === "") setQty((p) => ({ ...p, [id]: 1 })); }}
                         style={{ width: 32, border: "none", background: "transparent", textAlign: "center", fontSize: 13, fontWeight: 600, color: C.text, outline: "none", padding: 0 }}
                       />
-                      <button onClick={() => handleDelta(id, 1, stock)} style={{ border: "none", background: "none", width: 30, height: 34, cursor: "pointer", fontSize: 18, color: C.text }}>+</button>
+                      <button type="button" onClick={() => handleDelta(id, 1, stock)} style={{ border: "none", background: "none", width: 30, height: 34, cursor: "pointer", fontSize: 18, color: C.text }}>+</button>
                     </div>
                   )}
                   <button
+                    type="button"
                     disabled={sinStock}
                     onClick={() => handleSelect(pp)}
                     style={{
@@ -360,6 +361,7 @@ function VaccinePickerModal({ isOpen, vaccines, aplicadas = [], onSelect, onClos
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
                 <p style={{ margin: 0, fontSize: 12, color: "rgba(255,255,255,0.6)" }}>{filtered.length} vacunas disponibles</p>
                 <button
+                  type="button"
                   onClick={() => setMostrarTodas(p => !p)}
                   style={{ fontSize: 11, padding: "2px 10px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.3)", background: mostrarTodas ? "rgba(255,255,255,0.2)" : "transparent", color: "rgba(255,255,255,0.8)", cursor: "pointer", fontWeight: 600 }}
                 >
@@ -368,7 +370,7 @@ function VaccinePickerModal({ isOpen, vaccines, aplicadas = [], onSelect, onClos
               </div>
             </div>
           </div>
-          <button onClick={onClose} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "white", width: 34, height: 34, borderRadius: 7, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <button type="button" onClick={onClose} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "white", width: 34, height: 34, borderRadius: 7, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
             {Ic.x}
           </button>
         </div>
@@ -385,7 +387,7 @@ function VaccinePickerModal({ isOpen, vaccines, aplicadas = [], onSelect, onClos
               style={{ width: "100%", padding: "10px 14px 10px 38px", borderRadius: 8, border: `0.5px solid ${C.border}`, fontSize: 13, outline: "none", background: C.surface, boxSizing: "border-box" }}
             />
             {search && (
-              <button onClick={() => setSearch("")} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: C.muted, display: "flex" }}>{Ic.x}</button>
+              <button type="button" onClick={() => setSearch("")} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: C.muted, display: "flex" }}>{Ic.x}</button>
             )}
           </div>
         </div>
@@ -443,6 +445,7 @@ function VaccinePickerModal({ isOpen, vaccines, aplicadas = [], onSelect, onClos
                 </div>
                 
                 <button
+                  type="button"
                   onClick={() => { onSelect(v); onClose(); }}
                   style={{
                     marginTop: 10, padding: "9px 0", borderRadius: 7, border: "none",
@@ -502,7 +505,7 @@ function PatientList({ onSelect }) {
           style={{ width: "100%", padding: "10px 14px 10px 38px", borderRadius: 10, fontSize: 13, border: `1px solid ${C.border}`, outline: "none", background: C.white, boxSizing: "border-box" }}
         />
         {search && (
-          <button onClick={() => setSearch("")} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: C.muted, display: "flex" }}>{Ic.x}</button>
+          <button type="button" onClick={() => setSearch("")} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: C.muted, display: "flex" }}>{Ic.x}</button>
         )}
       </div>
 
@@ -518,6 +521,7 @@ function PatientList({ onSelect }) {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 12 }}>
           {filtered.map((m) => (
             <button
+              type="button"
               key={m.idMascota}
               onClick={() => onSelect(m)}
               style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 12, padding: "16px", cursor: "pointer", textAlign: "left", display: "flex", flexDirection: "column", gap: 10 }}
@@ -617,8 +621,8 @@ function TreatmentForm({ initial, idHistorial, tiposTrat, estadosTrat, onSave, o
       </div>
       {err && <p style={{ margin: "0 0 8px", fontSize: 11, color: C.red }}>{err}</p>}
       <div style={{ display: "flex", gap: 8 }}>
-        <button onClick={onCancel} style={{ flex: 1, padding: "9px", borderRadius: 7, border: `1px solid ${C.border}`, background: "white", cursor: "pointer", fontWeight: 600, fontSize: 13 }}>Cancelar</button>
-        <button onClick={submit} disabled={saving} style={{ flex: 1, padding: "9px", borderRadius: 7, border: "none", background: saving ? "#94a3b8" : C.purple, color: "white", cursor: saving ? "not-allowed" : "pointer", fontWeight: 600, fontSize: 13 }}>{saving ? "Guardando…" : "Guardar tratamiento"}</button>
+        <button type="button" onClick={onCancel} style={{ flex: 1, padding: "9px", borderRadius: 7, border: `1px solid ${C.border}`, background: "white", cursor: "pointer", fontWeight: 600, fontSize: 13 }}>Cancelar</button>
+        <button type="button" onClick={submit} disabled={saving} style={{ flex: 1, padding: "9px", borderRadius: 7, border: "none", background: saving ? "#94a3b8" : C.purple, color: "white", cursor: saving ? "not-allowed" : "pointer", fontWeight: 600, fontSize: 13 }}>{saving ? "Guardando…" : "Guardar tratamiento"}</button>
       </div>
     </div>
   );
@@ -701,6 +705,7 @@ function VaccineForm({ initial, idHistorial, vaccines, onSave, onCancel, idEspec
         <div style={{ marginBottom: 10, gridColumn: "1/-1" }}>
           <label style={{ fontSize: 11, color: C.muted, fontWeight: 600, display: "block", marginBottom: 4 }}>Vacuna *</label>
           <button
+            type="button"
             onClick={() => setPickerOpen(true)}
             style={{
               width: "100%", padding: "10px 14px", borderRadius: 8,
@@ -727,8 +732,8 @@ function VaccineForm({ initial, idHistorial, vaccines, onSave, onCancel, idEspec
         </div>
         {err && <p style={{ margin: "0 0 8px", fontSize: 11, color: C.red }}>{err}</p>}
         <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={onCancel} style={{ flex: 1, padding: "9px", borderRadius: 7, border: `1px solid ${C.border}`, background: "white", cursor: "pointer", fontWeight: 600, fontSize: 13 }}>Cancelar</button>
-          <button onClick={submit} disabled={saving} style={{ flex: 1, padding: "9px", borderRadius: 7, border: "none", background: saving ? "#94a3b8" : C.amber, color: "white", cursor: saving ? "not-allowed" : "pointer", fontWeight: 600, fontSize: 13 }}>{saving ? "Guardando…" : "Guardar vacuna"}</button>
+          <button type="button" onClick={onCancel} style={{ flex: 1, padding: "9px", borderRadius: 7, border: `1px solid ${C.border}`, background: "white", cursor: "pointer", fontWeight: 600, fontSize: 13 }}>Cancelar</button>
+          <button type="button" onClick={submit} disabled={saving} style={{ flex: 1, padding: "9px", borderRadius: 7, border: "none", background: saving ? "#94a3b8" : C.amber, color: "white", cursor: saving ? "not-allowed" : "pointer", fontWeight: 600, fontSize: 13 }}>{saving ? "Guardando…" : "Guardar vacuna"}</button>
         </div>
       </div>
     </>
@@ -824,6 +829,7 @@ function TreatmentMedicationForm({ initial, idTratamiento, prodPres, onSave, onC
         <div style={{ marginBottom: 10 }}>
           <label style={{ fontSize: 11, color: C.muted, fontWeight: 600, display: "block", marginBottom: 4 }}>Producto / Presentación *</label>
           <button
+            type="button"
             onClick={() => setPickerOpen(true)}
             style={{
               width: "100%", padding: "10px 14px", borderRadius: 8,
@@ -867,8 +873,8 @@ function TreatmentMedicationForm({ initial, idTratamiento, prodPres, onSave, onC
 
         {err && <p style={{ margin: "0 0 8px", fontSize: 11, color: C.red }}>{err}</p>}
         <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={onCancel} style={{ flex: 1, padding: "9px", borderRadius: 7, border: `1px solid ${C.border}`, background: "white", cursor: "pointer", fontWeight: 600, fontSize: 13 }}>Cancelar</button>
-          <button onClick={submit} disabled={saving} style={{ flex: 1, padding: "9px", borderRadius: 7, border: "none", background: saving ? "#94a3b8" : C.purple, color: "white", cursor: saving ? "not-allowed" : "pointer", fontWeight: 600, fontSize: 13 }}>{saving ? "Guardando…" : "Guardar medicamento"}</button>
+          <button type="button" onClick={onCancel} style={{ flex: 1, padding: "9px", borderRadius: 7, border: `1px solid ${C.border}`, background: "white", cursor: "pointer", fontWeight: 600, fontSize: 13 }}>Cancelar</button>
+          <button type="button" onClick={submit} disabled={saving} style={{ flex: 1, padding: "9px", borderRadius: 7, border: "none", background: saving ? "#94a3b8" : C.purple, color: "white", cursor: saving ? "not-allowed" : "pointer", fontWeight: 600, fontSize: 13 }}>{saving ? "Guardando…" : "Guardar medicamento"}</button>
         </div>
       </div>
     </>
@@ -931,8 +937,8 @@ function HistorialForm({ initial, estadosMascota, onSave, onCancel }) {
       </div>
       {err && <p style={{ margin: "6px 0 0", fontSize: 11, color: C.red }}>{err}</p>}
       <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-        <button onClick={onCancel} style={{ flex: 1, padding: 9, borderRadius: 7, border: `1px solid ${C.border}`, background: "white", cursor: "pointer", fontWeight: 600, fontSize: 13 }}>Cancelar</button>
-        <button onClick={submit} disabled={saving} style={{ flex: 1, padding: 9, borderRadius: 7, border: "none", background: saving ? "#94a3b8" : C.green700, color: "white", cursor: saving ? "not-allowed" : "pointer", fontWeight: 600, fontSize: 13 }}>{saving ? "Guardando…" : "Guardar cambios"}</button>
+        <button type="button" onClick={onCancel} style={{ flex: 1, padding: 9, borderRadius: 7, border: `1px solid ${C.border}`, background: "white", cursor: "pointer", fontWeight: 600, fontSize: 13 }}>Cancelar</button>
+        <button type="button" onClick={submit} disabled={saving} style={{ flex: 1, padding: 9, borderRadius: 7, border: "none", background: saving ? "#94a3b8" : C.green700, color: "white", cursor: saving ? "not-allowed" : "pointer", fontWeight: 600, fontSize: 13 }}>{saving ? "Guardando…" : "Guardar cambios"}</button>
       </div>
     </div>
   );
@@ -1173,8 +1179,8 @@ function PatientHistory({ mascota, onBack }) {
               {m.instrucciones && <div style={{ fontSize: 11, color: C.muted, marginTop: 3, fontStyle: "italic" }}>📋 {m.instrucciones}</div>}
             </div>
             <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
-              <button onClick={() => { setEditMed(m); setShowMedForm(t.idTratamiento); }} style={{ background: "white", border: `0.5px solid ${C.border}`, borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: C.muted, display: "flex" }}>{Ic.edit}</button>
-              <button onClick={() => setConfirmDel({ type: "med", id: m.idTratMed, msg: "¿Eliminar este medicamento del tratamiento?" })} style={{ background: C.redBg, border: `0.5px solid ${C.redBorder}`, borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: C.red, display: "flex" }}>{Ic.trash}</button>
+              <button type="button" onClick={() => { setEditMed(m); setShowMedForm(t.idTratamiento); }} style={{ background: "white", border: `0.5px solid ${C.border}`, borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: C.muted, display: "flex" }}>{Ic.edit}</button>
+              <button type="button" onClick={() => setConfirmDel({ type: "med", id: m.idTratMed, msg: "¿Eliminar este medicamento del tratamiento?" })} style={{ background: C.redBg, border: `0.5px solid ${C.redBorder}`, borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: C.red, display: "flex" }}>{Ic.trash}</button>
             </div>
           </div>
         ))}
@@ -1203,6 +1209,7 @@ function PatientHistory({ mascota, onBack }) {
                 <span style={{ fontSize: 11, background: C.purple, color: "white", padding: "1px 7px", borderRadius: 10, fontWeight: 600 }}>{t.medicamentos?.length || 0}</span>
               </div>
               <button
+                type="button"
                 onClick={() => openMedForm(t.idTratamiento)}
                 style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 7, border: `1px solid ${C.purple}`, background: "white", color: C.purple, cursor: "pointer", fontWeight: 700, fontSize: 12 }}
               >{Ic.plus} Agregar medicamento</button>
@@ -1224,10 +1231,12 @@ function PatientHistory({ mascota, onBack }) {
 
         <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
           <button
+            type="button"
             onClick={() => { setEditTrat(t); setShowTratForm(h?.idHistorial || t.idHistorial); setTratHistoryPicker(String(h?.idHistorial || t.idHistorial)); }}
             style={{ background: "white", border: `0.5px solid ${C.border}`, borderRadius: 6, padding: "5px 8px", cursor: "pointer", color: C.muted, display: "flex" }}
           >{Ic.edit}</button>
           <button
+            type="button"
             onClick={() => setConfirmDel({ type: "trat", id: t.idTratamiento, msg: `¿Eliminar tratamiento "${t.descripcion}"?` })}
             style={{ background: C.redBg, border: `0.5px solid ${C.redBorder}`, borderRadius: 6, padding: "5px 8px", cursor: "pointer", color: C.red, display: "flex" }}
           >{Ic.trash}</button>
@@ -1253,7 +1262,7 @@ function PatientHistory({ mascota, onBack }) {
 
       {/* Header paciente */}
       <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 16 }}>
-        <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.white, cursor: "pointer", fontSize: 13, fontWeight: 600, color: C.muted, flexShrink: 0 }}>
+        <button type="button" onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.white, cursor: "pointer", fontSize: 13, fontWeight: 600, color: C.muted, flexShrink: 0 }}>
           {Ic.back} Volver
         </button>
         <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: "16px 20px", flex: 1, display: "flex", alignItems: "center", gap: 16 }}>
@@ -1281,9 +1290,9 @@ function PatientHistory({ mascota, onBack }) {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
-        <button onClick={() => setSelectedTab("fichas")}       style={tabBtn(selectedTab === "fichas")}>📋 Fichas ({historiales.length})</button>
-        <button onClick={() => setSelectedTab("tratamientos")} style={tabBtn(selectedTab === "tratamientos")}>💊 Tratamientos ({tratamientosPlenos.length})</button>
-        <button onClick={() => setSelectedTab("vacunas")}      style={tabBtn(selectedTab === "vacunas")}>💉 Vacunas ({vacunasPlenas.length})</button>
+        <button type="button" onClick={() => setSelectedTab("fichas")}       style={tabBtn(selectedTab === "fichas")}>📋 Fichas ({historiales.length})</button>
+        <button type="button" onClick={() => setSelectedTab("tratamientos")} style={tabBtn(selectedTab === "tratamientos")}>💊 Tratamientos ({tratamientosPlenos.length})</button>
+        <button type="button" onClick={() => setSelectedTab("vacunas")}      style={tabBtn(selectedTab === "vacunas")}>💉 Vacunas ({vacunasPlenas.length})</button>
       </div>
 
       {/* ══════════ FICHAS ══════════ */}
@@ -1291,7 +1300,7 @@ function PatientHistory({ mascota, onBack }) {
         <>
           <div style={{ display: "flex", gap: 10, margin: "0 0 16px", padding: 12, background: C.surface, borderRadius: 10, border: `1px solid ${C.border}` }}>
             <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} style={{ padding: 8, borderRadius: 6, border: `1px solid ${C.border}` }} title="Filtrar por fecha" />
-            <button onClick={() => setFilterDate("")} style={{ padding: "8px 12px", background: C.green100, border: "none", borderRadius: 6, cursor: "pointer" }}>Limpiar</button>
+            <button type="button" onClick={() => setFilterDate("")} style={{ padding: "8px 12px", background: C.green100, border: "none", borderRadius: 6, cursor: "pointer" }}>Limpiar</button>
           </div>
 
           {loading ? (
@@ -1324,7 +1333,7 @@ function PatientHistory({ mascota, onBack }) {
 
                       {/* Card */}
                       <div style={{ flex: 1, background: C.white, border: `1px solid ${isOpen ? C.green200 : C.border}`, borderRadius: 12, overflow: "hidden", transition: "border-color 0.2s", boxShadow: isOpen ? "0 4px 20px rgba(31,92,56,0.08)" : "none" }}>
-                        <button onClick={() => toggleExpand(h.idHistorial)} style={{ width: "100%", background: "none", border: "none", cursor: "pointer", padding: "14px 16px", display: "flex", alignItems: "center", gap: 12, textAlign: "left" }}>
+                        <button type="button"  onClick={() => toggleExpand(h.idHistorial)} style={{ width: "100%", background: "none", border: "none", cursor: "pointer", padding: "14px 16px", display: "flex", alignItems: "center", gap: 12, textAlign: "left" }}>
                           <div style={{ flex: 1 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
                               <span style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{Ic.calendar} {fmtFecha(h.Cita?.fecha)}</span>
@@ -1358,6 +1367,7 @@ function PatientHistory({ mascota, onBack }) {
                                       {puedeEditar && (
                                         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
                                           <button
+                                            type="button"
                                             onClick={() => { setEditHistorial(h); setShowHistorialForm(h.idHistorial); }}
                                             style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 7, border: `1px solid ${C.border}`, background: "white", color: C.muted, cursor: "pointer", fontWeight: 600, fontSize: 12 }}
                                           >
@@ -1402,7 +1412,7 @@ function PatientHistory({ mascota, onBack }) {
                                       <span style={{ fontWeight: 700, fontSize: 13, color: C.text }}>Tratamientos</span>
                                       <span style={{ fontSize: 11, background: C.purpleBg, color: C.purple, padding: "1px 7px", borderRadius: 10, fontWeight: 600 }}>{det?.tratamientos?.length || 0}</span>
                                     </div>
-                                    <button onClick={() => openTratForm(h.idHistorial)} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 7, border: "none", background: C.purpleBg, color: C.purple, cursor: "pointer", fontWeight: 600, fontSize: 12 }}>
+                                    <button type="button" onClick={() => openTratForm(h.idHistorial)} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 7, border: "none", background: C.purpleBg, color: C.purple, cursor: "pointer", fontWeight: 600, fontSize: 12 }}>
                                       {Ic.plus} Agregar
                                     </button>
                                   </div>
@@ -1439,7 +1449,7 @@ function PatientHistory({ mascota, onBack }) {
                                       <span style={{ fontWeight: 700, fontSize: 13, color: C.text }}>Vacunas aplicadas</span>
                                       <span style={{ fontSize: 11, background: C.amberBg, color: C.amber, padding: "1px 7px", borderRadius: 10, fontWeight: 600 }}>{det?.vacunas?.length || 0}</span>
                                     </div>
-                                    <button onClick={() => openVacForm(h.idHistorial)} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 7, border: "none", background: C.amberBg, color: C.amber, cursor: "pointer", fontWeight: 600, fontSize: 12 }}>
+                                    <button type="button" onClick={() => openVacForm(h.idHistorial)} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 7, border: "none", background: C.amberBg, color: C.amber, cursor: "pointer", fontWeight: 600, fontSize: 12 }}>
                                       {Ic.plus} Registrar
                                     </button>
                                   </div>
@@ -1474,8 +1484,8 @@ function PatientHistory({ mascota, onBack }) {
                                           </div>
                                           <div style={{ display: "flex", gap: 5, flexShrink: 0, alignItems: "center" }}>
                                             <span style={{ fontSize: 11, color: C.amber, fontWeight: 600, whiteSpace: "nowrap" }}>{fmtFecha(v.fechaAplicacion)}</span>
-                                            <button onClick={() => { setEditVac(v); setShowVacForm(h.idHistorial); }} style={{ background: "white", border: `0.5px solid ${C.border}`, borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: C.muted, display: "flex" }}>{Ic.edit}</button>
-                                            <button onClick={() => setConfirmDel({ type: "vac", id: v.idVacunaAplicada, msg: `¿Eliminar vacuna aplicada el ${fmtFecha(v.fechaAplicacion)}?` })} style={{ background: C.redBg, border: `0.5px solid ${C.redBorder}`, borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: C.red, display: "flex" }}>{Ic.trash}</button>
+                                            <button type="button" onClick={() => { setEditVac(v); setShowVacForm(h.idHistorial); }} style={{ background: "white", border: `0.5px solid ${C.border}`, borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: C.muted, display: "flex" }}>{Ic.edit}</button>
+                                            <button type="button" onClick={() => setConfirmDel({ type: "vac", id: v.idVacunaAplicada, msg: `¿Eliminar vacuna aplicada el ${fmtFecha(v.fechaAplicacion)}?` })} style={{ background: C.redBg, border: `0.5px solid ${C.redBorder}`, borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: C.red, display: "flex" }}>{Ic.trash}</button>
                                           </div>
                                         </div>
                                       ))}
@@ -1506,7 +1516,8 @@ function PatientHistory({ mascota, onBack }) {
                 <option key={h.idHistorial} value={h.idHistorial}>{fmtFecha(h.Cita?.fecha)} · {h.diagnostico || "Sin diagnóstico"}</option>
               ))}
             </select>
-            <button
+            <button 
+              type="button"
               onClick={() => tratHistoryPicker && openTratForm(Number(tratHistoryPicker))}
               disabled={!tratHistoryPicker}
               style={{ padding: "8px 14px", background: C.purple, color: "white", border: "none", borderRadius: 6, cursor: tratHistoryPicker ? "pointer" : "not-allowed", fontWeight: 700, display: "flex", alignItems: "center", gap: 6, opacity: tratHistoryPicker ? 1 : 0.5 }}
@@ -1516,7 +1527,7 @@ function PatientHistory({ mascota, onBack }) {
               {estadosTrat.map((e) => <option key={e.idEstadoTratamiento} value={e.idEstadoTratamiento}>{e.descripcion}</option>)}
             </select>
             {filterEstado !== "todos" && (
-              <button onClick={() => setFilterEstado("todos")} style={{ padding: "8px 12px", background: C.green100, border: "none", borderRadius: 6, cursor: "pointer" }}>Limpiar filtro</button>
+              <button type="button" onClick={() => setFilterEstado("todos")} style={{ padding: "8px 12px", background: C.green100, border: "none", borderRadius: 6, cursor: "pointer" }}>Limpiar filtro</button>
             )}
           </div>
 
@@ -1588,6 +1599,7 @@ function PatientHistory({ mascota, onBack }) {
               ))}
             </select>
             <button
+              type="button"
               onClick={() => vacHistoryPicker && openVacForm(Number(vacHistoryPicker))}
               disabled={!vacHistoryPicker}
               style={{ padding: "8px 14px", background: C.amber, color: "white", border: "none", borderRadius: 6, cursor: vacHistoryPicker ? "pointer" : "not-allowed", fontWeight: 700, display: "flex", alignItems: "center", gap: 6, opacity: vacHistoryPicker ? 1 : 0.5 }}
@@ -1666,8 +1678,8 @@ function PatientHistory({ mascota, onBack }) {
                       </div>
 
                       <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
-                        <button onClick={() => { setEditVac(v); setShowVacForm(v.idHistorial); setVacHistoryPicker(String(v.idHistorial)); }} style={{ background: "white", border: `0.5px solid ${C.border}`, borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: C.muted, display: "flex" }}>{Ic.edit}</button>
-                        <button onClick={() => setConfirmDel({ type: "vac", id: v.idVacunaAplicada, msg: `¿Eliminar vacuna aplicada el ${fmtFecha(v.fechaAplicacion)}?` })} style={{ background: C.redBg, border: `0.5px solid ${C.redBorder}`, borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: C.red, display: "flex" }}>{Ic.trash}</button>
+                        <button type="button" onClick={() => { setEditVac(v); setShowVacForm(v.idHistorial); setVacHistoryPicker(String(v.idHistorial)); }} style={{ background: "white", border: `0.5px solid ${C.border}`, borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: C.muted, display: "flex" }}>{Ic.edit}</button>
+                        <button type="button" onClick={() => setConfirmDel({ type: "vac", id: v.idVacunaAplicada, msg: `¿Eliminar vacuna aplicada el ${fmtFecha(v.fechaAplicacion)}?` })} style={{ background: C.redBg, border: `0.5px solid ${C.redBorder}`, borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: C.red, display: "flex" }}>{Ic.trash}</button>
                       </div>
                     </div>
                   </div>

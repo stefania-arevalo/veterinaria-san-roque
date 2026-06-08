@@ -1077,7 +1077,7 @@ export default function ComprasPage() {
           <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.border}`, padding: 20 }}>
             <h3 style={{ margin: "0 0 16px", fontSize: 14, fontWeight: 700, color: C.green800, textTransform: "uppercase", letterSpacing: "0.05em" }}>1. Datos del Comprobante</h3>
             
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 14 }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile  ? "1fr" : "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
               <Field label="Fecha" required col="span 3">
                 <input type="date" name="fecha" value={form.fecha} onChange={hf} style={inp} />
               </Field>
@@ -1096,33 +1096,36 @@ export default function ComprasPage() {
                   {paymentTypes.map(t => <option key={t.idTipoPago} value={t.idTipoPago}>{t.descripcion}</option>)}
                 </select>
               </Field>
-
-              <Field label="Proveedor" required col="span 6">
-                <div style={{ display:"flex", gap:8 }}>
-                  <select name="idProveedor" value={form.idProveedor} onChange={hf} style={{ ...inp, cursor:"pointer", flex:1 }}>
-                    <option value="">Seleccione un proveedor...</option>
-                    {providers.map(p => <option key={p.idProveedor} value={p.idProveedor}>{p.razonSocial}</option>)}
-                  </select>
-                  <button type="button" onClick={() => { setNewError(""); setShowNewProvider(true); }}
-                    style={{ padding:"0 12px", borderRadius:9, border:`1px solid ${C.green200}`, background:C.green100, color:C.green800, fontWeight:700, fontSize:18, cursor:"pointer", flexShrink:0, whiteSpace:"nowrap" }}
-                    title="Crear nuevo proveedor">+</button>
-                </div>
-              </Field>
-              <Field label="Visitador / Agente" col="span 6">
-                <div style={{ display:"flex", gap:8 }}>
-                  <select name="idVisitador" value={form.idVisitador} onChange={hf}
-                    disabled={!form.idProveedor}
-                    style={{ ...inp, cursor: form.idProveedor ? "pointer" : "not-allowed", opacity: form.idProveedor ? 1 : 0.6, flex:1 }}>
-                    <option value="">{form.idProveedor ? "Seleccione un visitador (Opcional)..." : "Seleccione primero un proveedor"}</option>
-                    {visitadoresFiltrados.map(v => <option key={v.idVisitador} value={v.idVisitador}>{v.nombre} {v.apellido}</option>)}
-                  </select>
-                  <button type="button"
-                    onClick={() => { setNewError(""); setShowNewVisitor(true); }}
-                    disabled={!form.idProveedor}
-                    style={{ padding:"0 12px", borderRadius:9, border:`1px solid ${C.green200}`, background: form.idProveedor ? C.green100 : C.border, color: form.idProveedor ? C.green800 : C.muted, fontWeight:700, fontSize:18, cursor: form.idProveedor ? "pointer" : "not-allowed", flexShrink:0 }}
-                    title={form.idProveedor ? "Crear nuevo visitador" : "Seleccioná primero un proveedor"}>+</button>
-                </div>
-              </Field>
+              <div style={{ gridColumn: isMobile ? "1" : "1 / -1" }}></div>
+                <Field label="Proveedor" required col="span 6">
+                  <div style={{ display:"flex", gap:8 }}>
+                    <select name="idProveedor" value={form.idProveedor} onChange={hf} style={{ ...inp, cursor:"pointer", flex:1 }}>
+                      <option value="">Seleccione un proveedor...</option>
+                      {providers.map(p => <option key={p.idProveedor} value={p.idProveedor}>{p.razonSocial}</option>)}
+                    </select>
+                    <button type="button" onClick={() => { setNewError(""); setShowNewProvider(true); }}
+                      style={{ padding:"0 12px", borderRadius:9, border:`1px solid ${C.green200}`, background:C.green100, color:C.green800, fontWeight:700, fontSize:18, cursor:"pointer", flexShrink:0, whiteSpace:"nowrap" }}
+                      title="Crear nuevo proveedor">+</button>
+                  </div>
+                </Field>
+              </div>
+              <div style={{ gridColumn: isMobile ? "1" : "1 / -1" }}>
+                <Field label="Visitador / Agente" col="span 6">
+                  <div style={{ display:"flex", gap:8 }}>
+                    <select name="idVisitador" value={form.idVisitador} onChange={hf}
+                      disabled={!form.idProveedor}
+                      style={{ ...inp, cursor: form.idProveedor ? "pointer" : "not-allowed", opacity: form.idProveedor ? 1 : 0.6, flex:1 }}>
+                      <option value="">{form.idProveedor ? "Seleccione un visitador (Opcional)..." : "Seleccione primero un proveedor"}</option>
+                      {visitadoresFiltrados.map(v => <option key={v.idVisitador} value={v.idVisitador}>{v.nombre} {v.apellido}</option>)}
+                    </select>
+                    <button type="button"
+                      onClick={() => { setNewError(""); setShowNewVisitor(true); }}
+                      disabled={!form.idProveedor}
+                      style={{ padding:"0 12px", borderRadius:9, border:`1px solid ${C.green200}`, background: form.idProveedor ? C.green100 : C.border, color: form.idProveedor ? C.green800 : C.muted, fontWeight:700, fontSize:18, cursor: form.idProveedor ? "pointer" : "not-allowed", flexShrink:0 }}
+                      title={form.idProveedor ? "Crear nuevo visitador" : "Seleccioná primero un proveedor"}>+</button>
+                  </div>
+                </Field>
+              </div>
             </div>
           </div>
 
