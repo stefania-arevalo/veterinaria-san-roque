@@ -1096,7 +1096,7 @@ export default function ComprasPage() {
                   {paymentTypes.map(t => <option key={t.idTipoPago} value={t.idTipoPago}>{t.descripcion}</option>)}
                 </select>
               </Field>
-              <div style={{ gridColumn: isMobile ? "1" : "1 / -1" }}></div>
+              <div style={{ gridColumn: isMobile ? "1" : "1 / -1" }}>
                 <Field label="Proveedor" required col="span 6">
                   <div style={{ display:"flex", gap:8 }}>
                     <select name="idProveedor" value={form.idProveedor} onChange={hf} style={{ ...inp, cursor:"pointer", flex:1 }}>
