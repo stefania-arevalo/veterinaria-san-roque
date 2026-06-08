@@ -25,6 +25,7 @@ const SECCIONES = [
         idField: "idTipoServicio",
         labelField: "descripcion",
         searchField: "descripcion",
+        canDelete: false,
         columns: [
           { field: "descripcion", label: "Descripción", required: true },
         ],
@@ -36,6 +37,7 @@ const SECCIONES = [
         idField: "idServicio",
         labelField: "descripcion",
         searchField: "descripcion",
+        canDelete: false,
         columns: [
           { field: "descripcion",    label: "Descripción",        required: true },
           { field: "idTipoServicio", label: "ID Tipo de Servicio", required: true, type: "fk", fkEndpoint: "/service-types", fkId: "idTipoServicio", fkLabel: "descripcion" },
@@ -48,6 +50,7 @@ const SECCIONES = [
         idField: "idPrecioServicio",
         labelField: "idPrecioServicio",
         searchField: "idServicio",
+        canDelete: false,
         columns: [
           { field: "idServicio",        label: "ID Servicio",            required: true, type: "fk", fkEndpoint: "/services",     fkId: "idServicio", fkLabel: "descripcion" },
           { field: "idTamaño",          label: "ID Tamaño Animal",       required: true, type: "fk", fkEndpoint: "/animal-sizes", fkId: "idTamaño",   fkLabel: "descripcion" },
@@ -62,6 +65,7 @@ const SECCIONES = [
         idField: "idTipoCita",
         labelField: "descripcion",
         searchField: "descripcion",
+        canDelete: false,
         columns: [
           { field: "descripcion", label: "Descripción", required: true },
         ],
@@ -73,6 +77,7 @@ const SECCIONES = [
         idField: "idTipoPago",
         labelField: "descripcion",
         searchField: "descripcion",
+        canDelete: false,
         columns: [
           { field: "descripcion", label: "Descripción", required: true },
         ],
@@ -84,6 +89,7 @@ const SECCIONES = [
         idField: "idTipoBoleta",
         labelField: "descripcion",
         searchField: "descripcion",
+        canDelete: false,
         columns: [
           { field: "descripcion", label: "Descripción", required: true },
         ],
@@ -95,6 +101,7 @@ const SECCIONES = [
         idField: "idEstadoCita",
         labelField: "descripcion",
         searchField: "descripcion",
+        canDelete: false,
         columns: [
           { field: "descripcion", label: "Descripción", required: true },
         ],
@@ -106,6 +113,7 @@ const SECCIONES = [
         idField: "idEstadoServicio",
         labelField: "descripcion",
         searchField: "descripcion",
+        canDelete: false,
         columns: [
           { field: "descripcion", label: "Descripción", required: true },
         ],
@@ -117,6 +125,7 @@ const SECCIONES = [
         idField: "idEstadoVenta",
         labelField: "descripcion",
         searchField: "descripcion",
+        canDelete: false,
         columns: [
           { field: "descripcion", label: "Descripción", required: true },
         ],
@@ -150,6 +159,7 @@ const SECCIONES = [
         idField: "idHorario",
         labelField: "diaSemana",
         searchField: "diaSemana",
+        canDelete: false,
         columns: [
           {
             field: "diaSemana",
@@ -196,6 +206,7 @@ const SECCIONES = [
         idField: "idLocalidad",
         labelField: "nombre",
         searchField: "nombre",
+        canDelete: false,
         columns: [
           { field: "nombre", label: "Nombre", required: true },
         ],
@@ -246,6 +257,7 @@ const SECCIONES = [
         idField: "idTipoTratamiento",
         labelField: "nombre",
         searchField: "nombre",
+        canDelete: false,
         columns: [
           { field: "nombre",      label: "Nombre",      required: true },
           { field: "descripcion", label: "Descripción", required: true, type: "textarea" },
@@ -258,6 +270,7 @@ const SECCIONES = [
         idField: "idEstadoTratamiento",
         labelField: "descripcion",
         searchField: "descripcion",
+        canDelete: false,
         columns: [
           { field: "descripcion", label: "Descripción", required: true },
         ],
@@ -269,6 +282,7 @@ const SECCIONES = [
         idField: "idTipoMedicacion",
         labelField: "descripcion",
         searchField: "descripcion",
+        canDelete: false,
         columns: [
           { field: "descripcion", label: "Descripción", required: true },
         ],
@@ -288,6 +302,7 @@ const SECCIONES = [
         idField: "idEspecie",
         labelField: "nombre",
         searchField: "nombre",
+        canDelete: false,
         columns: [
           { field: "nombre", label: "Nombre", required: true },
         ],
@@ -299,6 +314,7 @@ const SECCIONES = [
         idField: "idRaza",
         labelField: "nombre",
         searchField: "nombre",
+        canDelete: false,
         columns: [
           { field: "nombre",    label: "Nombre",     required: true },
           { field: "idEspecie", label: "ID Especie", required: true, type: "fk", fkEndpoint: "/species", fkId: "idEspecie", fkLabel: "nombre" },
@@ -311,6 +327,7 @@ const SECCIONES = [
         idField: "idTamaño",
         labelField: "descripcion",
         searchField: "descripcion",
+        canDelete: false,
         columns: [
           { field: "descripcion", label: "Descripción", required: true, placeholder: "ej: Pequeño (0-5 kg)" },
         ],
@@ -322,6 +339,7 @@ const SECCIONES = [
         idField: "idEstadoMascota",
         labelField: "descripcion",
         searchField: "descripcion",
+        canDelete: false,
         columns: [
           { field: "descripcion", label: "Descripción", required: true },
         ],
@@ -341,6 +359,7 @@ const SECCIONES = [
         idField: "idCategoria",
         labelField: "descripcion",
         searchField: "descripcion",
+        canDelete: false,
         columns: [
           { field: "descripcion", label: "Descripción", required: true },
         ],
@@ -352,6 +371,7 @@ const SECCIONES = [
         idField: "idMarca",
         labelField: "descripcion",
         searchField: "descripcion",
+        canDelete: false,
         columns: [
           { field: "descripcion", label: "Descripción", required: true },
         ],
@@ -363,6 +383,7 @@ const SECCIONES = [
         idField: "idPresentacion",
         labelField: "tipo",
         searchField: "tipo",
+        canDelete: false,
         columns: [
           { field: "tipo",          label: "Tipo de envase",  required: true, placeholder: "ej: Frasco, Blíster, Caja" },
           { field: "formato",       label: "Formato",         required: true, placeholder: "ej: Comprimido, Jarabe, Inyectable" },

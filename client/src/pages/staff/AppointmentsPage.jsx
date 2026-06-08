@@ -803,7 +803,7 @@ function AttendServiceModal({ cita, staff, onClose, onSave }) {
       const requiereHistorial = esMedico || esVacuna;
       const idPersonal = asignaciones[idDetalle];
       const user = getUserFromToken();
-      const esVeterinarioLogueado = Number(user?.idRol) === 2;
+      const esVeterinarioLogueado = [1, 2].includes(Number(user?.idRol));
     
       if (!idPersonal) {
         setAlertMsg({ type: "error", text: "Debés seleccionar un empleado primero." });
@@ -1040,7 +1040,7 @@ function AttendServiceModal({ cita, staff, onClose, onSave }) {
         <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "16px 14px" : "20px 28px" }}>
           
           {/* 📋  FICHA CLÍNICA */}
-          {tieneServicioMedico && Number(userLogueado?.idRol) === 2 && (
+          {tieneServicioMedico && [1, 2].includes(Number(userLogueado?.idRol)) && (
             <div style={{ marginBottom: 24, borderRadius: 14, border: erroresCampos.motivo || erroresCampos.diagnostico || erroresCampos.peso || erroresCampos.temperatura ? "1.5px solid #fca5a5" : "1.5px solid #bae6fd", overflow: "hidden" }}>
               
               {/* Header clickeable */}

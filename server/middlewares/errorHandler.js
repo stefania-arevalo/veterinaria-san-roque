@@ -9,8 +9,15 @@ function errorHandler(err, req, res, next) {
     }
   
     if (err.name === "SequelizeForeignKeyConstraintError") {
+      // Al eliminar: el registro tiene dependientes (errno 1451)
+      if (err.parent?.errno === 1451) {
+        return res.status(409).send({
+          message: "No se puede eliminar porque tiene registros asociados en el sistema.",
+        });
+      }
+      // Al crear/editar: la FK referenciada no existe (errno 1452)
       return res.status(400).send({
-        msg: "El registro relacionado no existe en la base de datos.",
+        message: "El registro relacionado no existe en la base de datos.",
       });
     }
   
