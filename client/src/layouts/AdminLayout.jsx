@@ -207,11 +207,13 @@ function ProfileDrawer({ user, username, onClose }) {
       }}>
 
         <div style={{ padding: "20px 24px", background: roleMeta.color, color: "white", flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyBetween: "space-between", marginBottom: 12 }}>
+          {/* Fila: título + botón X */}
+          <div style={{ display: "flex", alignItems: "center", justifyBetween: "space-between", marginBottom: 14 }}>
             <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Mi perfil</h2>
-            <button onClick={onClose} style={{ background: "rgba(255,255,255,0.15)", border: "none", color: "white", width: 32, height: 32, borderRadius: 8, fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+            <button onClick={onClose} style={{ background: "rgba(255,255,255,0.2)", border: "none", color: "white", width: 30, height: 30, borderRadius: 8, fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, lineHeight: 1, flexShrink: 0, }}>×</button>
           </div>
-
+          
+          {/* Fila: avatar + datos */}
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <div style={{
               width: 52, height: 52, borderRadius: 14, background: "rgba(255,255,255,0.2)",
