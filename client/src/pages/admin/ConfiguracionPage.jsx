@@ -1,5 +1,6 @@
 import { useState } from "react";
 import CatalogManager from "../../components/forms/CatalogManager";
+import { useWindowSize } from "../../hooks/useWindowSize";
 
 const C = {
   accent:        "#2d6a4f",
@@ -374,14 +375,16 @@ const SECCIONES = [
 ];
 
 // ─── Sidebar item ─────────────────────────────────────────────────────────────
-function SidebarItem({ seccion, isActive, onClick }) {
+function SidebarItem({ seccion, isActive, onClick, isMobile  }) {
   return (
     <button
       onClick={onClick}
       style={{
         width: "100%", textAlign: "left", padding: "10px 14px",
         border: "none",
-        borderLeft: isActive ? `3px solid ${C.accent}` : "3px solid transparent",
+        borderLeft: isMobile ? "none" : (isActive ? `3px solid ${C.accent}` : "3px solid transparent"),
+        borderBottom: isMobile ? (isActive ? `3px solid ${C.accent}` : "3px solid transparent") : "none",
+        whiteSpace: isMobile ? "nowrap" : "normal",
         background: isActive ? C.accentLight : "transparent",
         cursor: "pointer", display: "flex", alignItems: "center",
         justifyContent: "space-between", transition: "all 0.15s",
@@ -408,25 +411,26 @@ function SidebarItem({ seccion, isActive, onClick }) {
 export default function ConfiguracionPage() {
   const [activeId, setActiveId] = useState(SECCIONES[0].id);
   const seccionActiva = SECCIONES.find(s => s.id === activeId);
+  const { isMobile } = useWindowSize();
 
   return (
-    <div style={{ display: "flex", gap: 20, maxWidth: 1080, margin: "0 auto" }}>
+    <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 16, maxWidth: 1080, margin: "0 auto" }}>
 
       {/* Sidebar */}
       <aside style={{
-        width: 200, flexShrink: 0, background: C.white,
+        width: isMobile ? "100%" : 200, flexShrink: 0, background: C.white,
         borderRadius: 14, border: `0.5px solid ${C.border}`,
         overflow: "hidden", alignSelf: "flex-start",
-        position: "sticky", top: 16,
+        position: isMobile ? "static" : "sticky", top: 16,
       }}>
         <div style={{ padding: "12px 14px 8px", borderBottom: `0.5px solid ${C.border}`, background: "#fafbfc" }}>
           <p style={{ margin: 0, fontSize: 10, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: "0.07em" }}>
             Secciones
           </p>
         </div>
-        <nav style={{ padding: "8px 6px" }}>
+        <nav style={{ padding: "8px 6px", display: isMobile ? "flex" : "block", overflowX: isMobile ? "auto" : "visible", gap: isMobile ? 4 : 0 }}>
           {SECCIONES.map(s => (
-            <SidebarItem key={s.id} seccion={s} isActive={activeId === s.id} onClick={() => setActiveId(s.id)} />
+            <SidebarItem key={s.id} seccion={s} isActive={activeId === s.id} onClick={() => setActiveId(s.id)} isMobile={isMobile} />
           ))}
         </nav>
         <div style={{ padding: "10px 14px", borderTop: `0.5px solid ${C.border}`, background: "#fafbfc" }}>

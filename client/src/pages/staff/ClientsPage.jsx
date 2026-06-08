@@ -686,7 +686,7 @@ export default function ClientsPage() {
         icon="👤"
         onNew={() => setModal({ type: "new" })}
         isAdmin={user?.idRol === 1}
-        onGoUsers={() => navigate("/admin/empleados/usuarios")}
+        onGoUsers={() => navigate("/admin/usuarios")}
       />
 
       <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.border}`, boxShadow: "0 2px 12px rgba(0,0,0,0.05)", overflow: "hidden" }}>
