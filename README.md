@@ -105,7 +105,7 @@ PORT=3000
 DB_HOST=localhost
 DB_USER=tu_usuario
 DB_PASSWORD=tu_contraseña
-DB_NAME=veterinaria_san_roque
+DB_NAME=veterinaria-db
 JWT_SECRET=una_clave_secreta_larga
 ```
 
