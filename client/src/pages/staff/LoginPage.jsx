@@ -618,7 +618,8 @@ function ContactoSection({ isMobile }) {
       justifyContent: "center",
       background: G.white,
     }}>
-      <div style={{ marginBottom: isMobile ? 20 : 32 }}>
+      {/* Header */}
+      <div style={{ marginBottom: isMobile ? 20 : 28 }}>
         <div style={{
           display: "inline-flex", background: G.mint,
           border: `1px solid ${G.border}`, borderRadius: 99,
@@ -629,23 +630,33 @@ function ContactoSection({ isMobile }) {
         <h2 style={{ fontSize: isMobile ? 26 : 36, fontWeight: 900, color: G.forest, margin: "0 0 6px", letterSpacing: "-1px" }}>
           ¿Necesitás ayuda?
         </h2>
-        <p style={{ fontSize: 14, color: G.muted, margin: 0 }}>Encontranos en Punta Alta o escribinos por Instagram.</p>
+        <p style={{ fontSize: 14, color: G.muted, margin: 0 }}>
+          Encontranos en Punta Alta o escribinos por Instagram.
+        </p>
       </div>
 
-      {/* Grid: mapa + cards */}
+      {/* Grid principal */}
       <div style={{
         display: "grid",
         gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
-        gap: isMobile ? 20 : 28,
+        gap: isMobile ? 20 : 24,
         maxWidth: 860,
+        // ← clave: las dos columnas tienen el mismo alto
+        alignItems: "stretch",
       }}>
-        {/* Mapa */}
-        <div>
+
+        {/* Columna izquierda: mapa ocupa todo el alto */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <iframe
             src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2196.692958789054!2d-62.08201031397541!3d-38.86467307790214!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95ed9d6365f8a03b%3A0xae0213e78af39e51!2sVeterinaria%20San%20Roque!5e0!3m2!1ses-419!2sar!4v1780946843414!5m2!1ses-419!2sar"
             style={{
-              width: "100%", height: isMobile ? 200 : 280,
-              borderRadius: 14, border: `1px solid ${G.border}`,
+              width: "100%",
+              // ← en desktop crece para llenar; en mobile altura fija
+              flex: isMobile ? "none" : 1,
+              height: isMobile ? 200 : "100%",
+              minHeight: isMobile ? "auto" : 280,
+              borderRadius: 14,
+              border: `1px solid ${G.border}`,
               display: "block",
             }}
             allowFullScreen=""
@@ -653,65 +664,88 @@ function ContactoSection({ isMobile }) {
             referrerPolicy="no-referrer-when-downgrade"
             title="Ubicación Clínica Veterinaria San Roque"
           />
-          <p style={{ fontSize: 12, color: G.muted, margin: "8px 0 0", textAlign: "center" }}>
-            Punta Alta, Buenos Aires
+          <p style={{ fontSize: 12, color: G.muted, margin: 0, textAlign: "center" }}>
+            Veterinaria San Roque · Punta Alta, Buenos Aires
           </p>
         </div>
 
-        {/* Cards de info */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {[
-            { icon: "📍", label: "Dirección",  content: <span>Punta Alta, Buenos Aires</span> },
-            { icon: "📞", label: "Teléfono",   content: <a href="tel:+542932507203" style={{ color: G.leaf, fontWeight: 700, textDecoration: "none" }}>2932 507203</a> },
-            { icon: "📸", label: "Instagram",  content: <a href="https://www.instagram.com/precedojulieta/" target="_blank" rel="noopener noreferrer" style={{ color: G.leaf, fontWeight: 700, textDecoration: "none" }}>@precedojulieta</a> },
-          ].map((c, i) => (
-            <div key={i} style={{
-              background: G.foam, border: `1px solid ${G.border}`,
-              borderRadius: 12, padding: "14px 16px",
-              display: "flex", alignItems: "center", gap: 14,
-            }}>
-              <div style={{
-                width: 40, height: 40, borderRadius: 10,
-                background: G.mint, border: `1px solid ${G.border}`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 18, flexShrink: 0,
-              }}>{c.icon}</div>
-              <div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: G.muted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 3 }}>{c.label}</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: G.forest }}>{c.content}</div>
-              </div>
-            </div>
-          ))}
-
-          {/* Card horario — verde oscuro */}
+        {/* Columna derecha: cards con justify space-between para llenar el alto */}
+        <div style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between", // ← distribuye las 4 cards uniformemente
+          gap: 10,
+        }}>
+          {/* Dirección */}
           <div style={{
+            flex: 1,
+            background: G.foam, border: `1px solid ${G.border}`,
+            borderRadius: 12, padding: "14px 16px",
+            display: "flex", alignItems: "center", gap: 14,
+          }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: G.mint, border: `1px solid ${G.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>📍</div>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: G.muted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 3 }}>Dirección</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: G.forest }}>Punta Alta, Buenos Aires</div>
+            </div>
+          </div>
+
+          {/* Teléfono */}
+          <div style={{
+            flex: 1,
+            background: G.foam, border: `1px solid ${G.border}`,
+            borderRadius: 12, padding: "14px 16px",
+            display: "flex", alignItems: "center", gap: 14,
+          }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: G.mint, border: `1px solid ${G.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>📞</div>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: G.muted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 3 }}>Teléfono</div>
+              <a href="tel:+542932507203" style={{ fontSize: 14, fontWeight: 700, color: G.leaf, textDecoration: "none" }}>2932 507203</a>
+            </div>
+          </div>
+
+          {/* Instagram */}
+          <div style={{
+            flex: 1,
+            background: G.foam, border: `1px solid ${G.border}`,
+            borderRadius: 12, padding: "14px 16px",
+            display: "flex", alignItems: "center", gap: 14,
+          }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: G.mint, border: `1px solid ${G.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>📸</div>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: G.muted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 3 }}>Instagram</div>
+              <a href="https://www.instagram.com/precedojulieta/" target="_blank" rel="noopener noreferrer" style={{ fontSize: 14, fontWeight: 700, color: G.leaf, textDecoration: "none" }}>
+                @precedojulieta
+              </a>
+            </div>
+          </div>
+
+          {/* Horario — verde oscuro, flex: 1.5 para que sea un poco más alta */}
+          <div style={{
+            flex: 1.5,
             background: G.forest, border: `1px solid ${G.forest}`,
             borderRadius: 12, padding: "14px 16px",
-            display: "flex", alignItems: "flex-start", gap: 14,
+            display: "flex", alignItems: "center", gap: 14,
           }}>
-            <div style={{
-              width: 40, height: 40, borderRadius: 10,
-              background: "rgba(255,255,255,0.1)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 18, flexShrink: 0, marginTop: 2,
-            }}>⏰</div>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>⏰</div>
             <div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Horario</div>
-              <div style={{ fontSize: 12, color: "white", lineHeight: 1.8 }}>
-                <span style={{ fontWeight: 700 }}>Lun a Vie</span>
-                <span style={{ color: "rgba(255,255,255,0.55)" }}> · 9:00–12:30 / 17:30–21:00</span>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>Horario</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "white", lineHeight: 1.7 }}>
+                Lun a Vie
+                <span style={{ color: "rgba(255,255,255,0.6)", fontWeight: 400 }}> · 9:00–12:30 / 17:30–21:00</span>
                 <br />
-                <span style={{ fontWeight: 700 }}>Sábado</span>
-                <span style={{ color: "rgba(255,255,255,0.55)" }}> · 10:00–12:00</span>
+                Sábado
+                <span style={{ color: "rgba(255,255,255,0.6)", fontWeight: 400 }}> · 10:00–12:00</span>
                 <br />
-                <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 11 }}>Dom cerrado</span>
+                <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 11, fontWeight: 400 }}>Domingos · cerrado</span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div style={{ marginTop: 32, paddingTop: 18, borderTop: `1px solid ${G.border}` }}>
+      {/* Footer */}
+      <div style={{ marginTop: 28, paddingTop: 16, borderTop: `1px solid ${G.border}` }}>
         <p style={{ margin: 0, fontSize: 12, color: G.muted }}>
           © {new Date().getFullYear()} Clínica Veterinaria San Roque · Desarrollado por @stefaniaarevalo2026
         </p>
