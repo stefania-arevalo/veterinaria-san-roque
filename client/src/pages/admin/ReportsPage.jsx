@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import axios from "../../api/axios";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { useWindowSize } from "../../hooks/useWindowSize";
 
 // ─── API helpers ─────────────────────────────────────────────────────────────
 const token = () => localStorage.getItem("accessToken");
@@ -185,8 +186,9 @@ function SaleStateBadge({ idEstado }) {
 // TABS DE REPORTE
 // ══════════════════════════════════════════════════════════════════════════════
 
-function TabTurnos({ data }) {
+function TabTurnos({ data, isMobile }) {
   if (!data) return null;
+  const cols = isMobile ? "1fr" : "1fr 1fr";
   const { kpis, porVeterinario, porDia, porTipo, porEspecie, detalle } = data;
 
   const vetRank     = Object.entries(porVeterinario || {}).sort((a, b) => b[1] - a[1]).map(([nombre, cantidad]) => ({ nombre, cantidad }));
@@ -202,11 +204,11 @@ function TabTurnos({ data }) {
         <KpiCard label="Cancelados"     value={fmt(kpis.cancelados)} subColor={C.red} />
         <KpiCard label="Ausentes"       value={fmt(kpis.ausentes)} subColor={C.amber} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: cols, gap: 16 }}>
         <SectionCard title="Turnos por día de la semana"><BarChart data={porDia} /></SectionCard>
         <SectionCard title="Turnos por tipo de cita"><RankList items={tipoRank} labelKey="tipo" valueKey="cantidad" color={C.blue} /></SectionCard>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: cols, gap: 16 }}>
         <SectionCard title="Ranking de veterinarios"><RankList items={vetRank} labelKey="nombre" valueKey="cantidad" /></SectionCard>
         <SectionCard title="Especie más atendida"><RankList items={especieRank} labelKey="especie" valueKey="cantidad" color={C.amber} /></SectionCard>
       </div>
@@ -229,8 +231,9 @@ function TabTurnos({ data }) {
   );
 }
 
-function TabVentas({ data }) {
+function TabVentas({ data, isMobile }) {
   if (!data) return null;
+  const cols = isMobile ? "1fr" : "1fr 1fr";
   const { kpis, porFormaPago, porVendedor, porFecha, topProductos, detalle } = data;
 
   const vendedorRank = Object.entries(porVendedor || {}).sort((a, b) => b[1] - a[1]).map(([nombre, total]) => ({ nombre, total }));
@@ -248,11 +251,11 @@ function TabVentas({ data }) {
         <KpiCard label="Descuentos"        value={fmtPeso(kpis.descuentos)} />
         <KpiCard label="Anuladas"          value={fmt(kpis.anuladas)} subColor={C.red} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: cols, gap: 16 }}>
         <SectionCard title="Ingresos por fecha (últimos 15 días)"><BarChart data={fechaData} colorFn={() => C.blue} /></SectionCard>
         <SectionCard title="Por forma de pago"><RankList items={pagoRank} labelKey="forma" valueKey="total" color={C.amber} formatValue={fmtPeso} /></SectionCard>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: cols, gap: 16 }}>
         <SectionCard title="Ranking de vendedores"><RankList items={vendedorRank} labelKey="nombre" valueKey="total" formatValue={fmtPeso} /></SectionCard>
         <SectionCard title="Productos más vendidos (cantidad)"><RankList items={topProductos || []} labelKey="nombre" valueKey="cantidad" color={C.blue} /></SectionCard>
       </div>
@@ -277,8 +280,9 @@ function TabVentas({ data }) {
   );
 }
 
-function TabClinico({ data }) {
+function TabClinico({ data, isMobile }) {
   if (!data) return null;
+  const cols = isMobile ? "1fr" : "1fr 1fr";
   const { kpis, topDiagnosticos, topMotivos, porEspecie, detalle } = data;
   const especieRank = Object.entries(porEspecie || {}).sort((a, b) => b[1] - a[1]).map(([especie, cantidad]) => ({ especie, cantidad }));
 
@@ -289,7 +293,7 @@ function TabClinico({ data }) {
         <KpiCard label="Peso promedio"         value={kpis.pesoPromedio ? `${kpis.pesoPromedio} kg` : "—"} />
         <KpiCard label="Especie más atendida"  value={kpis.especieTop} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: cols, gap: 16 }}>
         <SectionCard title="Diagnósticos más frecuentes"><RankList items={topDiagnosticos || []} labelKey="diagnostico" valueKey="cantidad" /></SectionCard>
         <SectionCard title="Motivos de consulta más frecuentes"><RankList items={topMotivos || []} labelKey="motivo" valueKey="cantidad" color={C.blue} /></SectionCard>
       </div>
@@ -315,8 +319,9 @@ function TabClinico({ data }) {
   );
 }
 
-function TabInventario({ data }) {
+function TabInventario({ data, isMobile }) {
   if (!data) return null;
+  const cols = isMobile ? "1fr" : "1fr 1fr";
   const { kpis, topStock, vencidos, proximos, sinStock } = data;
 
   return (
@@ -339,7 +344,7 @@ function TabInventario({ data }) {
           <DataTable columns={[{ label: "Producto", key: "producto" }, { label: "Código lote", key: "lote" }, { label: "Vencimiento", key: "vencimiento" }, { label: "Stock", key: "stock", right: true }]} rows={proximos} />
         </div>
       )}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: cols, gap: 16 }}>
         <SectionCard title="Top 10 productos con más stock"><RankList items={topStock || []} labelKey="nombre" valueKey="stock" color={C.accent} /></SectionCard>
         <SectionCard title="Lotes sin stock">
           {sinStock?.length === 0

@@ -428,7 +428,7 @@ export default function ConfiguracionPage() {
             Secciones
           </p>
         </div>
-        <nav style={{ padding: "8px 6px", display: isMobile ? "flex" : "block", overflowX: isMobile ? "auto" : "visible", gap: isMobile ? 4 : 0 }}>
+        <nav style={{ padding: "8px 6px" }}>
           {SECCIONES.map(s => (
             <SidebarItem key={s.id} seccion={s} isActive={activeId === s.id} onClick={() => setActiveId(s.id)} isMobile={isMobile} />
           ))}
