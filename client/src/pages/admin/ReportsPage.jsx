@@ -376,6 +376,8 @@ export default function ReportsPage() {
   const [error,     setError]     = useState("");
   const [exporting, setExporting] = useState(false);
 
+  const { isMobile } = useWindowSize();
+
   // Referencia al contenido que se va a capturar para PDF
   const contentRef = useRef(null);
 
@@ -496,7 +498,7 @@ export default function ReportsPage() {
   };
 
   return (
-    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "20px 24px" }}>
+    <div style={{ maxWidth: 1200, margin: "0 auto", padding: isMobile ? "16px 12px" : "20px 24px"}}>
 
       {/* ── Header ── */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
@@ -586,7 +588,7 @@ export default function ReportsPage() {
         ref={contentRef}
         style={{
           background: C.white, border: `1px solid ${C.border}`, borderTop: "none",
-          borderRadius: "0 0 14px 14px", padding: "20px",
+          borderRadius: "0 0 14px 14px", padding: isMobile ? "14px 12px" : "20px",
           boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
           minHeight: 400,
         }}
@@ -626,10 +628,10 @@ export default function ReportsPage() {
 
         {!loading && !error && data && (
           <>
-            {activeTab === "turnos"     && <TabTurnos     data={data} />}
-            {activeTab === "ventas"     && <TabVentas     data={data} />}
-            {activeTab === "clinico"    && <TabClinico    data={data} />}
-            {activeTab === "inventario" && <TabInventario data={data} />}
+            {activeTab === "turnos"     && <TabTurnos     data={data} isMobile={isMobile} />}
+            {activeTab === "ventas"     && <TabVentas     data={data} isMobile={isMobile} />}
+            {activeTab === "clinico"    && <TabClinico    data={data} isMobile={isMobile} />}
+            {activeTab === "inventario" && <TabInventario data={data} isMobile={isMobile} />}
           </>
         )}
 
