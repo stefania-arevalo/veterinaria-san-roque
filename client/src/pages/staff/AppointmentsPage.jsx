@@ -2131,12 +2131,8 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
                   </div>
             
                   {/* Dos botones de registro rápido */}
-                  <div style={{ display: "flex", gap: 8 }}>
-            
-                    {/* Botón A: cliente nuevo + mascota nueva */}
-                    <button
-                      type="button"
-                      onClick={() => setShowNewPatient(true)}
+                  <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 8 }}>
+                    <button type="button" onClick={() => setShowNewPatient(true)}
                       style={{
                         flex: 1,
                         display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
@@ -2145,19 +2141,17 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
                         background: "white", color: "#1f5c38",
                         fontWeight: 700, fontSize: 12.5,
                         cursor: "pointer", transition: "background 0.15s",
-                        whiteSpace: "nowrap",
+                        whiteSpace: isMobile ? "normal" : "nowrap",
+                        textAlign: "center",
                       }}
                       onMouseEnter={e => e.currentTarget.style.background = "#eaf3de"}
                       onMouseLeave={e => e.currentTarget.style.background = "white"}
                     >
-                      <span style={{ fontSize: 15 }}>🧑‍⚕️</span>
+                      <span style={{ fontSize: 15, flexShrink: 0 }}>🧑‍⚕️</span>
                       Nuevo cliente + mascota
                     </button>
-            
-                    {/* Botón B: mascota nueva de dueño existente */}
-                    <button
-                      type="button"
-                      onClick={() => setShowNewPatient(true)}
+
+                    <button type="button" onClick={() => setShowNewPatient(true)}
                       style={{
                         flex: 1,
                         display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
@@ -2166,15 +2160,15 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
                         background: "white", color: "#1a3d28",
                         fontWeight: 700, fontSize: 12.5,
                         cursor: "pointer", transition: "background 0.15s",
-                        whiteSpace: "nowrap",
+                        whiteSpace: isMobile ? "normal" : "nowrap",
+                        textAlign: "center",
                       }}
                       onMouseEnter={e => e.currentTarget.style.background = "#f0f4f1"}
                       onMouseLeave={e => e.currentTarget.style.background = "white"}
                     >
-                      <span style={{ fontSize: 15 }}>🐾</span>
+                      <span style={{ fontSize: 15, flexShrink: 0 }}>🐾</span>
                       Mascota nueva — dueño existe
                     </button>
-            
                   </div>
                 </div>
               )}
