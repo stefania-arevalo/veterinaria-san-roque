@@ -1,7 +1,7 @@
 {
-  "name": "web-personal-api",
+  "name": "veterinaria-san-roque-backend",
   "version": "0.0.1",
-  "description": "El api de la web personal",
+  "description": "API REST del sistema web de gestión para la Clínica Veterinaria San Roque",
   "main": "index.js",
   "author": "Stefania Arevalo",
   "license": "MIT",
