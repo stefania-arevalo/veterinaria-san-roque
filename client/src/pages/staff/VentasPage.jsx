@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";import axios from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import EmailComprobanteModal from '../../components/shared/EmailComprobanteModal';
+import { useWindowSize } from "../../hooks/useWindowSize";
 
 const token = () => localStorage.getItem("accessToken");
 const headers = () => ({ Authorization: `Bearer ${token()}` });
@@ -1104,6 +1105,7 @@ export default function VentasPage() {
   const canAnular = [1, 4].includes(user?.idRol);
   const [step, setStep] = useState(1);
   const [showHistory, setShowHistory] = useState(false);
+  const { isMobile } = useWindowSize();
 
   // ── NUEVO: estado para clientes pendientes ──
   const [clientesPendientes, setClientesPendientes] = useState([]);
@@ -1647,7 +1649,7 @@ export default function VentasPage() {
         </button>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 340px", gap: 20 }}>
         {/* ── Columna izquierda ── */}
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
@@ -1854,7 +1856,7 @@ export default function VentasPage() {
         </div>
 
         {/* ── Resumen lateral ── */}
-        <div style={{ position: "sticky", top: 20, height: "fit-content" }}>
+        <div style={{ position: isMobile ? "static" : "sticky", top: isMobile ? "auto" : 20, height: "fit-content" }}>
           <div style={{ background: C.white, border: `0.5px solid ${C.border}`, borderRadius: 10, overflow: "hidden" }}>
             <div style={{ background: C.green900, padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span style={{ fontSize: 11, fontWeight: 500, letterSpacing: "0.5px", textTransform: "uppercase", color: "rgba(255,255,255,0.65)" }}>

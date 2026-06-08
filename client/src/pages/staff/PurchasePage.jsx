@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import axios from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
+import { useWindowSize } from "../../hooks/useWindowSize";
 
 const token   = () => localStorage.getItem("accessToken");
 const headers = () => ({ Authorization: `Bearer ${token()}` });
@@ -289,6 +290,8 @@ function HistorialCompras({ onBack, canEliminar }) {
   const [confirm,  setConfirm]  = useState(null);
   const [msgOk,    setMsgOk]    = useState("");
   const [msgErr,   setMsgErr]   = useState("");
+
+  const { isMobile } = useWindowSize();
 
   // ── Filtros ──
   const [filtFechaDesde, setFiltFechaDesde] = useState("");
@@ -1068,7 +1071,7 @@ export default function ComprasPage() {
       </div>
 
       {/* Grid Principal */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 20, alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 320px", gap: 20, alignItems: "start" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           
           {/* SECCIÓN 1: DATOS GENERALES */}
@@ -1216,7 +1219,7 @@ export default function ComprasPage() {
         </div>
 
         {/* RESUMEN LATERAL */}
-        <div style={{ position: "sticky", top: 20 }}>
+        <div style={{ position: isMobile ? "static" : "sticky", top: isMobile ? "auto" : 20 }}>
           <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.border}`, overflow: "hidden" }}>
             <div style={{ background: C.surface, padding: "14px 18px", borderBottom: `1px solid ${C.border}` }}>
               <h3 style={{ margin: 0, fontSize: 12, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Resumen de Totales</h3>
