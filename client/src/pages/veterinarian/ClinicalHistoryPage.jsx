@@ -1003,7 +1003,8 @@ function PatientHistory({ mascota, onBack }) {
     }
     return { vacunas, tratamientos };
   }, []);
-
+  
+  const mascotaId = mascota.idMascota; 
   const reloadPatientData = useCallback(async () => {
     setLoading(true);
     try {
@@ -1062,7 +1063,7 @@ function PatientHistory({ mascota, onBack }) {
       }
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
-  }, [fetchHistorialDetail, mascota.idMascota]);
+  }, [fetchHistorialDetail, mascotaId]);
 
   useEffect(() => { reloadPatientData(); }, [reloadPatientData]);
 
