@@ -50,7 +50,7 @@ export default function MyPets() {
 
   // Cuando cambia la mascota seleccionada, traer sus vacunas aplicadas
   useEffect(() => {
-    if (!selectedPet) return;
+    if (!selectedPet || history.length === 0) return;
     const token = localStorage.getItem("accessToken");
     axios.get("/applied-vaccines", { headers: { Authorization: `Bearer ${token}` } })
       .then(r => {

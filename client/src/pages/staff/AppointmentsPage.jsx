@@ -541,7 +541,7 @@ function ServiceModal({ isOpen, onClose, onAddService, servicePrices, petSize, f
 // ── Modal de Selección de Vacunas (Estilo Tarjetas) ───────────────
 function VaccineModal({ isOpen, onClose, onSelectVaccine, vacunasDisponibles, especieMascota, lotesDisponibles }) {
   const [searchTerm, setSearchTerm] = useState("");
-
+  const { isMobile } = useWindowSize();
   if (!isOpen) return null;
 
   const filtered = vacunasDisponibles.filter(v => {
@@ -689,6 +689,8 @@ function AttendServiceModal({ cita, staff, onClose, onSave }) {
   const [lotesDisponibles, setLotesDisponibles] = useState([]);
   const [datosVacuna, setDatosVacuna] = useState({}); // { [idDetalle]: { idVacuna, idLote } }
 
+  const { isMobile } = useWindowSize();
+  
   const [tratamientos, setTratamientos] = useState([{
     descripcion: "",
     fechaInicio: new Date().toISOString().split('T')[0],
