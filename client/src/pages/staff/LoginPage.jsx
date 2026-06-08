@@ -41,7 +41,7 @@ function SnapSection({ id, children, bg }) {
   );
 }
 
-// ── Navbar lateral ────────────────────────────────────────────────
+// ── Navbar ────────────────────────────────────────────────────────
 function Navbar({ onLoginClick, isMobile, containerRef }) {
   const [active, setActive] = useState("inicio");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -69,7 +69,6 @@ function Navbar({ onLoginClick, isMobile, containerRef }) {
     return () => el.removeEventListener("scroll", onScroll);
   }, [containerRef]);
 
-  // Scroll suave con rueda: avanza/retrocede de a una sección sin el salto brusco del snap
   useEffect(() => {
     const el = containerRef?.current;
     if (!el) return;
@@ -100,7 +99,6 @@ function Navbar({ onLoginClick, isMobile, containerRef }) {
     setMenuOpen(false);
   };
 
-  // ── Mobile top bar ────────────────────────────────────────────
   if (isMobile) {
     return (
       <>
@@ -108,27 +106,20 @@ function Navbar({ onLoginClick, isMobile, containerRef }) {
           position: "fixed", top: 0, left: 0, right: 0, zIndex: 200,
           height: 56, display: "flex", alignItems: "center",
           justifyContent: "space-between", padding: "0 16px",
-          background: G.white,
-          borderBottom: `1px solid ${G.border}`,
+          background: G.white, borderBottom: `1px solid ${G.border}`,
         }}>
           <img src="/logo.png" alt="San Roque" style={{ height: 30 }} />
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <button onClick={onLoginClick} style={{
               padding: "7px 16px", borderRadius: 8,
               background: G.forest, color: "white",
-              border: "none", fontSize: 12, fontWeight: 700,
-              cursor: "pointer",
-            }}>
-              Ingresar
-            </button>
+              border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer",
+            }}>Ingresar</button>
             <button onClick={() => setMenuOpen(v => !v)} style={{
-              background: G.gray100, border: "none",
-              color: G.gray600, width: 36, height: 36, borderRadius: 8,
-              fontSize: 16, cursor: "pointer",
+              background: G.gray100, border: "none", color: G.gray600,
+              width: 36, height: 36, borderRadius: 8, fontSize: 16, cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              {menuOpen ? "✕" : "☰"}
-            </button>
+            }}>{menuOpen ? "✕" : "☰"}</button>
           </div>
         </nav>
         {menuOpen && (
@@ -140,8 +131,7 @@ function Navbar({ onLoginClick, isMobile, containerRef }) {
               <button key={s.id} onClick={() => scrollTo(s.id)} style={{
                 display: "flex", alignItems: "center", gap: 10,
                 width: "100%", padding: "13px 20px",
-                background: active === s.id ? G.mint : "none",
-                border: "none",
+                background: active === s.id ? G.mint : "none", border: "none",
                 borderLeft: `3px solid ${active === s.id ? G.leaf : "transparent"}`,
                 color: active === s.id ? G.forest : G.gray600,
                 fontSize: 14, fontWeight: active === s.id ? 700 : 500,
@@ -156,74 +146,49 @@ function Navbar({ onLoginClick, isMobile, containerRef }) {
     );
   }
 
-  // ── Desktop side nav ──────────────────────────────────────────
   return (
     <nav style={{
       position: "fixed", left: 0, top: 0, bottom: 0, zIndex: 200,
-      width: 72,
-      background: G.white,
-      borderRight: `1px solid ${G.border}`,
+      width: 72, background: G.white, borderRight: `1px solid ${G.border}`,
       display: "flex", flexDirection: "column",
-      alignItems: "center", justifyContent: "space-between",
-      padding: "20px 0",
+      alignItems: "center", justifyContent: "space-between", padding: "20px 0",
     }}>
-      {/* Logo */}
-      <img src="/logo.png" alt="San Roque"
-        style={{ width: 36, height: 36, objectFit: "contain" }} />
-
-      {/* Nav items */}
+      <img src="/logo.png" alt="San Roque" style={{ width: 36, height: 36, objectFit: "contain" }} />
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
         {sections.map(s => {
           const isActive = active === s.id;
           return (
-            <button
-              key={s.id}
-              onClick={() => scrollTo(s.id)}
-              title={s.label}
-              style={{
-                width: 52, height: 52, borderRadius: 12,
-                background: isActive ? G.mint : "transparent",
-                border: "none",
-                color: isActive ? G.forest : G.gray400,
-                cursor: "pointer",
-                display: "flex", flexDirection: "column",
-                alignItems: "center", justifyContent: "center", gap: 3,
-                transition: "all 0.15s",
-              }}
-              onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = G.gray50; }}
-              onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
+            <button key={s.id} onClick={() => scrollTo(s.id)} title={s.label} style={{
+              width: 52, height: 52, borderRadius: 12,
+              background: isActive ? G.mint : "transparent", border: "none",
+              color: isActive ? G.forest : G.gray400, cursor: "pointer",
+              display: "flex", flexDirection: "column",
+              alignItems: "center", justifyContent: "center", gap: 3, transition: "all 0.15s",
+            }}
+            onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = G.gray50; }}
+            onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
             >
               <span style={{ fontSize: 18, lineHeight: 1 }}>{s.emojiDesktop}</span>
-              <span style={{
-                fontSize: 9, fontWeight: 700, letterSpacing: "0.05em",
-                color: isActive ? G.forest : G.gray400,
-                textTransform: "uppercase",
-              }}>
+              <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.05em", color: isActive ? G.forest : G.gray400, textTransform: "uppercase" }}>
                 {s.label.slice(0, 4)}
               </span>
             </button>
           );
         })}
       </div>
-
-      {/* Login */}
       <button onClick={onLoginClick} style={{
-        width: 44, height: 44, borderRadius: 10,
-        background: G.forest, color: "white",
-        border: "none", fontSize: 16, cursor: "pointer",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        transition: "background 0.15s",
+        width: 44, height: 44, borderRadius: 10, background: G.forest,
+        color: "white", border: "none", fontSize: 16, cursor: "pointer",
+        display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.15s",
       }}
       onMouseEnter={e => e.currentTarget.style.background = G.pine}
       onMouseLeave={e => e.currentTarget.style.background = G.forest}
-      title="Ingresar">
-        👤
-      </button>
+      title="Ingresar">👤</button>
     </nav>
   );
 }
 
-// ── SECCIÓN 1: Inicio ─────────────────────────────────────────────
+// ── SECCIÓN 1: Hero ───────────────────────────────────────────────
 function HeroSection({ onLoginClick, isMobile }) {
   const features = [
     { icon: "📋", label: "Consultas clínicas",  desc: "Control y diagnóstico médico" },
@@ -234,40 +199,45 @@ function HeroSection({ onLoginClick, isMobile }) {
 
   return (
     <div style={{
-      flex: 1,
-      display: "flex",
+      flex: 1, display: "flex",
       flexDirection: isMobile ? "column" : "row",
       alignItems: "center",
-      // Cambiamos a space-between en desktop para mandar el texto a la izquierda y el logo a la derecha
       justifyContent: isMobile ? "center" : "space-between",
-      padding: isMobile ? "72px 28px 28px" : "0 96px 0 96px", // Balanceamos los paddings laterales
+      padding: isMobile ? "72px 28px 28px" : "0 96px",
       gap: isMobile ? 24 : 48,
       background: G.forest,
-      overflow: "hidden",
-      position: "relative",
-      width: "100%",
-      boxSizing: "border-box",
+      overflow: "hidden", position: "relative", width: "100%", boxSizing: "border-box",
     }}>
 
-      {/* ── CONTENEDOR IZQUIERDO: Texto ── */}
+      {/* Fondo decorativo: círculos sutiles */}
+      {!isMobile && (
+        <>
+          <div style={{
+            position: "absolute", right: -80, top: -80,
+            width: 400, height: 400, borderRadius: "50%",
+            border: "1px solid rgba(255,255,255,0.05)",
+            pointerEvents: "none",
+          }} />
+          <div style={{
+            position: "absolute", right: -20, top: -20,
+            width: 260, height: 260, borderRadius: "50%",
+            border: "1px solid rgba(255,255,255,0.07)",
+            pointerEvents: "none",
+          }} />
+        </>
+      )}
+
+      {/* Texto izquierdo */}
       <div style={{
-        flex: isMobile ? "none" : "1",
-        maxWidth: 540, // Le damos un poquito más de margen para que respire el texto
-        position: "relative",
-        zIndex: 1,
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        paddingTop: isMobile ? 8 : 0,
+        flex: isMobile ? "none" : "1", maxWidth: 540,
+        position: "relative", zIndex: 1,
+        display: "flex", flexDirection: "column", justifyContent: "center",
       }}>
-        {/* Chip */}
         <div style={{
           display: "inline-flex", alignItems: "center", gap: 6,
-          background: "rgba(255,255,255,0.1)",
-          borderRadius: 99,
+          background: "rgba(255,255,255,0.1)", borderRadius: 99,
           padding: "5px 14px", marginBottom: 22,
-          border: "1px solid rgba(255,255,255,0.15)",
-          alignSelf: "flex-start",
+          border: "1px solid rgba(255,255,255,0.15)", alignSelf: "flex-start",
         }}>
           <span style={{ width: 6, height: 6, borderRadius: "50%", background: G.mint, flexShrink: 0 }} />
           <span style={{ fontSize: 11, fontWeight: 700, color: G.mint, letterSpacing: "0.06em", textTransform: "uppercase" }}>
@@ -276,29 +246,17 @@ function HeroSection({ onLoginClick, isMobile }) {
         </div>
 
         <h1 style={{
-          fontSize: isMobile ? 32 : 52,
-          fontWeight: 900,
-          color: "white",
-          margin: "0 0 16px",
-          lineHeight: 1.08, letterSpacing: "-1.5px",
+          fontSize: isMobile ? 32 : 52, fontWeight: 900, color: "white",
+          margin: "0 0 16px", lineHeight: 1.08, letterSpacing: "-1.5px",
         }}>
           Cuidamos a tu mascota con dedicación
         </h1>
 
-        <p style={{
-          fontSize: isMobile ? 14 : 15,
-          color: "rgba(255,255,255,0.65)",
-          lineHeight: 1.7, margin: "0 0 28px", maxWidth: 440,
-        }}>
+        <p style={{ fontSize: isMobile ? 14 : 15, color: "rgba(255,255,255,0.65)", lineHeight: 1.7, margin: "0 0 28px", maxWidth: 440 }}>
           Sistema integral de gestión para la clínica veterinaria San Roque. Portal de clientes, historiales clínicos y agenda en tiempo real.
         </p>
 
-        {/* Feature grid */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 8, marginBottom: 28,
-        }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 28 }}>
           {features.map((f, i) => (
             <div key={i} style={{
               display: "flex", alignItems: "center", gap: 9,
@@ -316,54 +274,49 @@ function HeroSection({ onLoginClick, isMobile }) {
         </div>
 
         <button onClick={onLoginClick} style={{
-          padding: "13px 28px",
-          background: G.mint,
-          color: G.forest,
-          border: "none", borderRadius: 10,
-          fontSize: 14, fontWeight: 800, cursor: "pointer",
+          padding: "13px 28px", background: G.mint, color: G.forest,
+          border: "none", borderRadius: 10, fontSize: 14, fontWeight: 800, cursor: "pointer",
           display: "inline-flex", alignItems: "center", gap: 8,
-          width: isMobile ? "100%" : "auto",
-          alignSelf: "flex-start",
-          justifyContent: "center",
-          transition: "opacity 0.15s",
+          width: isMobile ? "100%" : "auto", alignSelf: "flex-start",
+          justifyContent: "center", transition: "opacity 0.15s",
         }}
         onMouseEnter={e => e.currentTarget.style.opacity = "0.88"}
-        onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-        >
+        onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
           👤 Ingresar al sistema →
         </button>
       </div>
 
-      {/* ── CONTENEDOR DERECHO: Logo e Imagen (Se adapta según Mobile o Desktop) ── */}
+      {/* Logo derecho — versión mejorada */}
       <div style={{
-        flex: isMobile ? "none" : "1",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: isMobile ? "center" : "flex-end",
-        width: isMobile ? "100%" : "auto",
-        position: isMobile ? "absolute" : "relative", // Sigue siendo fondo en mobile para no romper tu layout, pero tiene peso real en desktop
+        flex: isMobile ? "none" : "0 0 340px",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        position: isMobile ? "absolute" : "relative",
         inset: isMobile ? 0 : "auto",
         zIndex: isMobile ? 0 : 1,
-        pointerEvents: "none",
-        userSelect: "none",
-        opacity: isMobile ? 0.35 : 1, // Le bajamos la opacidad en mobile si está de fondo para que no pise el texto
+        pointerEvents: "none", userSelect: "none",
       }}>
-        <img
-          src="/logocolor.png"
-          alt="Veterinaria San Roque"
-          style={{
-            width: isMobile ? "80%" : "100%",
-            maxWidth: isMobile ? 300 : 420, // Controlamos el tamaño máximo para que no se desorbite
-            height: "auto",
-            objectFit: "contain",
-            // En desktop le quitamos los filtros agresivos para que luzca el logo original de la veterinaria
-            filter: isMobile 
-              ? "grayscale(1) brightness(0) invert(0) sepia(1) saturate(3) hue-rotate(90deg) brightness(0.45)" 
-              : "none", 
-          }}
-        />
+        {isMobile ? (
+          // Mobile: logo muy sutil como marca de agua, sin filtros agresivos
+          <img src="/logocolor.png" alt="" style={{
+            width: "70%", maxWidth: 280, height: "auto", objectFit: "contain",
+            opacity: 0.06,
+          }} />
+        ) : (
+          // Desktop: logo limpio con halo suave
+          <div style={{
+            width: 300, height: 300, borderRadius: "50%",
+            background: "rgba(255,255,255,0.05)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <img src="/logocolor.png" alt="Veterinaria San Roque" style={{
+              width: "75%", height: "auto", objectFit: "contain",
+              filter: "brightness(0) invert(1)",
+              opacity: 0.18,
+            }} />
+          </div>
+        )}
       </div>
-
     </div>
   );
 }
@@ -382,11 +335,9 @@ function ServiciosSection({ isMobile }) {
     <div style={{
       flex: 1, display: "flex", flexDirection: "column",
       padding: isMobile ? "72px 20px 24px" : "0 64px 0 96px",
-      justifyContent: "center",
-      background: G.foam,
+      justifyContent: "center", background: G.foam,
       overflowY: isMobile ? "auto" : "hidden",
     }}>
-      {/* Header */}
       <div style={{ marginBottom: isMobile ? 20 : 36 }}>
         <div style={{
           display: "inline-flex", alignItems: "center", gap: 6,
@@ -400,12 +351,10 @@ function ServiciosSection({ isMobile }) {
         </h2>
         <p style={{ fontSize: 14, color: G.muted, margin: 0 }}>Atención integral en un solo lugar</p>
       </div>
-
       <div style={{
         display: "grid",
         gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(3, 1fr)",
-        gap: isMobile ? 10 : 14,
-        maxWidth: 860,
+        gap: isMobile ? 10 : 14, maxWidth: 860,
       }}>
         {services.map((s, i) => <ServiceCard key={i} {...s} isMobile={isMobile} />)}
       </div>
@@ -416,24 +365,16 @@ function ServiciosSection({ isMobile }) {
 function ServiceCard({ icon, title, desc, isMobile }) {
   const [hov, setHov] = useState(false);
   return (
-    <div
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{
-        padding: isMobile ? "14px" : "20px",
-        borderRadius: 12,
-        border: `1px solid ${hov ? G.border : G.gray200}`,
-        background: hov ? G.white : G.white,
-        boxShadow: hov ? "0 4px 16px rgba(26,61,40,0.07)" : "none",
-        transition: "all 0.18s",
-        cursor: "default",
-      }}
-    >
+    <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} style={{
+      padding: isMobile ? "14px" : "20px", borderRadius: 12,
+      border: `1px solid ${hov ? G.border : G.gray200}`, background: G.white,
+      boxShadow: hov ? "0 4px 16px rgba(26,61,40,0.07)" : "none",
+      transition: "all 0.18s", cursor: "default",
+    }}>
       <div style={{
-        width: 40, height: 40, borderRadius: 10,
-        background: G.mint, border: `1px solid ${G.border}`,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 18, marginBottom: 12,
+        width: 40, height: 40, borderRadius: 10, background: G.mint,
+        border: `1px solid ${G.border}`, display: "flex", alignItems: "center",
+        justifyContent: "center", fontSize: 18, marginBottom: 12,
       }}>{icon}</div>
       <div style={{ fontSize: isMobile ? 12 : 13, fontWeight: 800, color: G.forest, marginBottom: isMobile ? 0 : 4 }}>{title}</div>
       {!isMobile && <div style={{ fontSize: 12, color: G.muted, lineHeight: 1.6 }}>{desc}</div>}
@@ -450,16 +391,10 @@ function PortalSection({ isMobile }) {
   ];
   return (
     <div style={{
-      flex: 1, 
-      display: "flex", 
-      flexDirection: "column",
-      // Ajustamos paddings en mobile para que no aprieten el contenido verticalmente
+      flex: 1, display: "flex", flexDirection: "column",
       padding: isMobile ? "64px 20px 16px" : "0 64px 0 96px",
-      justifyContent: "center",
-      background: G.white,
-      overflow: "hidden", // Volvemos a bloquear el scroll para que actúe el snap
+      justifyContent: "center", background: G.white, overflow: "hidden",
     }}>
-      {/* Header */}
       <div style={{ marginBottom: isMobile ? 14 : 40 }}>
         <div style={{
           display: "inline-flex", alignItems: "center",
@@ -475,62 +410,29 @@ function PortalSection({ isMobile }) {
           Disponible para todos los clientes registrados.
         </p>
       </div>
-
-      {/* Grid / Lista de pasos */}
       <div style={{
         display: "grid",
-        // En mobile usamos una sola columna pero reducimos drásticamente los espacios (gap)
         gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
-        gap: isMobile ? 8 : 18,
-        maxWidth: 860,
-        width: "100%",
-        boxSizing: "border-box",
+        gap: isMobile ? 8 : 18, maxWidth: 860, width: "100%", boxSizing: "border-box",
       }}>
         {steps.map((s, i) => (
           <div key={i} style={{
-            // Reducimos el padding en mobile a 12px para que las tarjetas sean delgadas
-            padding: isMobile ? "12px 14px" : "28px",
-            borderRadius: 12,
-            border: `1px solid ${G.border}`,
-            background: G.foam,
-            display: "flex",
-            // En desktop las tarjetas van en vertical, pero en mobile alineamos todo en una sola línea horizontal (tipo fila)
-            flexDirection: isMobile ? "row" : "column",
-            alignItems: "center",
-            gap: isMobile ? 12 : 0,
+            padding: isMobile ? "12px 14px" : "28px", borderRadius: 12,
+            border: `1px solid ${G.border}`, background: G.foam,
+            display: "flex", flexDirection: isMobile ? "row" : "column",
+            alignItems: "center", gap: isMobile ? 12 : 0,
           }}>
-            {/* Número identificador */}
             <div style={{
-              width: isMobile ? 28 : 36, 
-              height: isMobile ? 28 : 36, 
-              borderRadius: isMobile ? 7 : 9,
+              width: isMobile ? 28 : 36, height: isMobile ? 28 : 36, borderRadius: isMobile ? 7 : 9,
               background: G.forest, color: "white",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: isMobile ? 11 : 12, fontWeight: 900, 
-              marginBottom: isMobile ? 0 : 14,
-              flexShrink: 0,
+              fontSize: isMobile ? 11 : 12, fontWeight: 900,
+              marginBottom: isMobile ? 0 : 14, flexShrink: 0,
             }}>{s.n}</div>
-            
-            {/* Contenedor de Icono + Texto interno */}
-            <div style={{ 
-              display: "flex", 
-              alignItems: "center", 
-              gap: 8,
-              flex: 1 
-            }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
               <div style={{ fontSize: isMobile ? 18 : 22, flexShrink: 0, marginBottom: isMobile ? 0 : 10 }}>{s.icon}</div>
-              <div style={{ 
-                fontSize: isMobile ? 12 : 13, 
-                fontWeight: 800, 
-                color: G.forest,
-                marginBottom: isMobile ? 0 : 6,
-                lineHeight: 1.2
-              }}>
-                {s.title}
-              </div>
+              <div style={{ fontSize: isMobile ? 12 : 13, fontWeight: 800, color: G.forest, marginBottom: isMobile ? 0 : 6, lineHeight: 1.2 }}>{s.title}</div>
             </div>
-
-            {/* Descripción larga: Oculta por completo en mobile para ahorrar espacio vertical */}
             {!isMobile && <div style={{ fontSize: 12, color: G.muted, lineHeight: 1.65 }}>{s.desc}</div>}
           </div>
         ))}
@@ -543,27 +445,22 @@ function PortalSection({ isMobile }) {
 function NosotrosSection({ isMobile }) {
   const stats = [
     { n: "5",    l: "Roles de acceso" },
-    { n: "∞",   l: "Mascotas atendidas" },
+    { n: "∞",    l: "Mascotas atendidas" },
     { n: "100%", l: "Historial digital" },
     { n: "24/7", l: "Portal disponible" },
   ];
   return (
     <div style={{
-      flex: 1, display: "flex",
-      flexDirection: isMobile ? "column" : "row",
-      alignItems: "center",
-      padding: isMobile ? "72px 20px 24px" : "0 64px 0 96px",
-      gap: isMobile ? 24 : 64,
-      background: G.foam,
+      flex: 1, display: "flex", flexDirection: isMobile ? "column" : "row",
+      alignItems: "center", padding: isMobile ? "72px 20px 24px" : "0 64px 0 96px",
+      gap: isMobile ? 24 : 64, background: G.foam,
       overflowY: isMobile ? "auto" : "hidden",
     }}>
-      {/* Card verde */}
       <div style={{
         background: G.forest, borderRadius: 18,
         padding: isMobile ? "24px 20px" : "36px 32px",
         display: "flex", flexDirection: "column", gap: 18,
-        flex: "0 0 auto",
-        width: isMobile ? "100%" : 320,
+        flex: "0 0 auto", width: isMobile ? "100%" : 320,
       }}>
         <div style={{ fontSize: 36 }}>🏥</div>
         <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: "white", lineHeight: 1.2 }}>
@@ -585,13 +482,11 @@ function NosotrosSection({ isMobile }) {
           ))}
         </div>
       </div>
-
-      {/* Texto */}
       <div style={{ flex: 1 }}>
         <div style={{
-          display: "inline-flex",
-          background: G.mint, border: `1px solid ${G.border}`,
-          borderRadius: 99, padding: "4px 14px", marginBottom: 14,
+          display: "inline-flex", background: G.mint,
+          border: `1px solid ${G.border}`, borderRadius: 99,
+          padding: "4px 14px", marginBottom: 14,
         }}>
           <span style={{ fontSize: 11, fontWeight: 700, color: G.leaf, textTransform: "uppercase", letterSpacing: "0.06em" }}>Sobre nosotros</span>
         </div>
@@ -609,14 +504,13 @@ function NosotrosSection({ isMobile }) {
   );
 }
 
-// ── SECCIÓN 5: Contacto ───────────────────────────────────────────
+// ── SECCIÓN 5: Contacto ── REDISEÑADA ─────────────────────────────
 function ContactoSection({ isMobile }) {
   return (
     <div style={{
       flex: 1, display: "flex", flexDirection: "column",
       padding: isMobile ? "72px 20px 24px" : "0 64px 0 96px",
-      justifyContent: "center",
-      background: G.white,
+      justifyContent: "center", background: G.white,
     }}>
       {/* Header */}
       <div style={{ marginBottom: isMobile ? 20 : 28 }}>
@@ -635,51 +529,43 @@ function ContactoSection({ isMobile }) {
         </p>
       </div>
 
-      {/* Grid principal */}
+      {/* Grid: mapa + cards */}
       <div style={{
         display: "grid",
         gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
         gap: isMobile ? 20 : 24,
         maxWidth: 860,
-        // ← clave: las dos columnas tienen el mismo alto
         alignItems: "stretch",
       }}>
 
-        {/* Columna izquierda: mapa ocupa todo el alto */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {/* Columna izquierda: mapa */}
+        <div style={{ display: "flex", flexDirection: "column" }}>
           <iframe
             src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2196.692958789054!2d-62.08201031397541!3d-38.86467307790214!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95ed9d6365f8a03b%3A0xae0213e78af39e51!2sVeterinaria%20San%20Roque!5e0!3m2!1ses-419!2sar!4v1780946843414!5m2!1ses-419!2sar"
             style={{
               width: "100%",
-              // ← en desktop crece para llenar; en mobile altura fija
-              flex: isMobile ? "none" : 1,
               height: isMobile ? 200 : "100%",
-              minHeight: isMobile ? "auto" : 280,
-              borderRadius: 14,
-              border: `1px solid ${G.border}`,
-              display: "block",
+              minHeight: isMobile ? "auto" : 300,
+              flex: 1,
+              borderRadius: 14, border: `1px solid ${G.border}`, display: "block",
             }}
-            allowFullScreen=""
-            loading="lazy"
+            allowFullScreen="" loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
             title="Ubicación Clínica Veterinaria San Roque"
           />
-          <p style={{ fontSize: 12, color: G.muted, margin: 0, textAlign: "center" }}>
+          <p style={{ fontSize: 12, color: G.muted, margin: "8px 0 0", textAlign: "center" }}>
             Veterinaria San Roque · Punta Alta, Buenos Aires
           </p>
         </div>
 
-        {/* Columna derecha: cards con justify space-between para llenar el alto */}
+        {/* Columna derecha: cards que llenan el alto */}
         <div style={{
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between", // ← distribuye las 4 cards uniformemente
-          gap: 10,
+          display: "flex", flexDirection: "column",
+          justifyContent: "space-between", gap: 10,
         }}>
           {/* Dirección */}
           <div style={{
-            flex: 1,
-            background: G.foam, border: `1px solid ${G.border}`,
+            flex: 1, background: G.foam, border: `1px solid ${G.border}`,
             borderRadius: 12, padding: "14px 16px",
             display: "flex", alignItems: "center", gap: 14,
           }}>
@@ -692,8 +578,7 @@ function ContactoSection({ isMobile }) {
 
           {/* Teléfono */}
           <div style={{
-            flex: 1,
-            background: G.foam, border: `1px solid ${G.border}`,
+            flex: 1, background: G.foam, border: `1px solid ${G.border}`,
             borderRadius: 12, padding: "14px 16px",
             display: "flex", alignItems: "center", gap: 14,
           }}>
@@ -706,38 +591,37 @@ function ContactoSection({ isMobile }) {
 
           {/* Instagram */}
           <div style={{
-            flex: 1,
-            background: G.foam, border: `1px solid ${G.border}`,
+            flex: 1, background: G.foam, border: `1px solid ${G.border}`,
             borderRadius: 12, padding: "14px 16px",
             display: "flex", alignItems: "center", gap: 14,
           }}>
             <div style={{ width: 40, height: 40, borderRadius: 10, background: G.mint, border: `1px solid ${G.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>📸</div>
             <div>
               <div style={{ fontSize: 10, fontWeight: 700, color: G.muted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 3 }}>Instagram</div>
-              <a href="https://www.instagram.com/precedojulieta/" target="_blank" rel="noopener noreferrer" style={{ fontSize: 14, fontWeight: 700, color: G.leaf, textDecoration: "none" }}>
+              <a href="https://www.instagram.com/precedojulieta/" target="_blank" rel="noopener noreferrer"
+                style={{ fontSize: 14, fontWeight: 700, color: G.leaf, textDecoration: "none" }}>
                 @precedojulieta
               </a>
             </div>
           </div>
 
-          {/* Horario — verde oscuro, flex: 1.5 para que sea un poco más alta */}
+          {/* Horario — verde oscuro, más alto */}
           <div style={{
-            flex: 1.5,
-            background: G.forest, border: `1px solid ${G.forest}`,
-            borderRadius: 12, padding: "14px 16px",
+            flex: 1.6, background: G.forest, border: `1px solid ${G.forest}`,
+            borderRadius: 12, padding: "16px 16px",
             display: "flex", alignItems: "center", gap: 14,
           }}>
             <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>⏰</div>
             <div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>Horario</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "white", lineHeight: 1.7 }}>
-                Lun a Vie
+              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Horario</div>
+              <div style={{ fontSize: 13, color: "white", lineHeight: 1.9 }}>
+                <span style={{ fontWeight: 700 }}>Lun a Vie</span>
                 <span style={{ color: "rgba(255,255,255,0.6)", fontWeight: 400 }}> · 9:00–12:30 / 17:30–21:00</span>
                 <br />
-                Sábado
+                <span style={{ fontWeight: 700 }}>Sábado</span>
                 <span style={{ color: "rgba(255,255,255,0.6)", fontWeight: 400 }}> · 10:00–12:00</span>
                 <br />
-                <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 11, fontWeight: 400 }}>Domingos · cerrado</span>
+                <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 11, fontWeight: 400 }}>Dom · cerrado</span>
               </div>
             </div>
           </div>
@@ -745,7 +629,7 @@ function ContactoSection({ isMobile }) {
       </div>
 
       {/* Footer */}
-      <div style={{ marginTop: 28, paddingTop: 16, borderTop: `1px solid ${G.border}` }}>
+      <div style={{ marginTop: 24, paddingTop: 16, borderTop: `1px solid ${G.border}` }}>
         <p style={{ margin: 0, fontSize: 12, color: G.muted }}>
           © {new Date().getFullYear()} Clínica Veterinaria San Roque · Desarrollado por @stefaniaarevalo2026
         </p>
@@ -777,45 +661,36 @@ function LoginModal({ onLogin, onClose, isMobile }) {
 
   const inp = {
     width: "100%", boxSizing: "border-box",
-    padding: "11px 14px 11px 42px",
-    borderRadius: 9, fontSize: 14,
-    border: `1px solid ${G.border}`,
-    background: G.foam, color: G.text,
-    outline: "none", fontFamily: "inherit",
-    transition: "border-color 0.15s, box-shadow 0.15s",
+    padding: "11px 14px 11px 42px", borderRadius: 9, fontSize: 14,
+    border: `1px solid ${G.border}`, background: G.foam, color: G.text,
+    outline: "none", fontFamily: "inherit", transition: "border-color 0.15s, box-shadow 0.15s",
   };
 
   return (
     <div onClick={onClose} style={{
       position: "fixed", inset: 0, zIndex: 300,
       display: "flex", alignItems: "center", justifyContent: "center",
-      background: "rgba(26,61,40,0.45)",
-      backdropFilter: "blur(8px)",
-      padding: 20,
+      background: "rgba(26,61,40,0.45)", backdropFilter: "blur(8px)", padding: 20,
     }}>
       <div onClick={e => e.stopPropagation()} style={{
-        background: G.white, borderRadius: 18,
-        border: `1px solid ${G.border}`,
+        background: G.white, borderRadius: 18, border: `1px solid ${G.border}`,
         boxShadow: "0 24px 64px rgba(26,61,40,0.15)",
         padding: isMobile ? "28px 20px" : "36px 32px",
-        width: "100%", maxWidth: 380,
-        position: "relative",
+        width: "100%", maxWidth: 380, position: "relative",
       }}>
         <button onClick={onClose} style={{
           position: "absolute", top: 14, right: 14,
           width: 30, height: 30, borderRadius: 8,
-          background: G.gray100, border: "none",
-          cursor: "pointer", fontSize: 13, color: G.gray600,
+          background: G.gray100, border: "none", cursor: "pointer",
+          fontSize: 13, color: G.gray600,
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>✕</button>
 
-        {/* Header */}
         <div style={{ textAlign: "center", marginBottom: 26 }}>
           <div style={{
             width: 56, height: 56, borderRadius: 14, margin: "0 auto 12px",
-            background: G.forest,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            overflow: "hidden", padding: 10,
+            background: G.forest, display: "flex", alignItems: "center",
+            justifyContent: "center", overflow: "hidden", padding: 10,
           }}>
             <img src="/logo.png" alt="Logo" style={{ width: "100%", height: "100%", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
           </div>
@@ -828,17 +703,13 @@ function LoginModal({ onLogin, onClose, isMobile }) {
         {error && (
           <div style={{
             background: G.redBg, border: `1px solid #f7c1c1`,
-            borderLeft: `4px solid ${G.red}`,
-            borderRadius: 9, padding: "10px 14px",
-            color: G.red, fontSize: 13, marginBottom: 14,
+            borderLeft: `4px solid ${G.red}`, borderRadius: 9,
+            padding: "10px 14px", color: G.red, fontSize: 13, marginBottom: 14,
             display: "flex", alignItems: "center", gap: 8,
-          }}>
-            ⚠️ {error}
-          </div>
+          }}>⚠️ {error}</div>
         )}
 
         <form onSubmit={handleSubmit}>
-          {/* Usuario */}
           <div style={{ marginBottom: 12 }}>
             <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: G.forest, marginBottom: 5, letterSpacing: "0.05em", textTransform: "uppercase" }}>
               Usuario
@@ -853,7 +724,6 @@ function LoginModal({ onLogin, onClose, isMobile }) {
             </div>
           </div>
 
-          {/* Contraseña */}
           <div style={{ marginBottom: 24 }}>
             <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: G.forest, marginBottom: 5, letterSpacing: "0.05em", textTransform: "uppercase" }}>
               Contraseña
@@ -861,9 +731,8 @@ function LoginModal({ onLogin, onClose, isMobile }) {
             <div style={{ position: "relative" }}>
               <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 15, opacity: 0.4 }}>🔒</span>
               <input type={showPass ? "text" : "password"} name="password"
-                value={form.password} onChange={hc}
-                placeholder="Tu contraseña" autoComplete="current-password"
-                style={{ ...inp, paddingRight: 42 }}
+                value={form.password} onChange={hc} placeholder="Tu contraseña"
+                autoComplete="current-password" style={{ ...inp, paddingRight: 42 }}
                 onFocus={e => { e.target.style.borderColor = G.leaf; e.target.style.boxShadow = `0 0 0 3px rgba(39,107,66,0.1)`; }}
                 onBlur={e => { e.target.style.borderColor = G.border; e.target.style.boxShadow = "none"; }}
               />
@@ -872,9 +741,7 @@ function LoginModal({ onLogin, onClose, isMobile }) {
                 background: "none", border: "none", cursor: "pointer", padding: 0,
                 display: "flex", alignItems: "center",
               }}>
-                <img src={showPass ? "/closeeye.png" : "/openeye.png"}
-                  alt={showPass ? "Ocultar" : "Mostrar"}
-                  style={{ width: 18, height: 18, opacity: 0.45 }} />
+                <img src={showPass ? "/closeeye.png" : "/openeye.png"} alt={showPass ? "Ocultar" : "Mostrar"} style={{ width: 18, height: 18, opacity: 0.45 }} />
               </button>
             </div>
           </div>
@@ -883,8 +750,8 @@ function LoginModal({ onLogin, onClose, isMobile }) {
             width: "100%", padding: "12px",
             background: loading ? G.gray200 : G.forest,
             color: loading ? G.gray400 : "white",
-            border: "none", borderRadius: 9,
-            fontSize: 14, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer",
+            border: "none", borderRadius: 9, fontSize: 14, fontWeight: 800,
+            cursor: loading ? "not-allowed" : "pointer",
             display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
             transition: "background 0.15s",
           }}
@@ -939,17 +806,11 @@ export default function LoginPage() {
     <div style={{ fontFamily: "'Segoe UI', system-ui, sans-serif", height: "100dvh", overflow: "hidden" }}>
       <Navbar onLoginClick={() => setShowForm(true)} isMobile={isMobile} containerRef={containerRef} />
 
-      {/* Scroll container */}
-      <div
-        ref={containerRef}
-        style={{
-          height: "100dvh",
-          overflowY: "scroll",
-          scrollSnapType: "y mandatory",
-          scrollBehavior: "smooth",
-          marginLeft: isMobile ? 0 : 72,
-        }}
-      >
+      <div ref={containerRef} style={{
+        height: "100dvh", overflowY: "scroll",
+        scrollSnapType: "y mandatory", scrollBehavior: "smooth",
+        marginLeft: isMobile ? 0 : 72,
+      }}>
         <SnapSection id="inicio"    bg={G.white}><HeroSection     onLoginClick={() => setShowForm(true)} isMobile={isMobile} /></SnapSection>
         <SnapSection id="servicios" bg={G.foam}> <ServiciosSection isMobile={isMobile} /></SnapSection>
         <SnapSection id="portal"    bg={G.white}><PortalSection    isMobile={isMobile} /></SnapSection>
