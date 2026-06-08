@@ -698,13 +698,13 @@ function ContactoSection({ isMobile }) {
             <div>
               <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Horario</div>
               <div style={{ fontSize: 12, color: "white", lineHeight: 1.8 }}>
-                <span style={{ fontWeight: 700 }}>Mar a Vie</span>
+                <span style={{ fontWeight: 700 }}>Lun a Vie</span>
                 <span style={{ color: "rgba(255,255,255,0.55)" }}> · 9:00–12:30 / 17:30–21:00</span>
                 <br />
                 <span style={{ fontWeight: 700 }}>Sábado</span>
                 <span style={{ color: "rgba(255,255,255,0.55)" }}> · 10:00–12:00</span>
                 <br />
-                <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 11 }}>Lun y Dom cerrado</span>
+                <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 11 }}>Dom cerrado</span>
               </div>
             </div>
           </div>
