@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "../../api/axios";
 import { VET_COLORS } from "../../layouts/AdminLayout";
+import { useWindowSize } from "../../hooks/useWindowSize";
 
 const token = () => localStorage.getItem("accessToken");
 const headers = () => ({ Authorization: `Bearer ${token()}` });
@@ -124,6 +125,8 @@ export default function PermissionsPage() {
   const [saving, setSaving] = useState(null);
   const [search, setSearch] = useState("");
   const [filterRol, setFilterRol] = useState("all");
+
+  const { isMobile } = useWindowSize();
 
   useEffect(() => {
     axios.get("/users", { headers: headers() })

@@ -479,7 +479,7 @@ function HistorialCompras({ onBack, canEliminar }) {
       </div>
 
       {/* Tabla */}
-      <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.border}`, overflow: "hidden" }}>
+      <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.border}`, overflowX: "auto", width: "100%"  }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ background: C.surface, borderBottom: `1px solid ${C.border}` }}>
@@ -1142,77 +1142,161 @@ export default function ComprasPage() {
               </div>
             )}
 
-            <div style={{ flex: 1, overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr style={{ borderBottom: `1px solid ${C.border}`, background: C.surface }}>
-                    {["Producto", "Lote *", "Vencimiento *", "Cant *", "Precio Unit *","Precio Venta *",  "Subtotal", ""].map((h, idx) => (
-                      <th key={idx} style={{ padding: "10px 12px", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.04em", textAlign: idx === 5 ? "right" : "left" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
+            <div style={{ flex: 1 }}>
+              {isMobile ? (
+                // ── Tarjetas en mobile ──
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   {lineas.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} style={{ textAlign: "center", padding: "40px 20px", color: C.muted, fontSize: 13.5 }}>
-                        <div style={{ fontSize: 24, marginBottom: 8 }}>📋</div>
-                        No hay productos agregados al remito aún. Use el botón de arriba para buscar.
-                      </td>
-                    </tr>
-                  ) : (
-                    lineas.map((linea) => {
-                      const rowSubtotal = parseFloat(linea.precioUnidad || 0) * parseInt(linea.cantidad || 1);
-                      return (
-                        <tr key={linea.uniqueId} style={{ borderBottom: `1px solid ${C.borderLight}` }}>
-                          <td style={{ padding: "10px 12px", maxWidth: 220 }}>
-                            <div style={{ fontWeight: 600, fontSize: 13.5, color: C.text }}>{linea.nombreProducto}</div>
-                            {linea.presentacion && <span style={{ fontSize: 11, color: C.blue, background: C.blueBg, padding: "1px 5px", borderRadius: 4, display: "inline-block", marginTop: 2 }}>{linea.presentacion}</span>}
-                          </td>
-                          <td style={{ padding: "10px 4px" }}>
-                            <input type="text" placeholder="ABC1234" value={linea.codigoLote} onChange={e => updateLinea(linea.uniqueId, "codigoLote", e.target.value)} style={{ ...inp, padding: "6px 10px" }} />
-                          </td>
-                          <td style={{ padding: "10px 4px" }}>
-                            <input type="date" value={linea.fechaVencimiento} onChange={e => updateLinea(linea.uniqueId, "fechaVencimiento", e.target.value)} style={{ ...inp, padding: "5px 8px" }} />
-                          </td>
-                          <td style={{ padding: "10px 4px", width: 75 }}>
-                            <input type="number" min="1" value={linea.cantidad} onChange={e => updateLinea(linea.uniqueId, "cantidad", parseInt(e.target.value) || "")} style={{ ...inp, padding: "6px 8px", textAlign: "center" }} />
-                          </td>
-                          <td style={{ padding: "10px 4px", width: 105 }}>
+                    <div style={{ textAlign: "center", padding: "32px 16px", color: C.muted, fontSize: 13 }}>
+                      <div style={{ fontSize: 24, marginBottom: 8 }}>📋</div>
+                      No hay productos. Usá "Buscar Producto".
+                    </div>
+                  ) : lineas.map((linea) => {
+                    const rowSubtotal = parseFloat(linea.precioUnidad || 0) * parseInt(linea.cantidad || 1);
+                    return (
+                      <div key={linea.uniqueId} style={{
+                        background: C.surface, borderRadius: 10,
+                        border: `1px solid ${C.border}`, padding: "14px 16px",
+                      }}>
+                        {/* Encabezado de la tarjeta */}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{linea.nombreProducto}</div>
+                            {linea.presentacion && (
+                              <span style={{ fontSize: 11, color: C.blue, background: C.blueBg, padding: "1px 6px", borderRadius: 4 }}>
+                                {linea.presentacion}
+                              </span>
+                            )}
+                          </div>
+                          <button onClick={() => removeLinea(linea.uniqueId)}
+                            style={{ background: "none", border: "none", color: C.red, fontSize: 18, cursor: "pointer", padding: 4 }}>✕</button>
+                        </div>
+
+                        {/* Campos en grilla 2x2 */}
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                          <div>
+                            <label style={{ ...lbl, fontSize: 10 }}>Lote *</label>
+                            <input type="text" placeholder="ABC1234" value={linea.codigoLote}
+                              onChange={e => updateLinea(linea.uniqueId, "codigoLote", e.target.value)}
+                              style={{ ...inp, padding: "8px 10px", fontSize: 13 }} />
+                          </div>
+                          <div>
+                            <label style={{ ...lbl, fontSize: 10 }}>Vencimiento *</label>
+                            <input type="date" value={linea.fechaVencimiento}
+                              onChange={e => updateLinea(linea.uniqueId, "fechaVencimiento", e.target.value)}
+                              style={{ ...inp, padding: "7px 8px", fontSize: 12 }} />
+                          </div>
+                          <div>
+                            <label style={{ ...lbl, fontSize: 10 }}>Cantidad *</label>
+                            <input type="number" min="1" value={linea.cantidad}
+                              onChange={e => updateLinea(linea.uniqueId, "cantidad", parseInt(e.target.value) || "")}
+                              style={{ ...inp, padding: "8px 10px", fontSize: 13, textAlign: "center" }} />
+                          </div>
+                          <div>
+                            <label style={{ ...lbl, fontSize: 10 }}>P. Costo *</label>
                             <div style={{ position: "relative" }}>
-                              <span style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: C.muted }}>$</span>
-                              <input type="number" step="0.01" min="0" placeholder="Costo" value={linea.precioUnidad} onChange={e => updateLinea(linea.uniqueId, "precioUnidad", e.target.value)} style={{ ...inp, padding: "6px 8px 6px 18px" }} />
+                              <span style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", fontSize: 12, color: C.muted }}>$</span>
+                              <input type="number" step="0.01" min="0" placeholder="0.00" value={linea.precioUnidad}
+                                onChange={e => updateLinea(linea.uniqueId, "precioUnidad", e.target.value)}
+                                style={{ ...inp, padding: "8px 8px 8px 18px", fontSize: 13 }} />
                             </div>
-                          </td>
-                          <td style={{ padding: "10px 4px", width: 105 }}>
+                          </div>
+                          <div style={{ gridColumn: "1 / -1" }}>
+                            <label style={{ ...lbl, fontSize: 10 }}>P. Venta *</label>
                             <div style={{ position: "relative" }}>
-                              <span style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: C.green700 }}>$</span>
-                              <input 
-                                type="number" 
-                                step="0.01" 
-                                placeholder="Venta" 
-                                value={linea.precioVentaPublico || ""} 
-                                onChange={e => updateLinea(linea.uniqueId, "precioVentaPublico", e.target.value)} 
-                                style={{ ...inp, padding: "6px 8px 6px 18px", borderColor: C.greenMint }} 
-                              />
-                              {linea.precioVentaActual > 0 && (
-                                <div style={{ fontSize: 10.5, color: C.muted, marginTop: 3 }}>
-                                  <span>Venta actual: </span>${fmt(linea.precioVentaActual)}
-                                </div>
-                              )}
+                              <span style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", fontSize: 12, color: C.green700 }}>$</span>
+                              <input type="number" step="0.01" placeholder="0.00" value={linea.precioVentaPublico || ""}
+                                onChange={e => updateLinea(linea.uniqueId, "precioVentaPublico", e.target.value)}
+                                style={{ ...inp, padding: "8px 8px 8px 18px", fontSize: 13, borderColor: C.greenMint }} />
                             </div>
-                          </td>
-                          <td style={{ padding: "10px 12px", textAlign: "right", fontSize: 13.5, fontWeight: 600, color: C.text }}>
-                            ${fmt(rowSubtotal)}
-                          </td>
-                          <td style={{ padding: "10px 6px", textAlign: "center" }}>
-                            <button type="button" onClick={() => removeLinea(linea.uniqueId)} style={{ background: "none", border: "none", color: C.red, fontSize: 16, cursor: "pointer", padding: "4px 8px" }}>✕</button>
+                            {linea.precioVentaActual > 0 && (
+                              <div style={{ fontSize: 10.5, color: C.muted, marginTop: 2 }}>Actual: ${fmt(linea.precioVentaActual)}</div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Subtotal */}
+                        <div style={{ marginTop: 10, display: "flex", justifyContent: "flex-end", fontSize: 14, fontWeight: 700, color: C.green800 }}>
+                          Subtotal: ${fmt(rowSubtotal)}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{ flex: 1, overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr style={{ borderBottom: `1px solid ${C.border}`, background: C.surface }}>
+                        {["Producto", "Lote *", "Vencimiento *", "Cant *", "Precio Unit *","Precio Venta *",  "Subtotal", ""].map((h, idx) => (
+                          <th key={idx} style={{ padding: "10px 12px", fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: "0.04em", textAlign: idx === 5 ? "right" : "left" }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {lineas.length === 0 ? (
+                        <tr>
+                          <td colSpan={8} style={{ textAlign: "center", padding: "40px 20px", color: C.muted, fontSize: 13.5 }}>
+                            <div style={{ fontSize: 24, marginBottom: 8 }}>📋</div>
+                            No hay productos agregados al remito aún. Use el botón de arriba para buscar.
                           </td>
                         </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
+                      ) : (
+                        lineas.map((linea) => {
+                          const rowSubtotal = parseFloat(linea.precioUnidad || 0) * parseInt(linea.cantidad || 1);
+                          return (
+                            <tr key={linea.uniqueId} style={{ borderBottom: `1px solid ${C.borderLight}` }}>
+                              <td style={{ padding: "10px 12px", maxWidth: 220 }}>
+                                <div style={{ fontWeight: 600, fontSize: 13.5, color: C.text }}>{linea.nombreProducto}</div>
+                                {linea.presentacion && <span style={{ fontSize: 11, color: C.blue, background: C.blueBg, padding: "1px 5px", borderRadius: 4, display: "inline-block", marginTop: 2 }}>{linea.presentacion}</span>}
+                              </td>
+                              <td style={{ padding: "10px 4px" }}>
+                                <input type="text" placeholder="ABC1234" value={linea.codigoLote} onChange={e => updateLinea(linea.uniqueId, "codigoLote", e.target.value)} style={{ ...inp, padding: "6px 10px" }} />
+                              </td>
+                              <td style={{ padding: "10px 4px" }}>
+                                <input type="date" value={linea.fechaVencimiento} onChange={e => updateLinea(linea.uniqueId, "fechaVencimiento", e.target.value)} style={{ ...inp, padding: "5px 8px" }} />
+                              </td>
+                              <td style={{ padding: "10px 4px", width: 75 }}>
+                                <input type="number" min="1" value={linea.cantidad} onChange={e => updateLinea(linea.uniqueId, "cantidad", parseInt(e.target.value) || "")} style={{ ...inp, padding: "6px 8px", textAlign: "center" }} />
+                              </td>
+                              <td style={{ padding: "10px 4px", width: 105 }}>
+                                <div style={{ position: "relative" }}>
+                                  <span style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: C.muted }}>$</span>
+                                  <input type="number" step="0.01" min="0" placeholder="Costo" value={linea.precioUnidad} onChange={e => updateLinea(linea.uniqueId, "precioUnidad", e.target.value)} style={{ ...inp, padding: "6px 8px 6px 18px" }} />
+                                </div>
+                              </td>
+                              <td style={{ padding: "10px 4px", width: 105 }}>
+                                <div style={{ position: "relative" }}>
+                                  <span style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: C.green700 }}>$</span>
+                                  <input 
+                                    type="number" 
+                                    step="0.01" 
+                                    placeholder="Venta" 
+                                    value={linea.precioVentaPublico || ""} 
+                                    onChange={e => updateLinea(linea.uniqueId, "precioVentaPublico", e.target.value)} 
+                                    style={{ ...inp, padding: "6px 8px 6px 18px", borderColor: C.greenMint }} 
+                                  />
+                                  {linea.precioVentaActual > 0 && (
+                                    <div style={{ fontSize: 10.5, color: C.muted, marginTop: 3 }}>
+                                      <span>Venta actual: </span>${fmt(linea.precioVentaActual)}
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                              <td style={{ padding: "10px 12px", textAlign: "right", fontSize: 13.5, fontWeight: 600, color: C.text }}>
+                                ${fmt(rowSubtotal)}
+                              </td>
+                              <td style={{ padding: "10px 6px", textAlign: "center" }}>
+                                <button type="button" onClick={() => removeLinea(linea.uniqueId)} style={{ background: "none", border: "none", color: C.red, fontSize: 16, cursor: "pointer", padding: "4px 8px" }}>✕</button>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         </div>
