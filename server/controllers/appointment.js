@@ -350,7 +350,7 @@ async function getAppointments(req, res, next) {
                     as: 'Mascota',
                     attributes: ['idMascota', 'nombre', 'idTamaño', 'idRaza'],
                     include: [
-                        { model: Client, as: 'Dueño', attributes: ['idCliente', 'nombres', 'apellidos'] },
+                        { model: Client, as: 'Dueño', attributes: ['idCliente', 'nombres', 'apellidos', 'correo'] },
                         { model: Breed,  as: 'Raza',  attributes: ['idRaza', 'nombre', 'idEspecie'] }
                     ]
                 },
