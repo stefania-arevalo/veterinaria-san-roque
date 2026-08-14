@@ -15,6 +15,14 @@ const getUserFromToken = () => {
   } catch { return null; }
 };
 
+const hoyISO = () => new Date().toISOString().slice(0, 10);
+
+const estadoVencimiento = (fechaISO) => {
+  if (!fechaISO) return { vencido: false, label: "" };
+  const vencido = fechaISO < hoyISO();
+  return { vencido };
+};
+
 const THEME = {
   primary:   "#0f2a4a",
   accent:    "#1a6bc4",
@@ -315,13 +323,23 @@ export default function Dashboard() {
       // ── Stock ──
       if (lotesRes.status === "fulfilled") {
         const lotes = lotesRes.value.data || [];
-        const en30 = new Date(); en30.setDate(en30.getDate() + 30);
+        const en30       = new Date(); en30.setDate(en30.getDate() + 30);
+        const hace2Meses  = new Date(); hace2Meses.setDate(hace2Meses.getDate() - 60);
+    
         setStockBajo(lotes.filter(l => l.cantidadDisponible <= 5 && l.cantidadDisponible > 0).slice(0, 5));
-        setStockVenc(lotes.filter(l => {
-          if (!l.fechaVencimiento) return false;
-          return new Date(l.fechaVencimiento + "T00:00:00") <= en30;
-        }).slice(0, 5));
-      }
+    
+        setStockVenc(
+          lotes
+            .filter(l => {
+              if (!l.fechaVencimiento) return false;
+              const fechaLote = new Date(l.fechaVencimiento + "T00:00:00");
+              // Entra si vence dentro de 30 días O ya venció pero no hace más de 2 meses
+              return fechaLote <= en30 && fechaLote >= hace2Meses;
+            })
+            .sort((a, b) => new Date(a.fechaVencimiento) - new Date(b.fechaVencimiento))
+            .slice(0, 5)
+        );
+    }
 
       setLoading(false);
     }
@@ -427,7 +445,7 @@ export default function Dashboard() {
           </Panel>
 
           <Panel
-            title="Por vencerse (30 días)"
+            title="Vencidos y por vencer"
             icon="⏳"
             iconBg={THEME.redBg}
             iconColor={THEME.red}
@@ -439,15 +457,19 @@ export default function Dashboard() {
             ) : stockVenc.length === 0 ? (
               <Empty icon="✅" text="Sin vencimientos próximos." />
             ) : (
-              stockVenc.map(l => (
-                <StockRow
-                  key={l.idLote}
-                  icon="📆"
-                  iconColor={THEME.red}
-                  title={l.Producto?.nombre ? `${l.Producto.nombre} — Lote #${l.idLote}` : `Lote #${l.idLote}`}
-                  sub={`Vence: ${new Date(l.fechaVencimiento + "T00:00:00").toLocaleDateString("es-AR")}`}
-                />
-              ))
+              stockVenc.map(l => {
+                const { vencido } = estadoVencimiento(l.fechaVencimiento);
+                const fechaFmt = new Date(l.fechaVencimiento + "T00:00:00").toLocaleDateString("es-AR");
+                return (
+                  <StockRow
+                    key={l.idLote}
+                    icon={vencido ? "🔴" : "📆"}
+                    iconColor={THEME.red}
+                    title={l.Producto?.nombre ? `${l.Producto.nombre} — Lote #${l.idLote}` : `Lote #${l.idLote}`}
+                    sub={vencido ? `VENCIDO el ${fechaFmt}` : `Vence: ${fechaFmt}`}
+                  />
+                );
+              })
             )}
           </Panel>
         </div>
@@ -542,16 +564,23 @@ export default function Dashboard() {
               }
             </Panel>
 
-            <Panel title="Productos por vencerse" icon="⏳" iconBg={THEME.redBg} iconColor={THEME.red}
+            <Panel title="Vencidos y por vencer" icon="⏳" iconBg={THEME.redBg} iconColor={THEME.red}
               count={stockVenc.length || undefined} countColor={THEME.red}>
               {loading ? <Empty icon="⏳" text="Cargando..." /> :
                 stockVenc.length === 0 ? <Empty icon="✅" text="Sin vencimientos próximos." /> :
-                stockVenc.map(l => (
-                  <StockRow key={l.idLote} icon="📆" iconColor={THEME.red}
-                    title={l.Producto?.nombre ? `${l.Producto.nombre} — Lote #${l.idLote}` : `Lote #${l.idLote}`}
-                    sub={`Vence: ${new Date(l.fechaVencimiento + "T00:00:00").toLocaleDateString("es-AR")}`}
-                  />
-                ))
+                stockVenc.map(l => {
+                  const { vencido } = estadoVencimiento(l.fechaVencimiento);
+                  const fechaFmt = new Date(l.fechaVencimiento + "T00:00:00").toLocaleDateString("es-AR");
+                  return (
+                    <StockRow
+                      key={l.idLote}
+                      icon={vencido ? "🔴" : "📆"}
+                      iconColor={THEME.red}
+                      title={l.Producto?.nombre ? `${l.Producto.nombre} — Lote #${l.idLote}` : `Lote #${l.idLote}`}
+                      sub={vencido ? `VENCIDO el ${fechaFmt}` : `Vence: ${fechaFmt}`}
+                    />
+                  );
+                })
               }
             </Panel>
           </>

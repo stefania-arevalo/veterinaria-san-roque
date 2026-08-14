@@ -53,7 +53,6 @@ const getProducts = async (req, res) => {
                     model: Batch, 
                     as: 'Lotes', 
                     attributes: ['idLote', 'cantidadDisponible', 'codigoLote', 'fechaVencimiento'],
-                    where: { fechaVencimiento: { [Op.gt]: new Date() } },
                     required: false
                 }
             ]

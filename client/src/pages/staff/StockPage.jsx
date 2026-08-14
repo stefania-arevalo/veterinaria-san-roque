@@ -358,7 +358,8 @@ function ProductoExpandedPanel({ idProducto, canEdit, onClose }) {
                     {[...lotes]
                       .sort((a, b) => new Date(a.fechaVencimiento) - new Date(b.fechaVencimiento))
                       .map((l, i) => {
-                        const vencido       = new Date(l.fechaVencimiento) < new Date();
+                        const hoyISO   = new Date().toISOString().slice(0, 10);
+                        const vencido  = l.fechaVencimiento < hoyISO;
                         const diasRestantes = Math.ceil((new Date(l.fechaVencimiento) - new Date()) / (1000 * 60 * 60 * 24));
                         const proxVencer    = !vencido && diasRestantes <= 30;
                         const anulado       = l.cantidadDisponible === 0 && !vencido;
@@ -388,10 +389,10 @@ function ProductoExpandedPanel({ idProducto, canEdit, onClose }) {
                               </span>
                             </td>
                             <td style={{ padding: "10px 12px", textAlign: "center" }}>
-                              {vencido && l.cantidadDisponible > 0
-                                ? <span style={{ fontSize: 9.5, fontWeight: 800, color: C.red, background: C.redBg, padding: "2px 7px", borderRadius: 4 }}>VENCIDO</span>
-                                : vencido && l.cantidadDisponible === 0
-                                ? <span style={{ fontSize: 9.5, fontWeight: 700, color: C.muted, background: "#f0f0f0", padding: "2px 7px", borderRadius: 4 }}>AGOTADO</span>
+                              {vencido
+                                ? <span style={{ fontSize: 9.5, fontWeight: 800, color: C.red, background: C.redBg, padding: "2px 7px", borderRadius: 4 }}>
+                                    VENCIDO{l.cantidadDisponible === 0 ? " · sin stock" : ""}
+                                  </span>
                                 : proxVencer
                                 ? <span style={{ fontSize: 9.5, fontWeight: 800, color: C.amber, background: C.amberBg, padding: "2px 7px", borderRadius: 4 }}>PROX. VENCER</span>
                                 : anulado
@@ -940,6 +941,7 @@ export default function InventarioPage() {
 
   const [tab,            setTab]            = useState("todos");
   const [productos,      setProductos]      = useState([]);
+  const [searchLote, setSearchLote] = useState("");
   const [categorias,     setCategorias]     = useState([]);
   const [marcas,         setMarcas]         = useState([]);
   const [presentaciones, setPresentaciones] = useState([]);
@@ -983,9 +985,13 @@ export default function InventarioPage() {
     } finally { setDeleting(false); }
   };
 
-  const stockTotal = useCallback((p) =>
-    (p.Batches || p.Lotes || []).reduce((s, l) => s + (l.cantidadDisponible || 0), 0), []
-  );
+  const stockTotal = useCallback((p) => {
+    const hoyISO = new Date().toISOString().slice(0, 10);
+    return (p.Batches || p.Lotes || []).reduce((s, l) => {
+      const vencido = l.fechaVencimiento < hoyISO;
+      return vencido ? s : s + (l.cantidadDisponible || 0);
+    }, 0);
+  }, []);
 
   const filtered = useMemo(() => {
     return productos.filter(p => {
@@ -995,9 +1001,15 @@ export default function InventarioPage() {
         tab === "todos"        ? true :
         tab === "medicamentos" ? !!p.Medication || !!p.Medicamento :
         tab === "vacunas"      ? !!p.Vaccine || !!p.Vacuna : true;
-      return matchS && matchCat && matchTab;
+  
+      const lotesProducto = p.Batches || p.Lotes || [];
+      const matchLote = !searchLote || lotesProducto.some(l =>
+        (l.codigoLote || "").toLowerCase().includes(searchLote.toLowerCase())
+      );
+  
+      return matchS && matchCat && matchTab && matchLote;
     });
-  }, [productos, search, filterCat, tab]);
+  }, [productos, search, filterCat, tab, searchLote]);
 
   const toggleExpand = (id) => setExpandedId(prev => prev === id ? null : id);
 
@@ -1044,6 +1056,10 @@ export default function InventarioPage() {
         <div style={{ position: "relative", flex: "2 1 220px" }}>
           <span style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", opacity: 0.4 }}>🔍</span>
           <input placeholder="Buscar por nombre…" value={search} onChange={e => setSearch(e.target.value)} style={{ ...inp, paddingLeft: 34 }} />
+          <div style={{ position: "relative", flex: "1 1 180px" }}>
+            <span style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", opacity: 0.4 }}>📦</span>
+            <input placeholder="Buscar por N° de lote…" value={searchLote} onChange={e => setSearchLote(e.target.value)} style={{ ...inp, paddingLeft: 34 }} />
+          </div>
         </div>
         <select value={filterCat} onChange={e => setFilterCat(e.target.value)} style={{ ...inp, flex: "1 1 160px", cursor: "pointer" }}>
           <option value="all">Todas las categorías</option>
