@@ -13,5 +13,6 @@ api.delete("/applied-vaccine/:id", [md_auth.asureAuth, md_auth.hasRole([1, 2]), 
 api.get("/applied-vaccines", [md_auth.asureAuth, md_auth.hasRole([1, 2, 4, 5])], AppliedVaccineController.getAllApplied);
 api.get("/applied-vaccine/:id", [md_auth.asureAuth, md_auth.hasRole([1, 2, 4, 5]), validateId, validate], AppliedVaccineController.getAppliedById);
 api.get("/applied-vaccines/mascota/:idMascota", [md_auth.asureAuth], AppliedVaccineController.getUncollectedByPet);
+api.get("/applied-vaccines/por-lote/:idLote", [md_auth.asureAuth, md_auth.hasRole([1, 2, 4, 5])], AppliedVaccineController.getAppliedByLote);
 
 module.exports = api;

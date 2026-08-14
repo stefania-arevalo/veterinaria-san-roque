@@ -1482,11 +1482,20 @@ function PatientHistory({ mascota, onBack }) {
                                               {v.precioAplicado != null && <span>${fmt(v.precioAplicado)}</span>}
                                               <span style={{ background: v.cobrada ? C.tealBg : C.redBg, color: v.cobrada ? C.teal : C.red, padding: "0 6px", borderRadius: 4, fontWeight: 600 }}>{v.cobrada ? "Cobrada" : "Pendiente"}</span>
                                             </div>
+                                            <div style={{ fontSize: 11, color: C.amber, marginTop: 2 }}>
+                                              Lote: {v.Lote?.codigoLote || "—"} · Vence: {v.Lote?.fechaVencimiento ? fmtFecha(v.Lote.fechaVencimiento) : "—"}
+                                            </div>
                                           </div>
                                           <div style={{ display: "flex", gap: 5, flexShrink: 0, alignItems: "center" }}>
                                             <span style={{ fontSize: 11, color: C.amber, fontWeight: 600, whiteSpace: "nowrap" }}>{fmtFecha(v.fechaAplicacion)}</span>
-                                            <button type="button" onClick={() => { setEditVac(v); setShowVacForm(h.idHistorial); }} style={{ background: "white", border: `0.5px solid ${C.border}`, borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: C.muted, display: "flex" }}>{Ic.edit}</button>
-                                            <button type="button" onClick={() => setConfirmDel({ type: "vac", id: v.idVacunaAplicada, msg: `¿Eliminar vacuna aplicada el ${fmtFecha(v.fechaAplicacion)}?` })} style={{ background: C.redBg, border: `0.5px solid ${C.redBorder}`, borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: C.red, display: "flex" }}>{Ic.trash}</button>
+                                            <button type="button" disabled={v.cobrada}
+                                              onClick={() => { setEditVac(v); setShowVacForm(v.idHistorial); setVacHistoryPicker(String(v.idHistorial)); }}
+                                              title={v.cobrada ? "No se puede editar: vacuna ya cobrada" : "Editar"}
+                                              style={{ background: v.cobrada ? "#f1f5f9" : "white", border: `0.5px solid ${C.border}`, borderRadius: 6, padding: "4px 8px", cursor: v.cobrada ? "not-allowed" : "pointer", color: v.cobrada ? "#cbd5e1" : C.muted, display: "flex", opacity: v.cobrada ? 0.6 : 1 }}>{Ic.edit}</button>
+                                            <button type="button" disabled={v.cobrada}
+                                              onClick={() => setConfirmDel({ type: "vac", id: v.idVacunaAplicada, msg: `¿Eliminar vacuna aplicada el ${fmtFecha(v.fechaAplicacion)}?` })}
+                                              title={v.cobrada ? "No se puede eliminar: vacuna ya cobrada" : "Eliminar"}
+                                              style={{ background: v.cobrada ? "#f1f5f9" : C.redBg, border: `0.5px solid ${v.cobrada ? C.border : C.redBorder}`, borderRadius: 6, padding: "4px 8px", cursor: v.cobrada ? "not-allowed" : "pointer", color: v.cobrada ? "#cbd5e1" : C.red, display: "flex", opacity: v.cobrada ? 0.6 : 1 }}>{Ic.trash}</button>
                                           </div>
                                         </div>
                                       ))}

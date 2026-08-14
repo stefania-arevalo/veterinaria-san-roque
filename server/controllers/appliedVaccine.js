@@ -57,11 +57,17 @@ async function createAppliedVaccine(req, res, next) {
 async function getAllApplied(req, res, next) {
     try {
         const list = await AppliedVaccine.findAll({
-            include: [{
-                model: Vaccine,
-                as: 'Vacuna',
-                include: [{ model: Product, as: 'Producto', attributes: ['nombre'] }]
-            }]
+            include: [
+                {
+                    model: Vaccine,
+                    as: 'Vacuna',
+                    include: [{ model: Product, as: 'Producto', attributes: ['nombre'] }]
+                },
+                {
+                    model: Batch,
+                    as: 'Lote'
+                }
+            ]
         });
         return res.status(200).send(list);
     } catch (error) {
@@ -72,7 +78,12 @@ async function getAllApplied(req, res, next) {
 async function getAppliedById(req, res, next) {
     try {
         const { id } = req.params;
-        const entry = await AppliedVaccine.findByPk(id);
+        const entry = await AppliedVaccine.findByPk(id, {
+            include: [
+                { model: Vaccine, as: 'Vacuna', include: [{ model: Product, as: 'Producto', attributes: ['nombre'] }] },
+                { model: Batch, as: 'Lote' }
+            ]
+        });
         if (!entry) return res.status(404).send({ msg: "Registro no encontrado." });
         return res.status(200).send(entry);
     } catch (error) {
@@ -85,6 +96,12 @@ async function updateApplied(req, res, next) {
         const { id } = req.params;
         const entry = await AppliedVaccine.findByPk(id);
         if (!entry) return res.status(404).send({ msg: "El registro no existe." });
+
+        // Si ya está cobrada, no se puede tocar qué vacuna/lote/dosis/fecha se aplicó.
+        const camposProtegidos = ['idVacuna', 'idLote', 'dosis', 'fechaAplicacion'];
+        if (entry.cobrada && camposProtegidos.some(f => req.body[f] !== undefined)) {
+            return res.status(403).send({ msg: "Esta vacuna ya fue cobrada y no puede modificarse (trazabilidad sanitaria)." });
+        }
 
         let hasChanges = false;
         const fields = ['idHistorial', 'idVacuna', 'idLote', 'dosis', 'fechaAplicacion'];
@@ -109,8 +126,14 @@ async function updateApplied(req, res, next) {
 async function deleteApplied(req, res, next) {
     try {
         const { id } = req.params;
-        const deleted = await AppliedVaccine.destroy({ where: { idVacunaAplicada: id } });
-        if (deleted === 0) return res.status(404).send({ msg: "No se encontro el registro." });
+        const entry = await AppliedVaccine.findByPk(id);
+        if (!entry) return res.status(404).send({ msg: "No se encontro el registro." });
+
+        if (entry.cobrada) {
+            return res.status(403).send({ msg: "No se puede eliminar una vacuna ya cobrada (trazabilidad sanitaria)." });
+        }
+
+        await entry.destroy();
         return res.status(200).send({ msg: "Registro eliminado correctamente." });
     } catch (error) {
         next(error);
@@ -147,11 +170,37 @@ async function getUncollectedByPet(req, res, next) {
     }
 }
 
+async function getAppliedByLote(req, res, next) {
+    try {
+        const { idLote } = req.params;
+        const ClinicalHistory = require("../models/clinicalHistory");
+        const Pet = require("../models/pet");       
+        const Client = require("../models/client");  
+
+        const list = await AppliedVaccine.findAll({
+            where: { idLote },
+            include: [
+                { model: Vaccine, as: 'Vacuna', include: [{ model: Product, as: 'Producto', attributes: ['nombre'] }] },
+                {
+                    model: ClinicalHistory,
+                    as: 'Historial',
+                    include: [{ model: Pet, as: 'Mascota', include: [{ model: Client, as: 'Dueño' }] }]
+                }
+            ],
+            order: [['fechaAplicacion', 'ASC']]
+        });
+        return res.status(200).send(list);
+    } catch (error) {
+        next(error);
+    }
+}
+
 module.exports = {
     createAppliedVaccine,
     getAllApplied,
     getAppliedById,
     updateApplied,
     deleteApplied,
-    getUncollectedByPet
+    getUncollectedByPet,
+    getAppliedByLote
 };

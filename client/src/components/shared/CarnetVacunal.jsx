@@ -408,7 +408,7 @@ export function CarnetVacunal({ mascota, vacunas = [], aplicadas = [] }) {
                         background: C.green100, color: C.green800,
                         border: `0.5px solid ${C.green200}`,
                       }}>
-                        #{i + 1} · {fmtFecha(a.fechaAplicacion)} · {a.dosis || "Dosis Única"}
+                        #{i + 1} · {fmtFecha(a.fechaAplicacion)} · {a.dosis || "Dosis Única"} · Lote: {a.Lote?.codigoLote || "—"}
                       </span>
                     ))}
                   </div>
