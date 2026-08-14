@@ -465,12 +465,15 @@ function VaccinePickerModal({ isOpen, vaccines, aplicadas = [], onSelect, onClos
 }
 
 // ─── PatientList ──────────────────────────────────────────────────────────────
-
 function PatientList({ onSelect }) {
   const [mascotas, setMascotas] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [search, setSearch]     = useState("");
   const [err, setErr]           = useState("");
+  const [modo, setModo] = useState("nombre"); // "nombre" | "lote"
+  const [loteQuery, setLoteQuery] = useState("");
+  const [resultadosLote, setResultadosLote] = useState(null);
+  const [buscandoLote, setBuscandoLote] = useState(false);
 
   useEffect(() => {
     axios.get("/pets", { headers: hdrs() })
@@ -478,6 +481,25 @@ function PatientList({ onSelect }) {
       .catch((e) => setErr(e?.response?.data?.msg || "Error al cargar pacientes."))
       .finally(() => setLoading(false));
   }, []);
+
+  const buscarPorLote = async () => {
+    if (!loteQuery.trim()) return;
+    setBuscandoLote(true);
+    try {
+      const resLotes = await axios.get("/batches", { headers: hdrs() });
+      const lote = (resLotes.data || []).find(
+        l => l.codigoLote?.toLowerCase() === loteQuery.trim().toLowerCase()
+      );
+      if (!lote) { setResultadosLote([]); setBuscandoLote(false); return; }
+  
+      const res = await axios.get(`/applied-vaccines/por-lote/${lote.idLote}`, { headers: hdrs() });
+      setResultadosLote(res.data || []);
+    } catch (e) {
+      console.error(e);
+      setResultadosLote([]);
+    }
+    setBuscandoLote(false);
+  };
 
   const filtered = mascotas.filter((m) => {
     const t = search.toLowerCase();
@@ -496,20 +518,76 @@ function PatientList({ onSelect }) {
         <p style={{ margin: 0, fontSize: 13, color: C.muted }}>Seleccioná un paciente para ver su historial completo</p>
       </div>
 
-      <div style={{ position: "relative", marginBottom: 16, maxWidth: 480 }}>
-        <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: C.muted }}>{Ic.search}</span>
-        <input
-          placeholder="Buscar por nombre, dueño, raza o especie..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{ width: "100%", padding: "10px 14px 10px 38px", borderRadius: 10, fontSize: 13, border: `1px solid ${C.border}`, outline: "none", background: C.white, boxSizing: "border-box" }}
-        />
-        {search && (
-          <button type="button" onClick={() => setSearch("")} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: C.muted, display: "flex" }}>{Ic.x}</button>
-        )}
+      <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
+        <button type="button" onClick={() => setModo("nombre")}
+          style={{ padding: "8px 14px", borderRadius: 8, border: `1px solid ${modo === "nombre" ? C.green700 : C.border}`, background: modo === "nombre" ? C.green700 : "white", color: modo === "nombre" ? "white" : C.text, cursor: "pointer", fontWeight: 700, fontSize: 12 }}>
+          🔍 Buscar paciente
+        </button>
+        <button type="button" onClick={() => setModo("lote")}
+          style={{ padding: "8px 14px", borderRadius: 8, border: `1px solid ${modo === "lote" ? C.amber : C.border}`, background: modo === "lote" ? C.amber : "white", color: modo === "lote" ? "white" : C.text, cursor: "pointer", fontWeight: 700, fontSize: 12 }}>
+          💉 Buscar lotes aplicados
+        </button>
       </div>
 
-      {loading ? (
+      {modo === "nombre" ? (
+        <div style={{ position: "relative", marginBottom: 16, maxWidth: 480 }}>
+          <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: C.muted }}>{Ic.search}</span>
+          <input
+            placeholder="Buscar por nombre, dueño, raza o especie..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{ width: "100%", padding: "10px 14px 10px 38px", borderRadius: 10, fontSize: 13, border: `1px solid ${C.border}`, outline: "none", background: C.white, boxSizing: "border-box" }}
+          />
+          {search && (
+            <button type="button" onClick={() => setSearch("")} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: C.muted, display: "flex" }}>{Ic.x}</button>
+          )}
+        </div>
+      ) : (
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: "flex", gap: 8, maxWidth: 480, marginBottom: 12 }}>
+            <input
+              placeholder="Código de lote (ej: LOTE-3)"
+              value={loteQuery}
+              onChange={(e) => setLoteQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && buscarPorLote()}
+              style={{ flex: 1, padding: "10px 14px", borderRadius: 10, fontSize: 13, border: `1px solid ${C.amberBorder}`, outline: "none" }}
+            />
+            <button type="button" onClick={buscarPorLote} disabled={buscandoLote}
+              style={{ padding: "10px 18px", background: C.amber, color: "white", border: "none", borderRadius: 10, cursor: buscandoLote ? "not-allowed" : "pointer", fontWeight: 700, fontSize: 13 }}>
+              {buscandoLote ? "Buscando..." : "Buscar"}
+            </button>
+          </div>
+
+          {resultadosLote !== null && (
+            <>
+              <p style={{ margin: "0 0 10px", fontSize: 13, color: C.muted, fontWeight: 600 }}>
+                {resultadosLote.length} paciente{resultadosLote.length !== 1 ? "s" : ""} recibieron este lote
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {resultadosLote.map((r) => {
+                  const mascota = r.Historial?.Mascota;
+                  const dueño = mascota?.Dueño;
+                  return (
+                    <div key={r.idVacunaAplicada} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", background: C.amberBg, border: `1px solid ${C.amberBorder}`, borderRadius: 10 }}>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{mascota?.nombre || "—"}</div>
+                        <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
+                          {dueño ? `${dueño.nombres} ${dueño.apellidos}` : "Sin dueño"}
+                          {" · "}{r.Vacuna?.Producto?.nombre || "—"}
+                          {" · Dosis: "}{r.dosis}
+                        </div>
+                      </div>
+                      <span style={{ fontSize: 12, color: C.amber, fontWeight: 700, whiteSpace: "nowrap" }}>{fmtFecha(r.fechaAplicacion)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {modo === "nombre" && (loading ? (
         <div style={{ padding: 60, textAlign: "center", color: C.muted }}>Cargando pacientes...</div>
       ) : err ? (
         <div style={{ padding: 40, textAlign: "center", color: C.red, background: C.redBg, borderRadius: 10, border: `1px solid ${C.redBorder}` }}>{err}</div>
@@ -549,7 +627,7 @@ function PatientList({ onSelect }) {
             </button>
           ))}
         </div>
-      )}
+      ))}
     </div>
   );
 }
@@ -976,29 +1054,6 @@ function PatientHistory({ mascota, onBack }) {
   const [editHistorial, setEditHistorial]         = useState(null); 
 
   const [estadosMascota, setEstadosMascota] = useState([])
-
-  const [busquedaLote, setBusquedaLote] = useState("");
-  const [resultadosLote, setResultadosLote] = useState(null);
-  const [buscandoLote, setBuscandoLote] = useState(false);
-
-  const buscarPorLote = async () => {
-    if (!busquedaLote.trim()) return;
-    setBuscandoLote(true);
-    try {
-      const resLotes = await axios.get("/batches", { headers: hdrs() });
-      const lote = (resLotes.data || []).find(
-        l => l.codigoLote?.toLowerCase() === busquedaLote.trim().toLowerCase()
-      );
-      if (!lote) { setResultadosLote([]); setBuscandoLote(false); return; }
-  
-      const res = await axios.get(`/applied-vaccines/por-lote/${lote.idLote}`, { headers: hdrs() });
-      setResultadosLote(res.data || []);
-    } catch (e) {
-      console.error(e);
-      setResultadosLote([]);
-    }
-    setBuscandoLote(false);
-  };
 
   // Carga detalle de un historial
   const fetchHistorialDetail = useCallback(async (idHistorial) => {
@@ -1622,44 +1677,6 @@ function PatientHistory({ mascota, onBack }) {
             vacunas={vaccines}
             aplicadas={vacunasPlenas}
           />
-
-          <div style={{ marginBottom: 14, padding: 14, background: "#fefce8", border: "1.5px solid #fef08a", borderRadius: 10 }}>
-            <p style={{ margin: "0 0 8px", fontSize: 12, fontWeight: 800, color: "#854d0e" }}>
-              🔍 Trazabilidad por lote (SENASA) — ¿a quién más se le aplicó este lote?
-            </p>
-            <div style={{ display: "flex", gap: 8 }}>
-              <input
-                placeholder="Código de lote (ej: LOTE-3)"
-                value={busquedaLote}
-                onChange={e => setBusquedaLote(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && buscarPorLote()}
-                style={{ flex: 1, padding: "8px 12px", borderRadius: 8, border: "1.5px solid #fde68a", fontSize: 13 }}
-              />
-              <button type="button" onClick={buscarPorLote} disabled={buscandoLote}
-                style={{ padding: "8px 16px", background: "#ca8a04", color: "white", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>
-                {buscandoLote ? "Buscando..." : "Buscar"}
-              </button>
-            </div>
-
-            {resultadosLote !== null && (
-              <div style={{ marginTop: 10 }}>
-                <p style={{ margin: "0 0 8px", fontSize: 12, color: "#854d0e", fontWeight: 600 }}>
-                  {resultadosLote.length} paciente{resultadosLote.length !== 1 ? "s" : ""} recibieron este lote
-                </p>
-                {resultadosLote.map(r => (
-                  <div key={r.idVacunaAplicada} style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", background: "white", borderRadius: 8, marginBottom: 6, fontSize: 13 }}>
-                    <span style={{ fontWeight: 700, color: "#166534" }}>
-                      {r.Historial?.Mascota?.nombre || "—"}
-                      <span style={{ fontWeight: 400, color: "#64748b" }}>
-                        {" — "}{r.Historial?.Mascota?.Dueño ? `${r.Historial.Mascota.Dueño.nombres} ${r.Historial.Mascota.Dueño.apellidos}` : "sin dueño"}
-                      </span>
-                    </span>
-                    <span style={{ color: "#94a3b8", fontSize: 12 }}>{fmtFecha(r.fechaAplicacion)}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
 
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14, padding: 12, background: C.surface, borderRadius: 10, border: `1px solid ${C.border}` }}>
             <select value={vacHistoryPicker} onChange={(e) => setVacHistoryPicker(e.target.value)} style={{ padding: 8, borderRadius: 6, border: `1px solid ${C.border}`, minWidth: 260 }}>
