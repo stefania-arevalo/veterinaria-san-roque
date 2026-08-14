@@ -5,9 +5,12 @@ const Locality = require("../models/locality");
 const { Op } = require("sequelize");
 
 const validateCreateClient = [
-  body("nombres").notEmpty().withMessage("El nombre es obligatorio."),
-  body("apellidos").notEmpty().withMessage("El apellido es obligatorio."),
-
+  body("nombres")
+    .notEmpty().withMessage("El nombre es obligatorio.")
+    .matches(/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/).withMessage("El nombre no puede contener números ni símbolos."),
+  body("apellidos")
+    .notEmpty().withMessage("El apellido es obligatorio.")
+    .matches(/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/).withMessage("El apellido no puede contener números ni símbolos."),
   body("dni")
     .notEmpty().withMessage("El DNI es obligatorio.")
     .isLength({ min: 7, max: 10 }).withMessage("El DNI debe tener entre 7 y 10 caracteres.")
@@ -25,7 +28,9 @@ const validateCreateClient = [
     .notEmpty().withMessage("El sexo es obligatorio.")
     .isIn(["M", "F"]).withMessage("El sexo debe ser M o F."),
 
-  body("telefono").notEmpty().withMessage("El teléfono es obligatorio."),
+  body("telefono")
+    .notEmpty().withMessage("El teléfono es obligatorio.")
+    .matches(/^[0-9+\-\s]+$/).withMessage("El teléfono solo puede contener números."),
   body("direccion").notEmpty().withMessage("La dirección es obligatoria."),
 
   body("correo")
@@ -54,8 +59,12 @@ const validateCreateClient = [
 ];
 
 const validateUpdateClient = [
-  body("nombres").optional(),
-  body("apellidos").optional(),
+  body("nombres")
+    .optional()
+    .matches(/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/).withMessage("El nombre no puede contener números ni símbolos."),
+  body("apellidos")
+    .optional()
+    .matches(/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/).withMessage("El apellido no puede contener números ni símbolos."),
 
   body("dni")
     .optional() 
@@ -76,7 +85,9 @@ const validateUpdateClient = [
     .optional()
     .isIn(["M", "F"]).withMessage("El sexo debe ser M o F."),
 
-  body("telefono").optional(),
+  body("telefono")
+    .optional()
+    .matches(/^[0-9+\-\s]+$/).withMessage("El teléfono solo puede contener números."),
   body("direccion").optional(),
 
   body("correo")

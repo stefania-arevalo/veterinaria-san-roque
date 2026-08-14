@@ -128,7 +128,6 @@ const validateCreatePurchase = [
     .notEmpty().withMessage("El precio de venta al público es obligatorio.")
     .isDecimal({ min: 0.01 }).withMessage("El precio de venta debe ser mayor a 0.")
     .custom((value, { req, path }) => {
-        // Opcional: Validar que el precio de venta no sea menor al precio de costo (para no perder dinero)
         const match = path.match(/items\[(\d+)\]/);
         if (match) {
             const index = match[1];

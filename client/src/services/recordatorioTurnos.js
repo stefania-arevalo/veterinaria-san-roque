@@ -62,7 +62,6 @@ export async function verificarYEnviarRecordatorios() {
 
       if (resultado.ok) {
         marcarEnviado(cita.idCita);
-        console.log(`✉️ Recordatorio enviado: Cita #${cita.idCita} → ${email}`);
       }
 
       // Esperar 1 segundo entre mails para no saturar EmailJS

@@ -849,7 +849,6 @@ function AttendServiceModal({ cita, staff, onClose, onSave }) {
               const msg = patchErr.response?.data?.msg || "";
               if (msg === "No se detectaron cambios en la ficha para actualizar.") {
                 // Sin cambios reales → no es un error, simplemente continuamos
-                console.log("Historial sin cambios, continuando con el flujo...");
               } else {
                 // Otro error inesperado → sí lo propagamos
                 throw patchErr;
@@ -995,7 +994,6 @@ function AttendServiceModal({ cita, staff, onClose, onSave }) {
 
   // Función que se ejecuta cuando eligen una vacuna en el modal de tarjetas
   const handleSelectVaccine = (vacunaSeleccionada) => {
-      console.log("Vacuna seleccionada:", vacunaSeleccionada); // ← para ver qué llega
       setDatosVacuna(prev => ({ 
         ...prev, 
         [detalleVacunaActivo]: { 
@@ -1854,7 +1852,7 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
           }, { headers: headers() });
         }
 
-        // 4. ACTUALIZAR LOS SERVICIOS EXISTENTES (¡Esto es lo que faltaba!)
+        // 4. ACTUALIZAR LOS SERVICIOS EXISTENTES 
         // Permite guardar los cambios en "Responsable" y "Observaciones"
         const existentes = detalles.filter(d => d._esExistente);
         for (const d of existentes) {

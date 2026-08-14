@@ -5,8 +5,12 @@ const Visitor = require("../models/visitor"); // Importamos el modelo para la va
 
 const validateCreate = [
     // 1. Validaciones individuales de campo
-    body("nombre").notEmpty().withMessage("El nombre es obligatorio."),
-    body("apellido").notEmpty().withMessage("El apellido es obligatorio."),
+    body("nombre")
+        .notEmpty().withMessage("El nombre es obligatorio.")
+        .matches(/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/).withMessage("El nombre no puede contener números ni símbolos."),
+    body("apellido")
+        .notEmpty().withMessage("El apellido es obligatorio.")
+        .matches(/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/).withMessage("El apellido no puede contener números ni símbolos."),
     body("correo").optional().isEmail().withMessage("El formato del correo no es válido."),
     body("idProveedor")
         .isInt().withMessage("El ID de proveedor debe ser un entero.")

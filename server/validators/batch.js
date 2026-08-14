@@ -1,6 +1,6 @@
 const { body, param } = require("express-validator");
-const Product = require("../models/product"); // Ajusta la ruta
-const ProductPresentation = require("../models/productPresentation"); // Ajusta la ruta
+const Product = require("../models/product"); 
+const ProductPresentation = require("../models/productPresentation"); 
 
 const validateCreate = [
     body("idProducto")

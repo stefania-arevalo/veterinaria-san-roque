@@ -77,8 +77,7 @@ Product.associate = (models) => {
     Product.belongsTo(models.Category, { foreignKey: 'idCategoria', as: 'Categoria' });
     Product.hasMany(models.ProductPresentation, { foreignKey: 'idProducto', as: 'Presentaciones' }); 
     Product.hasMany(models.Batch, { foreignKey: 'idProducto', as: 'Lotes' });
-    
-    // 🔥 LAS 3 RELACIONES QUE FALTABAN:
+
     Product.belongsTo(models.Brand, { foreignKey: 'idMarca', as: 'Marca' });
     Product.hasOne(models.Medication, { foreignKey: 'idProducto', as: 'Medicamento' });
     Product.hasOne(models.Vaccine, { foreignKey: 'idProducto', as: 'Vacuna' });

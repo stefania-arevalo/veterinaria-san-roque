@@ -5,11 +5,16 @@ const Staff = require("../models/staff");
 const Client = require("../models/client");
 
 const validateCreateStaff = [
-  body("nombres").notEmpty().withMessage("El nombre es obligatorio."),
-  body("apellidos").notEmpty().withMessage("El apellido es obligatorio."),
+  body("nombres")
+    .notEmpty().withMessage("El nombre es obligatorio.")
+    .matches(/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/).withMessage("El nombre no puede contener números ni símbolos."),
+  body("apellidos")
+    .notEmpty().withMessage("El apellido es obligatorio.")
+    .matches(/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/).withMessage("El apellido no puede contener números ni símbolos."),
   body("dni")
     .notEmpty().withMessage("El DNI es obligatorio.")
-    .isLength({ max: 10 }).withMessage("DNI inválido.")
+    .isLength({ min: 7, max: 10 }).withMessage("El DNI debe tener entre 7 y 10 caracteres.")
+    .isNumeric().withMessage("El DNI debe contener solo números.")
     .custom(async (dni) => {
       const inStaff = await Staff.findOne({ where: { dni } });
       if (inStaff) throw new Error("Este DNI pertenece a un registro de personal.");
@@ -39,9 +44,16 @@ const validateCreateStaff = [
 ];
 
 const validateUpdateStaff = [
-  body("nombres").optional().notEmpty(),
-  body("apellidos").optional().notEmpty(),
-  body("dni").optional().notEmpty(),
+  body("nombres")
+    .optional().notEmpty()
+    .matches(/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/).withMessage("El nombre no puede contener números ni símbolos."),
+  body("apellidos")
+    .optional().notEmpty()
+    .matches(/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/).withMessage("El apellido no puede contener números ni símbolos."),
+  body("dni")
+    .optional().notEmpty()
+    .isLength({ min: 7, max: 10 }).withMessage("El DNI debe tener entre 7 y 10 caracteres.")
+    .isNumeric().withMessage("El DNI debe contener solo números."),
   body("sexo").optional().isIn(["M","F","O"]),
   body("fechaNacimiento").optional().isDate(),
   body("correo").optional().isEmail(),

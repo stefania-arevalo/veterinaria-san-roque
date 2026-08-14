@@ -1,5 +1,5 @@
 const Salary = require("../models/salary");
-const Staff  = require("../models/staff");   // ← faltaba esto
+const Staff  = require("../models/staff");   
 const { Op } = require("sequelize");
 
 async function createSalary(req, res, next) {

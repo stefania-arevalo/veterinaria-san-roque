@@ -10,7 +10,7 @@ async function createAppliedVaccine(req, res, next) {
     try {
         const { idHistorial, idVacuna, dosis, fechaAplicacion } = req.body;
 
-        // ── LÓGICA FIFO: buscar el lote con vencimiento más próximo ──
+        // ── LÓGICA FEFO: buscar el lote con vencimiento más próximo ──
         const lote = await Batch.findOne({
             where: {
                 idProducto:       idVacuna,
