@@ -428,13 +428,15 @@ function AlertModal({ emoji, emojiBg, title, message, onConfirm, onCancel, confi
 }
 
 function RecordatorioModal({ cita, onClose, onEnviado }) {
+  const yaEnviado = estaRecordatorioEnviado(cita.idCita);
+  const [email, setEmail] = useState(cita.Mascota?.Dueño?.correo || "");
   const [enviando, setEnviando] = useState(false);
   const [resultado, setResultado] = useState(null); // null | "ok" | "error"
   const [errorMsg, setErrorMsg] = useState("");
 
   const handleEnviar = async () => {
     setEnviando(true);
-    const res = await enviarRecordatorioManual(cita);
+    const res = await enviarRecordatorioManual(cita, email);
     setEnviando(false);
     if (res.ok) {
       setResultado("ok");
@@ -454,10 +456,10 @@ function RecordatorioModal({ cita, onClose, onEnviado }) {
 
         {resultado === "ok" ? (
           <>
-            <h2 style={{ margin: "0 0 10px", fontSize: 20, fontWeight: 800, color: "#166534" }}>¡Recordatorio enviado!</h2>
-            <p style={{ margin: "0 0 24px", fontSize: 14, color: "#64748b" }}>
-              Se envió correctamente a {cita.Mascota?.Dueño?.nombres || "el cliente"}.
-            </p>
+            <h2 style={{ margin: "0 0 10px", fontSize: 20, fontWeight: 800, color: "#166534" }}>
+              {yaEnviado ? "¡Recordatorio reenviado!" : "¡Recordatorio enviado!"}
+            </h2>
+            <p style={{ margin: "0 0 24px", fontSize: 14, color: "#64748b" }}>Se envió correctamente a {email}.</p>
             <button onClick={onClose} style={{ width: "100%", padding: 13, border: "none", borderRadius: 12, background: "#166534", color: "white", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
               Cerrar
             </button>
@@ -466,24 +468,44 @@ function RecordatorioModal({ cita, onClose, onEnviado }) {
           <>
             <h2 style={{ margin: "0 0 10px", fontSize: 20, fontWeight: 800, color: "#dc2626" }}>No se pudo enviar</h2>
             <p style={{ margin: "0 0 24px", fontSize: 14, color: "#64748b" }}>{errorMsg}</p>
-            <button onClick={onClose} style={{ width: "100%", padding: 13, border: "none", borderRadius: 12, background: "#ef4444", color: "white", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
-              Cerrar
+            <button onClick={() => setResultado(null)} style={{ width: "100%", padding: 13, border: "none", borderRadius: 12, background: "#ef4444", color: "white", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+              Volver a intentar
             </button>
           </>
         ) : (
           <>
-            <h2 style={{ margin: "0 0 10px", fontSize: 20, fontWeight: 800, color: "#166534" }}>¿Enviar recordatorio?</h2>
-            <p style={{ margin: "0 0 28px", fontSize: 14, color: "#64748b", lineHeight: 1.6 }}>
-              Se enviará un email a <strong>{cita.Mascota?.Dueño?.nombres} {cita.Mascota?.Dueño?.apellidos}</strong> sobre el turno de <strong>{cita.Mascota?.nombre}</strong> el {fmtFecha(cita.fecha)} a las {cita.hora?.slice(0,5)}.
+            <h2 style={{ margin: "0 0 10px", fontSize: 20, fontWeight: 800, color: "#166534" }}>
+              {yaEnviado ? "¿Reenviar recordatorio?" : "¿Enviar recordatorio?"}
+            </h2>
+            <p style={{ margin: "0 0 18px", fontSize: 14, color: "#64748b", lineHeight: 1.6 }}>
+              Turno de <strong>{cita.Mascota?.nombre}</strong> el {fmtFecha(cita.fecha)} a las {cita.hora?.slice(0,5)}.
+              {yaEnviado && <><br /><span style={{ fontSize: 12, color: "#94a3b8" }}>Ya se envió un recordatorio antes para esta cita.</span></>}
             </p>
+
+            <div style={{ marginBottom: 22, textAlign: "left" }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#64748b", marginBottom: 6, textTransform: "uppercase" }}>
+                Enviar a
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="email@ejemplo.com"
+                style={{ width: "100%", boxSizing: "border-box", padding: "11px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 14, outline: "none" }}
+              />
+              {!cita.Mascota?.Dueño?.correo && (
+                <p style={{ margin: "6px 0 0", fontSize: 12, color: "#c2410c" }}>⚠️ Este cliente no tiene email cargado — escribilo acá para poder enviarlo.</p>
+              )}
+            </div>
+
             <div style={{ display: "flex", gap: 12 }}>
               <button onClick={onClose} disabled={enviando}
                 style={{ flex: 1, padding: 13, border: "2px solid #e2e8f0", borderRadius: 12, background: "white", fontWeight: 700, fontSize: 14, cursor: "pointer", color: "#475569" }}>
                 Cancelar
               </button>
-              <button onClick={handleEnviar} disabled={enviando}
-                style={{ flex: 1, padding: 13, border: "none", borderRadius: 12, background: "#ca8a04", color: "white", fontWeight: 700, fontSize: 14, cursor: enviando ? "not-allowed" : "pointer" }}>
-                {enviando ? "Enviando..." : "Sí, enviar"}
+              <button onClick={handleEnviar} disabled={enviando || !email}
+                style={{ flex: 1, padding: 13, border: "none", borderRadius: 12, background: "#ca8a04", color: "white", fontWeight: 700, fontSize: 14, cursor: (enviando || !email) ? "not-allowed" : "pointer", opacity: (enviando || !email) ? 0.6 : 1 }}>
+                {enviando ? "Enviando..." : yaEnviado ? "Sí, reenviar" : "Sí, enviar"}
               </button>
             </div>
           </>
@@ -3566,16 +3588,16 @@ export default function AppointmentPage() {
                                 </button>
                               )}
                               {estaRecordatorioEnviado(a.idCita) ? (
-                                <span style={{ padding: "6px 11px", borderRadius: 8, background: "#f0fdf4", color: "#16a34a", fontSize: 12, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                                <button onClick={() => setModalRecordatorio(a)}
+                                  style={{ padding: "6px 11px", borderRadius: 8, border: "1.5px solid #86efac", background: "#f0fdf4", color: "#16a34a", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4 }}>
                                   🔔 Enviado
-                                </span>
+                                </button>
                               ) : (
                                 <button onClick={() => setModalRecordatorio(a)}
                                   style={{ padding: "6px 11px", borderRadius: 8, border: "1.5px solid #ca8a04", background: "white", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#ca8a04" }}>
                                   🔔 Recordatorio
                                 </button>
                               )}
-                              
                               {canEdit && (
                                 <button onClick={() => setModal({ type: "edit", data: a })}
                                   style={{ padding: "6px 11px", borderRadius: 8, border: `1.5px solid ${VET_COLORS.border}`, background: "white", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#166534" }}>

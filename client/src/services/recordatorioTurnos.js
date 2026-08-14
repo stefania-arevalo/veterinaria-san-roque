@@ -22,10 +22,10 @@ export function estaRecordatorioEnviado(idCita) {
   return !!getEnviados()[idCita];
 }
 
-export async function enviarRecordatorioManual(cita) {
-  const email = cita.Mascota?.Dueño?.correo;
+export async function enviarRecordatorioManual(cita, emailOverride) {
+  const email = emailOverride?.trim() || cita.Mascota?.Dueño?.correo;
   if (!email) {
-    return { ok: false, error: 'El dueño no tiene email cargado.' };
+    return { ok: false, error: 'Ingresá un email para enviar el recordatorio.' };
   }
 
   const servicioPrincipal =
