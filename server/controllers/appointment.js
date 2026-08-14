@@ -34,7 +34,7 @@ function minutesToTime(totalMinutes) {
 function getDiaSemana(fechaStr) {
     const [y, mo, d] = fechaStr.split('-');
     const fecha = new Date(y, mo - 1, d);
-    return ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sabado'][fecha.getDay()];
+    return ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][fecha.getDay()];
 }
 
 // ─── Validación de rol vs tipo de servicio ───────────────────────────────────
