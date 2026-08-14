@@ -1658,19 +1658,75 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
   const petSizeId    = selectedPet?.idTamaño || null;
   const petSizeLabel = selectedPet?.AnimalSize?.descripcion || null;
 
+  const [horarioDia, setHorarioDia] = useState([]); // [{horaInicio, horaFin}]
+  const [horarioCargado, setHorarioCargado] = useState(false);
+
+  // ── Traer horario del vet/día seleccionado ──────────────────────
   useEffect(() => {
-    if (!form.fecha || !form.hora || !form.idVeterinario) {
+    if (!form.fecha || !form.idVeterinario) {
+      setHorarioDia([]);
+      setHorarioCargado(false);
+      return;
+    }
+
+    const partes = form.fecha.split('-');
+    const fechaLocal = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+    const dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sabado'];
+    const diaSemana = dias[fechaLocal.getDay()];
+
+    setHorarioCargado(false);
+
+    axios.get(`/vetschedules?diaSemana=${encodeURIComponent(diaSemana)}&idPersonal=${form.idVeterinario}`, { headers: headers() })
+      .then(r => r.data || [])
+      .then(async (horarioPropio) => {
+        if (horarioPropio.length > 0) return horarioPropio;
+        // Sin horario propio → usar el horario general de la clínica
+        const resClinica = await axios.get(`/schedules?diaSemana=${encodeURIComponent(diaSemana)}`, { headers: headers() });
+        return resClinica.data || [];
+      })
+      .then(horarios => setHorarioDia(horarios))
+      .catch(() => setHorarioDia([]))
+      .finally(() => setHorarioCargado(true));
+  }, [form.fecha, form.idVeterinario]);
+
+  // ── Validar hora contra horario + superposición ─────────────────
+  useEffect(() => {
+    if (!form.fecha || !form.hora || !form.idVeterinario || !horarioCargado) {
       setVetDisponibilidad(null);
       return;
     }
-    // Chequeamos si el vet ya tiene una cita en esa fecha/hora (excluyendo la cita actual en edición)
+
+    const toMins = (t) => {
+      if (!t) return 0;
+      const [h, m] = t.substring(0, 5).split(':').map(Number);
+      return h * 60 + m;
+    };
+    const horaMins = toMins(form.hora);
+
+    // 1. ¿Cae dentro de algún bloque de horario de atención?
+    const dentroDeHorario = horarioDia.some(h =>
+      horaMins >= toMins(h.horaInicio) && horaMins < toMins(h.horaFin)
+    );
+
+    if (!dentroDeHorario) {
+      setVetDisponibilidad("fuera_horario");
+      setVetDisponibilidadMsg(
+        horarioDia.length === 0
+          ? "⚠️ No hay atención programada para este día."
+          : `⚠️ Fuera del horario de atención (${horarioDia.map(h => `${h.horaInicio?.substring(0,5)}–${h.horaFin?.substring(0,5)}`).join(' / ')}).`
+      );
+      return;
+    }
+
+    // 2. Si está dentro del horario, recién ahí chequeamos superposición con otras citas
     const citasDelVet = appointments.filter(a =>
       a.fecha === form.fecha &&
       a.hora?.slice(0, 5) === form.hora &&
       Number(a.idVeterinario) === Number(form.idVeterinario) &&
-      a.idEstadoCita !== 3 && // no canceladas
-      (!isEdit || a.idCita !== cita?.idCita) // excluir la cita actual en edición
+      a.idEstadoCita !== 3 &&
+      (!isEdit || a.idCita !== cita?.idCita)
     );
+
     if (citasDelVet.length > 0) {
       setVetDisponibilidad("ocupado");
       const mascota = citasDelVet[0].Mascota?.nombre || "otro paciente";
@@ -1679,7 +1735,7 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
       setVetDisponibilidad("ok");
       setVetDisponibilidadMsg("");
     }
-  }, [form.fecha, form.hora, form.idVeterinario]);
+  }, [form.fecha, form.hora, form.idVeterinario, horarioDia, horarioCargado]);
   
   useEffect(() => {
     axios.get("/service-prices", { headers: headers() })
@@ -1814,6 +1870,10 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
     );
     if (esteticaSinResponsable) {
       setError(`El servicio "${esteticaSinResponsable._descripcion}" es de estética y requiere que asignes un responsable.`);
+      return;
+    }
+    if (vetDisponibilidad === "fuera_horario" || vetDisponibilidad === "ocupado") {
+      setError(vetDisponibilidadMsg);
       return;
     }
 
@@ -2206,6 +2266,11 @@ function AppointmentModal({ mode, cita, pets, vets, staff, appointmentTypes, ani
                   background: "#fff7ed", border: "1.5px solid #f97316",
                   borderRadius: 8, fontSize: 12, color: "#c2410c", fontWeight: 600,
                 }}>
+                  {vetDisponibilidadMsg}
+                </div>
+              )}
+              {vetDisponibilidad === "fuera_horario" && (
+                <div style={{ marginTop: 6, padding: "8px 12px", background: "#fef2f2", border: "1.5px solid #fca5a5", borderRadius: 8, fontSize: 12, color: "#dc2626", fontWeight: 600 }}>
                   {vetDisponibilidadMsg}
                 </div>
               )}
