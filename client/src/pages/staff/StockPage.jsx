@@ -216,9 +216,17 @@ function ProductoExpandedPanel({ idProducto, canEdit, onClose }) {
     finally { setSavingPres(false); }
   };
 
-  const stockActivo   = lotes.filter(l => l.cantidadDisponible > 0 && new Date(l.fechaVencimiento) >= new Date());
-  const stockTotal    = lotes.reduce((s, l) => s + (l.cantidadDisponible || 0), 0);
-  const loteActivo    = stockActivo.sort((a, b) => new Date(a.fechaVencimiento) - new Date(b.fechaVencimiento))[0];
+  const hoyISO = new Date().toISOString().slice(0, 10);
+
+  const stockActivo = lotes.filter(
+    l => l.cantidadDisponible > 0 && l.fechaVencimiento >= hoyISO
+  );
+  
+  const stockTotal = stockActivo.reduce((s, l) => s + (l.cantidadDisponible || 0), 0); // ✅ solo vigentes
+  
+  const loteActivo = [...stockActivo].sort(
+    (a, b) => new Date(a.fechaVencimiento) - new Date(b.fechaVencimiento)
+  )[0];
 
   return (
     <tr>
@@ -1052,23 +1060,42 @@ export default function InventarioPage() {
       </div>
 
       {/* Filtros */}
-      <div style={{ background: C.white, borderRadius: 12, border: `1px solid ${C.border}`, padding: "12px 16px", marginBottom: 14, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+      <div style={{
+        background: C.white, borderRadius: 12, border: `1px solid ${C.border}`,
+        padding: "12px 16px", marginBottom: 14,
+        display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center",
+      }}>
+        {/* Buscar por nombre */}
         <div style={{ position: "relative", flex: "2 1 220px" }}>
-          <span style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", opacity: 0.4 }}>🔍</span>
-          <input placeholder="Buscar por nombre…" value={search} onChange={e => setSearch(e.target.value)} style={{ ...inp, paddingLeft: 34 }} />
-          <div style={{ position: "relative", flex: "1 1 180px" }}>
-            <span style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", opacity: 0.4 }}>📦</span>
-            <input placeholder="Buscar por N° de lote…" value={searchLote} onChange={e => setSearchLote(e.target.value)} style={{ ...inp, paddingLeft: 34 }} />
-          </div>
+          <span style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", opacity: 0.4, pointerEvents: "none" }}>🔍</span>
+          <input
+            placeholder="Buscar por nombre…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{ ...inp, paddingLeft: 34, width: "100%", boxSizing: "border-box" }}
+          />
         </div>
+
+        {/* Buscar por N° de lote*/}
+        <div style={{ position: "relative", flex: "1 1 180px" }}>
+          <span style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", opacity: 0.4, pointerEvents: "none" }}>📦</span>
+          <input
+            placeholder="Buscar por N° de lote…"
+            value={searchLote}
+            onChange={e => setSearchLote(e.target.value)}
+            style={{ ...inp, paddingLeft: 34, width: "100%", boxSizing: "border-box" }}
+          />
+        </div>
+
         <select value={filterCat} onChange={e => setFilterCat(e.target.value)} style={{ ...inp, flex: "1 1 160px", cursor: "pointer" }}>
           <option value="all">Todas las categorías</option>
           {categorias.map(c => <option key={c.idCategoria} value={c.idCategoria}>{c.descripcion || c.nombre}</option>)}
         </select>
+
         <span style={{ fontSize: 12, color: C.muted, marginLeft: "auto" }}>
           {filtered.length} producto{filtered.length !== 1 ? "s" : ""}
         </span>
-      </div>
+</div>
 
       {/* Tabla */}
       <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.border}`, overflow: "hidden" }}>

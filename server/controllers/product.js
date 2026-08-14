@@ -29,53 +29,56 @@ const getProducts = async (req, res) => {
         if (category && category !== 'all') whereClause.idCategoria = category;
         if (soloVenta === 'true') whereClause.esUsoInterno = 0;
 
-        // 1. Buscamos usando los alias exactos que definimos en Product.js
+        const hoyISO = new Date().toISOString().slice(0, 10); 
+
         const products = await Product.findAll({
             where: whereClause,
             include: [
                 { model: Category, as: 'Categoria', attributes: ['descripcion'] },
-                { model: Brand, as: 'Marca' }, 
-                { model: Medication, as: 'Medicamento' }, 
+                { model: Brand, as: 'Marca' },
+                { model: Medication, as: 'Medicamento' },
                 { model: Vaccine, as: 'Vacuna' },
-                { 
-                    model: ProductPresentation, 
+                {
+                    model: ProductPresentation,
                     as: 'Presentaciones',
                     where: { activo: true },
-                    required: false,         
+                    required: false,
                     attributes: ['idProdPres', 'precio'],
-                    include: [{ 
-                        model: Presentation, 
-                        as: 'Presentacion',
-                        attributes: ['tipo', 'formato', 'cantidad'] 
-                    }]
+                    include: [{ model: Presentation, as: 'Presentacion', attributes: ['tipo', 'formato', 'cantidad'] }]
                 },
-                { 
-                    model: Batch, 
-                    as: 'Lotes', 
+                {
+                    model: Batch,
+                    as: 'Lotes',
                     attributes: ['idLote', 'cantidadDisponible', 'codigoLote', 'fechaVencimiento'],
                     required: false
                 }
             ]
         });
-        
-        // 2. Mapeo Híbrido seguro
-        const formattedProducts = products.map(p => {
-            const pJSON = p.toJSON(); 
 
-            // Extraemos leyendo los nombres exactos
+        const formattedProducts = products.map(p => {
+            const pJSON = p.toJSON();
+
             const firstPres = pJSON.Presentaciones?.[0];
             const presData = firstPres?.Presentation;
-            const firstBatch = pJSON.Lotes?.[0]; 
-        
+
+            // ── Lotes activos: con stock > 0 y NO vencidos ──
+            const lotesActivos = (pJSON.Lotes || []).filter(
+                b => b.cantidadDisponible > 0 && b.fechaVencimiento >= hoyISO
+            );
+
+            // FEFO: el que vence antes primero
+            const loteFEFO = [...lotesActivos].sort(
+                (a, b) => a.fechaVencimiento.localeCompare(b.fechaVencimiento)
+            )[0] || null;
+
             return {
-                ...pJSON, 
+                ...pJSON,
                 categoria: pJSON.Categoria?.descripcion || "General",
                 precio: firstPres ? parseFloat(firstPres.precio) : 0,
-                idProdPres: firstPres ? firstPres.idProdPres : null, 
-                // En vez de clavar "Unidad", devolvemos null si no hay presentación para que no estorbe visualmente
+                idProdPres: firstPres ? firstPres.idProdPres : null,
                 presentacion: presData ? `${presData.tipo} ${presData.formato} x ${presData.cantidad}` : null,
-                stock: pJSON.Lotes?.reduce((acc, b) => acc + b.cantidadDisponible, 0) || 0,
-                idLote: firstBatch?.idLote ?? null  
+                stock: lotesActivos.reduce((acc, b) => acc + b.cantidadDisponible, 0), // ✅ solo vigentes
+                idLote: loteFEFO?.idLote ?? null // ✅ además, ahora manda el lote correcto (FEFO), no Lotes[0]
             };
         });
 
