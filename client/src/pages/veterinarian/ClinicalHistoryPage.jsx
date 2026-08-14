@@ -977,6 +977,28 @@ function PatientHistory({ mascota, onBack }) {
 
   const [estadosMascota, setEstadosMascota] = useState([])
 
+  const [busquedaLote, setBusquedaLote] = useState("");
+  const [resultadosLote, setResultadosLote] = useState(null);
+  const [buscandoLote, setBuscandoLote] = useState(false);
+
+  const buscarPorLote = async () => {
+    if (!busquedaLote.trim()) return;
+    setBuscandoLote(true);
+    try {
+      const resLotes = await axios.get("/batches", { headers: hdrs() });
+      const lote = (resLotes.data || []).find(
+        l => l.codigoLote?.toLowerCase() === busquedaLote.trim().toLowerCase()
+      );
+      if (!lote) { setResultadosLote([]); setBuscandoLote(false); return; }
+  
+      const res = await axios.get(`/applied-vaccines/por-lote/${lote.idLote}`, { headers: hdrs() });
+      setResultadosLote(res.data || []);
+    } catch (e) {
+      console.error(e);
+      setResultadosLote([]);
+    }
+    setBuscandoLote(false);
+  };
 
   // Carga detalle de un historial
   const fetchHistorialDetail = useCallback(async (idHistorial) => {
@@ -1601,6 +1623,44 @@ function PatientHistory({ mascota, onBack }) {
             aplicadas={vacunasPlenas}
           />
 
+          <div style={{ marginBottom: 14, padding: 14, background: "#fefce8", border: "1.5px solid #fef08a", borderRadius: 10 }}>
+            <p style={{ margin: "0 0 8px", fontSize: 12, fontWeight: 800, color: "#854d0e" }}>
+              🔍 Trazabilidad por lote (SENASA) — ¿a quién más se le aplicó este lote?
+            </p>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input
+                placeholder="Código de lote (ej: LOTE-3)"
+                value={busquedaLote}
+                onChange={e => setBusquedaLote(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && buscarPorLote()}
+                style={{ flex: 1, padding: "8px 12px", borderRadius: 8, border: "1.5px solid #fde68a", fontSize: 13 }}
+              />
+              <button type="button" onClick={buscarPorLote} disabled={buscandoLote}
+                style={{ padding: "8px 16px", background: "#ca8a04", color: "white", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>
+                {buscandoLote ? "Buscando..." : "Buscar"}
+              </button>
+            </div>
+
+            {resultadosLote !== null && (
+              <div style={{ marginTop: 10 }}>
+                <p style={{ margin: "0 0 8px", fontSize: 12, color: "#854d0e", fontWeight: 600 }}>
+                  {resultadosLote.length} paciente{resultadosLote.length !== 1 ? "s" : ""} recibieron este lote
+                </p>
+                {resultadosLote.map(r => (
+                  <div key={r.idVacunaAplicada} style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", background: "white", borderRadius: 8, marginBottom: 6, fontSize: 13 }}>
+                    <span style={{ fontWeight: 700, color: "#166534" }}>
+                      {r.Historial?.Mascota?.nombre || "—"}
+                      <span style={{ fontWeight: 400, color: "#64748b" }}>
+                        {" — "}{r.Historial?.Mascota?.Dueño ? `${r.Historial.Mascota.Dueño.nombres} ${r.Historial.Mascota.Dueño.apellidos}` : "sin dueño"}
+                      </span>
+                    </span>
+                    <span style={{ color: "#94a3b8", fontSize: 12 }}>{fmtFecha(r.fechaAplicacion)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14, padding: 12, background: C.surface, borderRadius: 10, border: `1px solid ${C.border}` }}>
             <select value={vacHistoryPicker} onChange={(e) => setVacHistoryPicker(e.target.value)} style={{ padding: 8, borderRadius: 6, border: `1px solid ${C.border}`, minWidth: 260 }}>
               <option value="">— Elegí una consulta para agregar —</option>
@@ -1659,7 +1719,9 @@ function PatientHistory({ mascota, onBack }) {
                             color: loteVencido ? C.red : C.green800,
                             padding: "0 6px", borderRadius: 4, fontSize: 11, fontWeight: 600
                           }}>
-                            {loteVencido ? `⚠️ Lote vencido ${fmtFecha(v.Lote.fechaVencimiento)}` : `Lote vence ${fmtFecha(v.Lote.fechaVencimiento)}`}
+                            {loteVencido
+                              ? `⚠️ Lote ${v.Lote?.codigoLote || "—"} vencido ${fmtFecha(v.Lote.fechaVencimiento)}`
+                              : `Lote ${v.Lote?.codigoLote || "—"} vence ${fmtFecha(v.Lote.fechaVencimiento)}`}
                           </span>
                         )}
 
