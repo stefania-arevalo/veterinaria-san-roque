@@ -1,10 +1,9 @@
-import axios from '../api/axios';
 import { enviarRecordatorioTurno } from './emailService';
 
 const STORAGE_KEY = 'recordatorios_enviados';
 
 function getEnviados() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } 
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
   catch { return {}; }
 }
 
@@ -19,55 +18,28 @@ function marcarEnviado(idCita) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(enviados));
 }
 
-export async function verificarYEnviarRecordatorios() {
-  try {
-    const token = localStorage.getItem('accessToken');
-    if (!token) return;
+export function estaRecordatorioEnviado(idCita) {
+  return !!getEnviados()[idCita];
+}
 
-    // Solo corre una vez por hora por sesión
-    const ultimaVez = localStorage.getItem('ultima_verificacion_recordatorios');
-    if (ultimaVez && Date.now() - Number(ultimaVez) < 60 * 60 * 1000) return;
-    localStorage.setItem('ultima_verificacion_recordatorios', String(Date.now()));
-
-    // Fecha de mañana
-    const manana = new Date();
-    manana.setDate(manana.getDate() + 1);
-    const fechaManana = manana.toLocaleDateString('en-CA'); // YYYY-MM-DD
-
-    const res = await axios.get(`/appointments?date=${fechaManana}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-
-    const citas = res.data || [];
-    const enviados = getEnviados();
-
-    for (const cita of citas) {
-      // Solo cita pendientes (1) con email del cliente
-      if (![1].includes(cita.idEstadoCita)) continue;
-      const email = cita.Mascota?.Dueño?.correo;
-      if (!email) continue;
-      // Ya enviado hoy
-      if (enviados[cita.idCita]) continue;
-
-      const servicioPrincipal = cita.detalles?.[0]?.PrecioServicio?.Service?.descripcion || 'Consulta veterinaria';
-
-      const resultado = await enviarRecordatorioTurno({
-        clienteNombre: `${cita.Mascota?.Dueño?.nombres || ''} ${cita.Mascota?.Dueño?.apellidos || ''}`.trim(),
-        clienteEmail:  email,
-        fecha:         new Date(cita.fecha + 'T00:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: '2-digit', month: 'long' }),
-        hora:          cita.hora?.slice(0, 5) || '',
-        mascotaNombre: cita.Mascota?.nombre || '',
-        servicio:      servicioPrincipal,
-      });
-
-      if (resultado.ok) {
-        marcarEnviado(cita.idCita);
-      }
-
-      // Esperar 1 segundo entre mails para no saturar EmailJS
-      await new Promise(r => setTimeout(r, 1000));
-    }
-  } catch (err) {
-    console.error('Error verificando recordatorios:', err);
+export async function enviarRecordatorioManual(cita) {
+  const email = cita.Mascota?.Dueño?.correo;
+  if (!email) {
+    return { ok: false, error: 'El dueño no tiene email cargado.' };
   }
+
+  const servicioPrincipal =
+    cita.detalles?.[0]?.PrecioServicio?.Service?.descripcion || 'Consulta veterinaria';
+
+  const resultado = await enviarRecordatorioTurno({
+    clienteNombre: `${cita.Mascota?.Dueño?.nombres || ''} ${cita.Mascota?.Dueño?.apellidos || ''}`.trim(),
+    clienteEmail:  email,
+    fecha:         new Date(cita.fecha + 'T00:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: '2-digit', month: 'long' }),
+    hora:          cita.hora?.slice(0, 5) || '',
+    mascotaNombre: cita.Mascota?.nombre || '',
+    servicio:      servicioPrincipal,
+  });
+
+  if (resultado.ok) marcarEnviado(cita.idCita);
+  return resultado;
 }

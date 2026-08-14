@@ -3,7 +3,7 @@ import React, { useEffect, useState, useRef, useMemo } from "react";
 import axios from "../../api/axios";
 import { VET_COLORS } from "../../layouts/AdminLayout";
 import { useNavigate, useLocation } from "react-router-dom";
-import { verificarYEnviarRecordatorios } from '../../services/recordatorioTurnos';
+import { estaRecordatorioEnviado, enviarRecordatorioManual } from '../../services/recordatorioTurnos';
 import { useWindowSize } from "../../hooks/useWindowSize";
 
 const token    = () => localStorage.getItem("accessToken");
@@ -422,6 +422,72 @@ function AlertModal({ emoji, emojiBg, title, message, onConfirm, onCancel, confi
             {confirmText || "Aceptar"}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function RecordatorioModal({ cita, onClose, onEnviado }) {
+  const [enviando, setEnviando] = useState(false);
+  const [resultado, setResultado] = useState(null); // null | "ok" | "error"
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const handleEnviar = async () => {
+    setEnviando(true);
+    const res = await enviarRecordatorioManual(cita);
+    setEnviando(false);
+    if (res.ok) {
+      setResultado("ok");
+      onEnviado?.();
+    } else {
+      setResultado("error");
+      setErrorMsg(res.error || "No se pudo enviar el recordatorio.");
+    }
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(10,20,40,0.65)", backdropFilter: "blur(8px)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div style={{ background: "white", borderRadius: 24, padding: "40px 36px", maxWidth: 420, width: "100%", textAlign: "center", boxShadow: "0 32px 80px rgba(0,0,0,0.28)" }}>
+        <div style={{ width: 72, height: 72, borderRadius: "50%", background: "#fef9c3", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 34, margin: "0 auto 20px" }}>
+          {resultado === "ok" ? "✅" : resultado === "error" ? "❌" : "🔔"}
+        </div>
+
+        {resultado === "ok" ? (
+          <>
+            <h2 style={{ margin: "0 0 10px", fontSize: 20, fontWeight: 800, color: "#166534" }}>¡Recordatorio enviado!</h2>
+            <p style={{ margin: "0 0 24px", fontSize: 14, color: "#64748b" }}>
+              Se envió correctamente a {cita.Mascota?.Dueño?.nombres || "el cliente"}.
+            </p>
+            <button onClick={onClose} style={{ width: "100%", padding: 13, border: "none", borderRadius: 12, background: "#166534", color: "white", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+              Cerrar
+            </button>
+          </>
+        ) : resultado === "error" ? (
+          <>
+            <h2 style={{ margin: "0 0 10px", fontSize: 20, fontWeight: 800, color: "#dc2626" }}>No se pudo enviar</h2>
+            <p style={{ margin: "0 0 24px", fontSize: 14, color: "#64748b" }}>{errorMsg}</p>
+            <button onClick={onClose} style={{ width: "100%", padding: 13, border: "none", borderRadius: 12, background: "#ef4444", color: "white", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+              Cerrar
+            </button>
+          </>
+        ) : (
+          <>
+            <h2 style={{ margin: "0 0 10px", fontSize: 20, fontWeight: 800, color: "#166534" }}>¿Enviar recordatorio?</h2>
+            <p style={{ margin: "0 0 28px", fontSize: 14, color: "#64748b", lineHeight: 1.6 }}>
+              Se enviará un email a <strong>{cita.Mascota?.Dueño?.nombres} {cita.Mascota?.Dueño?.apellidos}</strong> sobre el turno de <strong>{cita.Mascota?.nombre}</strong> el {fmtFecha(cita.fecha)} a las {cita.hora?.slice(0,5)}.
+            </p>
+            <div style={{ display: "flex", gap: 12 }}>
+              <button onClick={onClose} disabled={enviando}
+                style={{ flex: 1, padding: 13, border: "2px solid #e2e8f0", borderRadius: 12, background: "white", fontWeight: 700, fontSize: 14, cursor: "pointer", color: "#475569" }}>
+                Cancelar
+              </button>
+              <button onClick={handleEnviar} disabled={enviando}
+                style={{ flex: 1, padding: 13, border: "none", borderRadius: 12, background: "#ca8a04", color: "white", fontWeight: 700, fontSize: 14, cursor: enviando ? "not-allowed" : "pointer" }}>
+                {enviando ? "Enviando..." : "Sí, enviar"}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -3029,6 +3095,8 @@ export default function AppointmentPage() {
   const [filterPago, setFilterPago] = useState("all");
   const [vistaAgenda, setVistaAgenda] = useState(false);
   const [fechaAgenda, setFechaAgenda] = useState(new Date().toLocaleDateString("en-CA"));
+  const [modalRecordatorio, setModalRecordatorio] = useState(null);
+  const [enviadosVersion, setEnviadosVersion] = useState(0); 
 
   const user  = getUserFromToken();
   const userRole     = user?.idRol      || 1;
@@ -3115,7 +3183,6 @@ export default function AppointmentPage() {
       setPets(p.data || []); setVets(v.data || []); setStaff(s.data || []);
       setTypes(t.data || []); setStates(st.data || []); setAnimalSizes(res.data);
     }).catch(console.error);
-    verificarYEnviarRecordatorios();
   }, []);
 
   useEffect(() => { loadAppointments(); }, [filterDate]);
@@ -3498,6 +3565,16 @@ export default function AppointmentPage() {
                                   Llegó
                                 </button>
                               )}
+                              {estaRecordatorioEnviado(a.idCita) ? (
+                                <span style={{ padding: "6px 11px", borderRadius: 8, background: "#f0fdf4", color: "#16a34a", fontSize: 12, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                                  🔔 Enviado
+                                </span>
+                              ) : (
+                                <button onClick={() => setModalRecordatorio(a)}
+                                  style={{ padding: "6px 11px", borderRadius: 8, border: "1.5px solid #ca8a04", background: "white", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#ca8a04" }}>
+                                  🔔 Recordatorio
+                                </button>
+                              )}
                               
                               {canEdit && (
                                 <button onClick={() => setModal({ type: "edit", data: a })}
@@ -3591,6 +3668,13 @@ export default function AppointmentPage() {
       />
       )}
       {modal?.type === "detail" && <DetailModal cita={modal.data} onClose={() => setModal(null)} />}
+      {modalRecordatorio && (
+        <RecordatorioModal
+          cita={modalRecordatorio}
+          onClose={() => setModalRecordatorio(null)}
+          onEnviado={() => setEnviadosVersion(v => v + 1)}
+        />
+      )}
       {modal?.type === "attend" && (
         <AttendServiceModal cita={modal.data} staff={staff}
           onClose={() => setModal(null)} onSave={() => loadAppointments()} />
